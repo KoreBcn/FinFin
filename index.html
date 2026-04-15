@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Home Finance Dashboard</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <section class="title-banner">
+      <div class="title-banner-card">
+        <p class="eyebrow">Personal Finance Overview</p>
+        <h1>Home Budget Dashboard</h1>
+      </div>
+    </section>
+
+    <section class="top-panel">
+      <div class="summary-grid" aria-label="Annual finance totals">
+        <article class="summary-card summary-income">
+          <span>Total Income</span>
+          <p class="summary-detail"><strong id="incomePlannedValue">0 kr</strong> Planned</p>
+          <p class="summary-detail"><strong id="incomeRealizedValue">0 kr</strong> Realized</p>
+        </article>
+        <article class="summary-card summary-expenses">
+          <span>Total Expenses</span>
+          <p class="summary-detail"><strong id="expensePlannedValue">0 kr</strong> Planned</p>
+          <p class="summary-detail"><strong id="expenseRealizedValue">0 kr</strong> Realized</p>
+        </article>
+        <article class="summary-card summary-savings">
+          <span>Total Savings</span>
+          <p class="summary-detail"><strong id="savingsPlannedValue">0 kr</strong> Planned</p>
+          <p class="summary-detail"><strong id="savingsRealizedValue">0 kr</strong> Realized</p>
+        </article>
+      </div>
+
+      <aside class="settings-panel">
+        <div class="config-card compact-settings">
+          <div class="settings-top-row">
+            <label class="upload-button">
+              <input type="file" id="fileInput" accept=".csv" />
+              Choose file
+            </label>
+            <p class="file-name compact-file-name" id="fileNameDisplay">No file loaded</p>
+          </div>
+          <div class="field-row">
+            <label class="inline-field">
+              <span>Currency</span>
+              <select id="currencySelect">
+                <option value="DKK">DKK</option>
+                <option value="EUR">EUR</option>
+              </select>
+            </label>
+          </div>
+          <div class="field-row">
+            <label class="inline-field">
+              <span>Rate</span>
+              <input id="exchangeRateInput" type="number" step="0.01" min="0.01" value="7.45" />
+            </label>
+          </div>
+          <div class="field-row">
+            <label class="inline-field">
+              <span>Year</span>
+              <select id="yearSelect">
+                <option value="">All years</option>
+              </select>
+            </label>
+          </div>
+          <div class="field-row">
+            <label class="inline-field">
+              <span>Show</span>
+              <select id="plannedRealizedSelect">
+                <option value="all">All</option>
+                <option value="planned">Planned</option>
+                <option value="realized">Realized</option>
+              </select>
+            </label>
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="chart-panel">
+      <div class="panel-header">
+        <div>
+          <h2>Category performance</h2>
+        </div>
+        <div class="global-chart-legend">
+          <span><span class="marker" style="background: rgba(75, 192, 192, 0.8);"></span>Planned</span>
+          <span><span class="marker" style="background: rgba(255, 99, 132, 0.85);"></span>Realized</span>
+        </div>
+      </div>
+      <div class="chart-grid">
+        <div class="chart-card income-card">
+          <div class="chart-header">
+            <h3>Income categories</h3>
+          </div>
+          <div id="incomeChart" class="bar-chart" aria-label="Income category chart"></div>
+        </div>
+
+        <div class="chart-right-column">
+          <div class="chart-card category-card">
+            <div class="chart-header">
+              <h3>Expense categories</h3>
+            </div>
+            <div id="categoryChart" class="bar-chart" aria-label="Expense category performance chart"></div>
+          </div>
+        </div>
+      </div>
+      <div class="chart-card monthly-card full-width-card">
+        <div class="chart-header">
+          <h3>Monthly development</h3>
+        </div>
+        <div id="monthlyChart" class="month-chart" aria-label="Monthly planned vs realized chart"></div>
+      </div>
+    </section>
+
+    <section class="drilldown-panel" aria-hidden="true">
+      <div class="drilldown-header">
+        <div>
+          <h2>Type drilldown</h2>
+          <p>Inspect the selected category in detail.</p>
+        </div>
+        <button id="closeDrilldown" class="drilldown-close" aria-label="Close drilldown panel">×</button>
+      </div>
+      <div id="drilldownContent" class="drilldown-content">
+        <div class="empty-state">Upload your CSV and select a category to inspect the details.</div>
+      </div>
+    </section>
+    <button id="drilldownToggle" class="drilldown-toggle" aria-label="Toggle drilldown panel">Details</button>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
