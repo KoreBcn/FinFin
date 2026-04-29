@@ -19,3 +19,4 @@ Thumbs.db
 
 api/session.json
 api/*.pem
+db/*.csv
