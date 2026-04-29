@@ -1,0 +1,2176 @@
+Expense,Planned/Rea,Type,Date,Month,Year,Amount,Comments,Account
+Akasse,Rea,👩 Anna,01/01/24,1,2024,-1450,,Anna
+Akasse,Rea,👩 Anna,01/02/24,2,2024,,,Anna
+Akasse,Rea,👩 Anna,01/03/24,3,2024,,,Anna
+Akasse,Rea,👩 Anna,01/04/24,4,2024,-1450,,Anna
+Akasse,Rea,👩 Anna,01/05/24,5,2024,,,Anna
+Akasse,Rea,👩 Anna,01/06/24,6,2024,,,Anna
+Akasse,Rea,👩 Anna,01/07/24,7,2024,-1450,,Anna
+Akasse,Rea,👩 Anna,01/08/24,8,2024,,,Anna
+Akasse,Rea,👩 Anna,01/09/24,9,2024,,,Anna
+Akasse,Rea,👩 Anna,01/10/24,10,2024,-1450,,Anna
+Akasse,Rea,👩 Anna,01/11/24,11,2024,0,,Anna
+Akasse,Rea,👩 Anna,01/12/24,12,2024,0,,Anna
+Bike repair,Rea,👩 Anna,01/01/24,1,2024,-550,,Anna
+Bike repair,Rea,👩 Anna,01/02/24,2,2024,0,,Anna
+Bike repair,Rea,👩 Anna,01/03/24,3,2024,0,,Anna
+Bike repair,Rea,👩 Anna,01/04/24,4,2024,0,,Anna
+Bike repair,Rea,👩 Anna,01/05/24,5,2024,0,,Anna
+Bike repair,Rea,👩 Anna,01/06/24,6,2024,0,,Anna
+Bike repair,Rea,👩 Anna,01/07/24,7,2024,-8000,new bike,Anna
+Bike repair,Rea,👩 Anna,01/08/24,8,2024,,,Anna
+Bike repair,Rea,👩 Anna,01/09/24,9,2024,,,Anna
+Bike repair,Rea,👩 Anna,01/10/24,10,2024,0,,Anna
+Bike repair,Rea,👩 Anna,01/11/24,11,2024,0,,Anna
+Bike repair,Rea,👩 Anna,01/12/24,12,2024,0,,Anna
+Cafe/bar/restaurant,Rea,👩 Anna,01/01/24,1,2024,,,Anna
+Cafe/bar/restaurant,Rea,👩 Anna,01/02/24,2,2024,-1790,Middag med fam,Anna
+Cafe/bar/restaurant,Rea,👩 Anna,01/03/24,3,2024,,,Anna
+Cafe/bar/restaurant,Rea,👩 Anna,01/04/24,4,2024,-487,Frokost + netto,Anna
+Cafe/bar/restaurant,Rea,👩 Anna,01/05/24,5,2024,-1111,BCN,Anna
+Cafe/bar/restaurant,Rea,👩 Anna,01/06/24,6,2024,-2118,BCN restaurants + frokost dk,Anna
+Cafe/bar/restaurant,Rea,👩 Anna,01/07/24,7,2024,-650,baka dbusk restaurant,Anna
+Cafe/bar/restaurant,Rea,👩 Anna,01/08/24,8,2024,,,Anna
+Cafe/bar/restaurant,Rea,👩 Anna,01/09/24,9,2024,-320,Novo,Anna
+Cafe/bar/restaurant,Rea,👩 Anna,01/10/24,10,2024,-439,,Anna
+Cafe/bar/restaurant,Rea,👩 Anna,01/11/24,11,2024,-1273,"wine club, out w. jeramie, sweden",Anna
+Cafe/bar/restaurant,Rea,👩 Anna,01/12/24,12,2024,-473,,Anna
+Clothes,Rea,👩 Anna,01/01/24,1,2024,-780,shoes,Anna
+Clothes,Rea,👩 Anna,01/02/24,2,2024,,,Anna
+Clothes,Rea,👩 Anna,01/03/24,3,2024,,,Anna
+Clothes,Rea,👩 Anna,01/04/24,4,2024,-530,sko bilka,Anna
+Clothes,Rea,👩 Anna,01/05/24,5,2024,-4150,BCN shopping,Anna
+Clothes,Rea,👩 Anna,01/06/24,6,2024,-4300,"BCN shopping, doll (present) Shoes + magasin",Anna
+Clothes,Rea,👩 Anna,01/07/24,7,2024,-2840,Clothes,Anna
+Clothes,Rea,👩 Anna,01/08/24,8,2024,-475,Clothes and shoes,Anna
+Clothes,Rea,👩 Anna,01/09/24,9,2024,,,Anna
+Clothes,Rea,👩 Anna,01/10/24,10,2024,,,Anna
+Clothes,Rea,👩 Anna,01/11/24,11,2024,-1700,"xmas pyjamas, løbesko",Anna
+Clothes,Rea,👩 Anna,01/12/24,12,2024,0,,Anna
+Hobby,Rea,👩 Anna,01/01/24,1,2024,,,Anna
+Hobby,Rea,👩 Anna,01/02/24,2,2024,,,Anna
+Hobby,Rea,👩 Anna,01/03/24,3,2024,,,Anna
+Hobby,Rea,👩 Anna,01/04/24,4,2024,,,Anna
+Hobby,Rea,👩 Anna,01/05/24,5,2024,,,Anna
+Hobby,Rea,👩 Anna,01/06/24,6,2024,,,Anna
+Hobby,Rea,👩 Anna,01/07/24,7,2024,,,Anna
+Hobby,Rea,👩 Anna,01/08/24,8,2024,,,Anna
+Hobby,Rea,👩 Anna,01/09/24,9,2024,,,Anna
+Hobby,Rea,👩 Anna,01/10/24,10,2024,-240,hobby + scout,Anna
+Hobby,Rea,👩 Anna,01/11/24,11,2024,0,,Anna
+Hobby,Rea,👩 Anna,01/12/24,12,2024,-212,,Anna
+Misc,Rea,👩 Anna,01/01/24,1,2024,-3994,New glasses,Anna
+Misc,Rea,👩 Anna,01/02/24,2,2024,,,Anna
+Misc,Rea,👩 Anna,01/03/24,3,2024,,,Anna
+Misc,Rea,👩 Anna,01/04/24,4,2024,,,Anna
+Misc,Rea,👩 Anna,01/05/24,5,2024,0,,Anna
+Misc,Rea,👩 Anna,01/06/24,6,2024,-873,Haircut tossa + Books,Anna
+Misc,Rea,👩 Anna,01/07/24,7,2024,-750,Bachelorette party,Anna
+Misc,Rea,👩 Anna,01/08/24,8,2024,-500,Scout event,Anna
+Misc,Rea,👩 Anna,01/08/24,8,2024,-1130,matas and normal - for wedding,Anna
+Misc,Rea,👩 Anna,01/09/24,9,2024,-500,,Anna
+Misc,Rea,👩 Anna,01/10/24,10,2024,-435,subsciption + spotify (emil) + vegetarsamfund ,Anna
+Misc,Rea,👩 Anna,01/11/24,11,2024,-690,wine shopping + donation (jens),Anna
+Misc,Rea,👩 Anna,01/12/24,12,2024,-106,,Anna
+Phone,Rea,👩 Anna,01/01/24,1,2024,-59,,Anna
+Phone,Rea,👩 Anna,01/02/24,2,2024,-59,,Anna
+Phone,Rea,👩 Anna,01/03/24,3,2024,-59,,Anna
+Phone,Rea,👩 Anna,01/04/24,4,2024,-59,,Anna
+Phone,Rea,👩 Anna,01/05/24,5,2024,-59,,Anna
+Phone,Rea,👩 Anna,01/06/24,6,2024,-59,,Anna
+Phone,Rea,👩 Anna,01/07/24,7,2024,-59,,Anna
+Phone,Rea,👩 Anna,01/08/24,8,2024,-59,,Anna
+Phone,Rea,👩 Anna,01/09/24,9,2024,-59,,Anna
+Phone,Rea,👩 Anna,01/10/24,10,2024,-59,,Anna
+Phone,Rea,👩 Anna,01/11/24,11,2024,-59,,Anna
+Phone,Rea,👩 Anna,01/12/24,12,2024,-59,,Anna
+Cleaning,Rea,🏠 Home,01/01/24,1,2024,,,Joint
+Cleaning,Rea,🏠 Home,01/02/24,2,2024,,,Joint
+Cleaning,Rea,🏠 Home,01/03/24,3,2024,,,Joint
+Presents,Rea,👩 Anna,01/04/24,4,2024,,,Anna
+Cleaning,Rea,🏠 Home,01/05/24,5,2024,-1600,,Joint
+Cleaning,Rea,🏠 Home,01/06/24,6,2024,,,Joint
+Cleaning,Rea,🏠 Home,01/07/24,7,2024,,,Joint
+Cleaning,Rea,🏠 Home,01/08/24,8,2024,-1600,,Joint
+Cleaning,Rea,🏠 Home,01/09/24,9,2024,-1600,,Joint
+Cleaning,Rea,🏠 Home,01/10/24,10,2024,-1600,,Joint
+Cleaning,Rea,🏠 Home,01/11/24,11,2024,-1600,,Joint
+Cleaning,Rea,🏠 Home,01/12/24,12,2024,-1200,,Joint
+Furniture Misc,Rea,🏠 Home,01/01/24,1,2024,,,Joint
+Furniture Misc,Rea,🏠 Home,01/02/24,2,2024,,,Joint
+Furniture Misc,Rea,🏠 Home,01/03/24,3,2024,,,Joint
+Rejsekort,Rea,👩 Anna,01/04/24,4,2024,0,,Anna
+Furniture Misc,Rea,🏠 Home,01/05/24,5,2024,,,Joint
+Furniture Misc,Rea,🏠 Home,01/06/24,6,2024,-2000,Jysk,Joint
+Furniture Misc,Rea,🏠 Home,01/06/24,6,2024,-536,,Joint
+Furniture Misc,Rea,🏠 Home,01/07/24,7,2024,-2224,,Joint
+Furniture Misc,Rea,🏠 Home,01/08/24,8,2024,-2244,Wardrobe,Joint
+Furniture Misc,Rea,🏠 Home,01/09/24,9,2024,-1100,"Bunk Bed, Commode",Joint
+Furniture Misc,Rea,🏠 Home,01/10/24,10,2024,-4758,"Matress Bunkbed, Candles. Pillows Jysk",Joint
+Furniture Misc,Rea,🏠 Home,01/11/24,11,2024,-367,Candles,Joint
+Furniture Misc,Rea,🏠 Home,01/12/24,12,2024,-2257,"photos, water filter",Joint
+Rent,Rea,🏠 Home,01/01/24,1,2024,-12400,,Joint
+Rent,Rea,🏠 Home,01/02/24,2,2024,-12400,,Joint
+Rent,Rea,🏠 Home,01/03/24,3,2024,-12400,,Joint
+Travel personal,Rea,👩 Anna,01/04/24,4,2024,0,,Anna
+Rent,Rea,🏠 Home,01/05/24,5,2024,-12400,,Joint
+Rent,Rea,🏠 Home,01/06/24,6,2024,-12400,,Joint
+Rent,Rea,🏠 Home,01/07/24,7,2024,-12400,,Joint
+Rent,Rea,🏠 Home,01/08/24,8,2024,-12400,,Joint
+Rent,Rea,🏠 Home,01/09/24,9,2024,-12400,,Joint
+Rent,Rea,🏠 Home,01/10/24,10,2024,-12400,,Joint
+Rent,Rea,🏠 Home,01/11/24,11,2024,-12400,,Joint
+Rent,Rea,🏠 Home,01/12/24,12,2024,-12400,,Joint
+Car Service,Rea,🚗 Car,01/01/24,1,2024,,,Joint
+Car Service,Rea,🚗 Car,01/02/24,2,2024,,,Joint
+Car Service,Rea,🚗 Car,01/03/24,3,2024,,,Joint
+Car Service,Rea,🚗 Car,01/05/24,5,2024,,,Joint
+Car Service,Rea,🚗 Car,01/06/24,6,2024,,,Joint
+Car Service,Rea,🚗 Car,01/07/24,7,2024,,,Joint
+Car Service,Rea,🚗 Car,01/08/24,8,2024,-2330,Car service,Joint
+Car Service,Rea,🚗 Car,01/09/24,9,2024,-1500,,Joint
+Car Service,Rea,🚗 Car,01/10/24,10,2024,,,Joint
+Car Service,Rea,🚗 Car,01/11/24,11,2024,-10500,diesel filter + pump change,Joint
+Car Service,Rea,🚗 Car,01/12/24,12,2024,0,,Joint
+Ejer afgifter,Rea,🚗 Car,01/01/24,1,2024,,,Joint
+Ejer afgifter,Rea,🚗 Car,01/02/24,2,2024,,,Joint
+Ejer afgifter,Rea,🚗 Car,01/03/24,3,2024,-2790,,Joint
+Ejer afgifter,Rea,🚗 Car,01/09/24,9,2024,-2790,,Joint
+Misc,Rea,🚗 Car,01/01/24,1,2024,,,Joint
+Misc,Rea,🚗 Car,01/02/24,2,2024,,,Joint
+Misc,Rea,🚗 Car,01/03/24,3,2024,,,Joint
+Misc,Rea,🚗 Car,01/05/24,5,2024,,,Joint
+Misc,Rea,🚗 Car,01/06/24,6,2024,,,Joint
+Misc,Rea,🚗 Car,01/07/24,7,2024,-514,,Joint
+Misc,Rea,🚗 Car,01/08/24,8,2024,-1471,"PK Fine, Fine France",Joint
+Misc,Rea,🚗 Car,01/09/24,9,2024,,,Joint
+Misc,Rea,🚗 Car,01/10/24,10,2024,,,Joint
+Misc,Rea,🚗 Car,01/11/24,11,2024,0,,Joint
+Misc,Rea,🚗 Car,01/12/24,12,2024,0,,Joint
+Gasoline,Rea,🚗 Car,01/01/24,1,2024,-706,,Joint
+Gasoline,Rea,🚗 Car,01/02/24,2,2024,-626,Anna,Joint
+Gasoline,Rea,🚗 Car,01/03/24,3,2024,-500,,Joint
+Gasoline,Rea,🚗 Car,01/05/24,5,2024,0,Gas is under Travelling here,Joint
+Gasoline,Rea,🚗 Car,01/06/24,6,2024,-680,Anna,Joint
+Gasoline,Rea,🚗 Car,01/07/24,7,2024,-671,,Joint
+Gasoline,Rea,🚗 Car,01/08/24,8,2024,-941,,Joint
+Gasoline,Rea,🚗 Car,01/09/24,9,2024,-625,,Joint
+Gasoline,Rea,🚗 Car,01/10/24,10,2024,-634,,Joint
+Gasoline,Rea,🚗 Car,01/11/24,11,2024,-676,,Joint
+Gasoline,Rea,🚗 Car,01/12/24,12,2024,-646,,Joint
+Misc,Rea,🚗 Car,01/01/24,1,2024,,,Joint
+Misc,Rea,🚗 Car,01/02/24,2,2024,,,Joint
+Misc,Rea,🚗 Car,01/03/24,3,2024,,,Joint
+Misc,Rea,🚗 Car,01/05/24,5,2024,,,Joint
+Misc,Rea,🚗 Car,01/06/24,6,2024,,,Joint
+Misc,Rea,🚗 Car,01/07/24,7,2024,,,Joint
+Misc,Rea,🚗 Car,01/08/24,8,2024,-1500,"Car Radio,Automatic PK clock",Joint
+Misc,Rea,🚗 Car,01/09/24,9,2024,-800,Joana's Car seat,Joint
+Misc,Rea,🚗 Car,01/10/24,10,2024,,,Joint
+Misc,Rea,🚗 Car,01/11/24,11,2024,-103,Parking Lyngby,Joint
+Misc,Rea,🚗 Car,01/12/24,12,2024,-176,parking,Joint
+Insurance,Rea,🚗 Car,01/01/24,1,2024,-640,,Joint
+Insurance,Rea,🚗 Car,01/02/24,2,2024,-640,,Joint
+Insurance,Rea,🚗 Car,01/03/24,3,2024,-640,,Joint
+Insurance,Rea,🚗 Car,01/05/24,5,2024,-640,,Joint
+Insurance,Rea,🚗 Car,01/06/24,6,2024,-640,,Joint
+Insurance,Rea,🚗 Car,01/07/24,7,2024,-705,,Joint
+Insurance,Rea,🚗 Car,01/08/24,8,2024,-725,,Joint
+Insurance,Rea,🚗 Car,01/09/24,9,2024,-725,,Joint
+Insurance,Rea,🚗 Car,01/10/24,10,2024,-725,,Joint
+Insurance,Rea,🚗 Car,01/10/24,10,2024,380,Bonus,Joint
+Insurance,Rea,🚗 Car,01/11/24,11,2024,-725,,Joint
+Insurance,Rea,🚗 Car,01/12/24,12,2024,-725,,Joint
+Clothes,Rea,👨 Carlos,01/01/24,1,2024,-700,,Personal
+Flight Tickets,Rea,👨 Carlos,01/01/24,1,2024,0,,Personal
+Bars & Restaurants,Rea,👨 Carlos,01/01/24,1,2024,-1277,,Personal
+Music Forening,Rea,👨 Carlos,01/01/24,1,2024,-260,,Personal
+Rejsekort,Rea,👨 Carlos,01/01/24,1,2024,0,,Personal
+Travel personal,Rea,👨 Carlos,01/01/24,1,2024,0,,Personal
+Clothes,Rea,👨 Carlos,01/02/24,2,2024,0,,Personal
+Flight Tickets,Rea,👨 Carlos,01/02/24,2,2024,0,,Personal
+Bars & Restaurants,Rea,👨 Carlos,01/02/24,2,2024,-650,,Personal
+Music Forening,Rea,👨 Carlos,01/02/24,2,2024,-260,,Personal
+Rejsekort,Rea,👨 Carlos,01/02/24,2,2024,0,,Personal
+Travel personal,Rea,👨 Carlos,01/02/24,2,2024,0,,Personal
+Clothes,Rea,👨 Carlos,01/03/24,3,2024,0,,Personal
+Flight Tickets,Rea,👨 Carlos,01/03/24,3,2024,0,,Personal
+Bars & Restaurants,Rea,👨 Carlos,01/03/24,3,2024,-1300,,Personal
+Music Forening,Rea,👨 Carlos,01/03/24,3,2024,-260,,Personal
+Rejsekort,Rea,👨 Carlos,01/03/24,3,2024,0,,Personal
+Travel personal,Rea,👨 Carlos,01/03/24,3,2024,0,,Personal
+Clothes,Rea,👨 Carlos,01/04/24,4,2024,0,,Personal
+Flight Tickets,Rea,👨 Carlos,01/04/24,4,2024,0,,Personal
+Subscriptions,Rea,👨 Carlos,01/04/24,4,2024,-150,Tennis Membership,Personal
+Bars & Restaurants,Rea,👨 Carlos,01/04/24,4,2024,-600,,Personal
+Music Forening,Rea,👨 Carlos,01/04/24,4,2024,-260,,Personal
+Rejsekort,Rea,👨 Carlos,01/04/24,4,2024,-300,,Personal
+Travel personal,Rea,👨 Carlos,01/04/24,4,2024,0,,Personal
+Clothes,Rea,👨 Carlos,01/05/24,5,2024,0,,Personal
+Flight Tickets,Rea,👨 Carlos,01/05/24,5,2024,0,,Personal
+Misc,Rea,👨 Carlos,01/05/24,5,2024,-16000,New Computer,Personal
+Bars & Restaurants,Rea,👨 Carlos,01/05/24,5,2024,-790,,Personal
+Music Forening,Rea,👨 Carlos,01/05/24,5,2024,-260,,Personal
+Rejsekort,Rea,👨 Carlos,01/05/24,5,2024,0,,Personal
+Travel personal,Rea,👨 Carlos,01/05/24,5,2024,-1200,Weekend in Nuria,Personal
+Clothes,Rea,👨 Carlos,01/06/24,6,2024,-596,Amazon,Personal
+Flight Tickets,Rea,👨 Carlos,01/06/24,6,2024,0,,Personal
+Bars & Restaurants,Rea,👨 Carlos,01/06/24,6,2024,-900,,Personal
+Music Forening,Rea,👨 Carlos,01/06/24,6,2024,-260,,Personal
+Rejsekort,Rea,👨 Carlos,01/06/24,6,2024,0,,Personal
+Travel personal,Rea,👨 Carlos,01/06/24,6,2024,0,,Personal
+Clothes,Rea,👨 Carlos,01/07/24,7,2024,-500,,Personal
+Flight Tickets,Rea,👨 Carlos,01/07/24,7,2024,0,,Personal
+Bars & Restaurants,Rea,👨 Carlos,01/07/24,7,2024,-369,,Personal
+Music Forening,Rea,👨 Carlos,01/07/24,7,2024,-260,,Personal
+Rejsekort,Rea,👨 Carlos,01/07/24,7,2024,-300,,Personal
+Travel personal,Rea,👨 Carlos,01/07/24,7,2024,0,,Personal
+Clothes,Rea,👨 Carlos,01/08/24,8,2024,-268,,Personal
+Flight Tickets,Rea,👨 Carlos,01/08/24,8,2024,0,,Personal
+Bars & Restaurants,Rea,👨 Carlos,01/08/24,8,2024,0,,Personal
+Music Forening,Rea,👨 Carlos,01/08/24,8,2024,-260,,Personal
+Rejsekort,Rea,👨 Carlos,01/08/24,8,2024,0,,Personal
+Travel personal,Rea,👨 Carlos,01/08/24,8,2024,0,,Personal
+Clothes,Rea,👨 Carlos,01/09/24,9,2024,-1651,Decathlon shopping,Personal
+Flight Tickets,Rea,👨 Carlos,01/09/24,9,2024,-3104,Barcelona,Personal
+Bars & Restaurants,Rea,👨 Carlos,01/09/24,9,2024,,,Personal
+Music Forening,Rea,👨 Carlos,01/09/24,9,2024,-260,,Personal
+Rejsekort,Rea,👨 Carlos,01/09/24,9,2024,0,,Personal
+Travel personal,Rea,👨 Carlos,01/09/24,9,2024,-1500,Carros de foc,Personal
+Presents,Rea,👩 Anna,01/01/24,1,2024,,,Anna
+Presents,Rea,👩 Anna,01/02/24,2,2024,,,Anna
+Presents,Rea,👩 Anna,01/03/24,3,2024,,,Anna
+Cleaning,Rea,🏠 Home,01/04/24,4,2024,-1600,,Joint
+Presents,Rea,👩 Anna,01/05/24,5,2024,,,Anna
+Presents,Rea,👩 Anna,01/06/24,6,2024,-500,Imerco,Anna
+Presents,Rea,👩 Anna,01/07/24,7,2024,,,Anna
+Presents,Rea,👩 Anna,01/08/24,8,2024,-400,Wedding,Anna
+Presents,Rea,👩 Anna,01/09/24,9,2024,,,Anna
+Presents,Rea,👩 Anna,01/10/24,10,2024,,,Anna
+Clothes,Rea,👨 Carlos,01/10/24,10,2024,0,,Personal
+Flight Tickets,Rea,👨 Carlos,01/10/24,10,2024,0,,Personal
+Bars & Restaurants,Rea,👨 Carlos,01/10/24,10,2024,-1200,,Personal
+Furniture Misc,Rea,🏠 Home,01/04/24,4,2024,-170,tomatoes for garden,Joint
+Music Forening,Rea,👨 Carlos,01/10/24,10,2024,-260,,Personal
+Rejsekort,Rea,👨 Carlos,01/10/24,10,2024,-300,,Personal
+Travel personal,Rea,👨 Carlos,01/10/24,10,2024,0,,Personal
+Clothes,Rea,👨 Carlos,01/11/24,11,2024,0,,Personal
+Presents,Rea,👨 Carlos,01/11/24,11,2024,-900,Bike lights for Anna,Personal
+Bars & Restaurants,Rea,👨 Carlos,01/11/24,11,2024,-550,Beers / Kebabs,Personal
+Music Forening,Rea,👨 Carlos,01/11/24,11,2024,-252,,Personal
+Rejsekort,Rea,👨 Carlos,01/11/24,11,2024,-300,,Personal
+Activities,Rea,🎉 Entertainment,01/01/24,1,2024,,,Joint
+Activities,Rea,🎉 Entertainment,01/02/24,2,2024,,,Joint
+Activities,Rea,🎉 Entertainment,01/03/24,3,2024,,,Joint
+Rent,Rea,🏠 Home,01/04/24,4,2024,-12400,,Joint
+Activities,Rea,🎉 Entertainment,01/05/24,5,2024,,,Joint
+Activities,Rea,🎉 Entertainment,01/06/24,6,2024,,,Joint
+Activities,Rea,🎉 Entertainment,01/07/24,7,2024,,,Joint
+Activities,Rea,🎉 Entertainment,01/08/24,8,2024,-395,Planetarium,Joint
+Activities,Rea,🎉 Entertainment,01/09/24,9,2024,-2500,Marinlyst,Joint
+Activities,Rea,🎉 Entertainment,01/10/24,10,2024,,,Joint
+Activities,Rea,🎉 Entertainment,01/11/24,11,2024,0,,Joint
+Activities,Rea,🎉 Entertainment,01/12/24,12,2024,-177,,Joint
+Bars & Restaurants,Rea,🎉 Entertainment,01/01/24,1,2024,-1000,,Joint
+Bars & Restaurants,Rea,🎉 Entertainment,01/02/24,2,2024,-1000,,Joint
+Bars & Restaurants,Rea,🎉 Entertainment,01/03/24,3,2024,-1000,,Joint
+Bars & Restaurants,Rea,🎉 Entertainment,01/05/24,5,2024,-5294,Road trip,Joint
+Bars & Restaurants,Rea,🎉 Entertainment,01/06/24,6,2024,-2068,,Joint
+Bars & Restaurants,Rea,🎉 Entertainment,01/07/24,7,2024,-1909,,Joint
+Bars & Restaurants,Rea,🎉 Entertainment,01/08/24,8,2024,-1423,,Joint
+Bars & Restaurants,Rea,🎉 Entertainment,01/09/24,9,2024,-2500,,Joint
+Bars & Restaurants,Rea,🎉 Entertainment,01/10/24,10,2024,-1256,,Joint
+Bars & Restaurants,Rea,🎉 Entertainment,01/11/24,11,2024,-300,,Joint
+Bars & Restaurants,Rea,🎉 Entertainment,01/12/24,12,2024,-3028,,Joint
+Netflix,Rea,🎉 Entertainment,01/01/24,1,2024,,,Joint
+Netflix,Rea,🎉 Entertainment,01/02/24,2,2024,,,Joint
+Netflix,Rea,🎉 Entertainment,01/03/24,3,2024,,,Joint
+Netflix,Rea,🎉 Entertainment,01/05/24,5,2024,,,Joint
+Netflix,Rea,🎉 Entertainment,01/06/24,6,2024,-150,,Joint
+Netflix,Rea,🎉 Entertainment,01/07/24,7,2024,-150,,Joint
+Netflix,Rea,🎉 Entertainment,01/08/24,8,2024,-150,,Joint
+Netflix,Rea,🎉 Entertainment,01/09/24,9,2024,-150,,Joint
+Netflix,Rea,🎉 Entertainment,01/10/24,10,2024,-150,,Joint
+Netflix,Rea,🎉 Entertainment,01/11/24,11,2024,0,,Joint
+Netflix,Rea,🎉 Entertainment,01/12/24,12,2024,-89,,Joint
+Port Aventura,Rea,🎉 Entertainment,01/01/24,1,2024,,,Joint
+Port Aventura,Rea,🎉 Entertainment,01/02/24,2,2024,,,Joint
+Port Aventura,Rea,🎉 Entertainment,01/03/24,3,2024,,,Joint
+Port Aventura,Rea,🎉 Entertainment,01/05/24,5,2024,-1400,,Joint
+Port Aventura,Rea,🎉 Entertainment,01/06/24,6,2024,,,Joint
+Port Aventura,Rea,🎉 Entertainment,01/07/24,7,2024,,,Joint
+Port Aventura,Rea,🎉 Entertainment,01/08/24,8,2024,,,Joint
+Port Aventura,Rea,🎉 Entertainment,01/09/24,9,2024,,,Joint
+Port Aventura,Rea,🎉 Entertainment,01/10/24,10,2024,,,Joint
+Travel personal,Rea,👨 Carlos,01/11/24,11,2024,0,,Personal
+Sports,Rea,🎉 Entertainment,01/01/24,1,2024,,,Joint
+Sports,Rea,🎉 Entertainment,01/02/24,2,2024,,,Joint
+Sports,Rea,🎉 Entertainment,01/03/24,3,2024,,,Joint
+Car Service,Rea,🚗 Car,01/04/24,4,2024,-15000,Big reparation,Joint
+Sports,Rea,🎉 Entertainment,01/05/24,5,2024,,,Joint
+Sports,Rea,🎉 Entertainment,01/06/24,6,2024,,,Joint
+Sports,Rea,🎉 Entertainment,01/07/24,7,2024,,,Joint
+Sports,Rea,🎉 Entertainment,01/08/24,8,2024,,,Joint
+Sports,Rea,🎉 Entertainment,01/09/24,9,2024,,,Joint
+Sports,Rea,🎉 Entertainment,01/10/24,10,2024,-125,Badminton,Joint
+Sports,Rea,🎉 Entertainment,01/11/24,11,2024,0,,Joint
+Sports,Rea,🎉 Entertainment,01/12/24,12,2024,-120,,Joint
+Subscriptions,Rea,🎉 Entertainment,01/01/24,1,2024,,,Joint
+Subscriptions,Rea,🎉 Entertainment,01/02/24,2,2024,,,Joint
+Subscriptions,Rea,🎉 Entertainment,01/03/24,3,2024,,,Joint
+Misc,Rea,🚗 Car,01/04/24,4,2024,,,Joint
+Subscriptions,Rea,🎉 Entertainment,01/05/24,5,2024,,,Joint
+Subscriptions,Rea,🎉 Entertainment,01/06/24,6,2024,,,Joint
+Subscriptions,Rea,🎉 Entertainment,01/07/24,7,2024,,,Joint
+Subscriptions,Rea,🎉 Entertainment,01/08/24,8,2024,,,Joint
+Subscriptions,Rea,🎉 Entertainment,01/09/24,9,2024,,,Joint
+Subscriptions,Rea,🎉 Entertainment,01/10/24,10,2024,-50,Disney+,Joint
+Subscriptions,Rea,🎉 Entertainment,01/11/24,11,2024,-45,Disney+,Joint
+Subscriptions,Rea,🎉 Entertainment,01/12/24,12,2024,-52,,Joint
+TV2Play,Rea,🎉 Entertainment,01/01/24,1,2024,,,Joint
+TV2Play,Rea,🎉 Entertainment,01/02/24,2,2024,,,Joint
+TV2Play,Rea,🎉 Entertainment,01/03/24,3,2024,,,Joint
+Gasoline,Rea,🚗 Car,01/04/24,4,2024,-600,,Joint
+TV2Play,Rea,🎉 Entertainment,01/05/24,5,2024,,,Joint
+TV2Play,Rea,🎉 Entertainment,01/06/24,6,2024,,,Joint
+TV2Play,Rea,🎉 Entertainment,01/07/24,7,2024,,,Joint
+TV2Play,Rea,🎉 Entertainment,01/08/24,8,2024,,,Joint
+TV2Play,Rea,🎉 Entertainment,01/09/24,9,2024,,,Joint
+TV2Play,Rea,🎉 Entertainment,01/10/24,10,2024,-220,,Joint
+TV2Play,Rea,🎉 Entertainment,01/11/24,11,2024,0,,Joint
+Youtube,Rea,🎉 Entertainment,01/01/24,1,2024,-119,,Joint
+Youtube,Rea,🎉 Entertainment,01/02/24,2,2024,-119,,Joint
+Youtube,Rea,🎉 Entertainment,01/03/24,3,2024,-119,,Joint
+Misc,Rea,🚗 Car,01/04/24,4,2024,,,Joint
+Youtube,Rea,🎉 Entertainment,01/05/24,5,2024,-119,,Joint
+Youtube,Rea,🎉 Entertainment,01/06/24,6,2024,-119,,Joint
+Youtube,Rea,🎉 Entertainment,01/07/24,7,2024,-119,,Joint
+Youtube,Rea,🎉 Entertainment,01/08/24,8,2024,-119,,Joint
+Youtube,Rea,🎉 Entertainment,01/09/24,9,2024,-119,,Joint
+Youtube,Rea,🎉 Entertainment,01/10/24,10,2024,-119,,Joint
+Youtube,Rea,🎉 Entertainment,01/11/24,11,2024,-139,,Joint
+Youtube,Rea,🎉 Entertainment,01/12/24,12,2024,0,,Joint
+Food,Rea,🛒 Groceries,01/01/24,1,2024,-3580,,Joint
+Food,Rea,🛒 Groceries,01/02/24,2,2024,-5030,,Joint
+Food,Rea,🛒 Groceries,01/03/24,3,2024,-4533,,Joint
+Insurance,Rea,🚗 Car,01/04/24,4,2024,-640,,Joint
+Food,Rea,🛒 Groceries,01/05/24,5,2024,-5294,,Joint
+Food,Rea,🛒 Groceries,01/06/24,6,2024,-7988,,Joint
+Food,Rea,🛒 Groceries,01/07/24,7,2024,-5206,,Joint
+Food,Rea,🛒 Groceries,01/08/24,8,2024,-5706,,Joint
+Food,Rea,🛒 Groceries,01/09/24,9,2024,-5159,,Joint
+Food,Rea,🛒 Groceries,01/10/24,10,2024,-6084,,Joint
+Food,Rea,🛒 Groceries,01/11/24,11,2024,-4187,,Joint
+Food,Rea,🛒 Groceries,01/12/24,12,2024,-5458,,Joint
+Dentist,Rea,👩 Anna,01/01/24,1,2024,,,Anna
+Dentist,Rea,👩 Anna,01/02/24,2,2024,,,Anna
+Dentist,Rea,👩 Anna,01/03/24,3,2024,,,Anna
+Akasse,Rea,👩 Anna,01/01/25,1,2025,-1500,,Anna
+Dentist,Rea,👩 Anna,01/05/24,5,2024,,,Anna
+Dentist,Rea,👩 Anna,01/06/24,6,2024,,,Anna
+Dentist,Rea,👩 Anna,01/07/24,7,2024,,,Anna
+Dentist,Rea,👩 Anna,01/08/24,8,2024,-2200,,Anna
+Dentist,Rea,👩 Anna,01/09/24,9,2024,-1900,,Anna
+Dentist,Rea,👩 Anna,01/10/24,10,2024,,,Anna
+Dentist,Rea,👩 Anna,01/11/24,11,2024,0,,Anna
+Dentist,Rea,👩 Anna,01/12/24,12,2024,0,,Anna
+Dentist,Rea,👨 Carlos,01/01/24,1,2024,,,Personal
+Dentist,Rea,👨 Carlos,01/02/24,2,2024,,,Personal
+Dentist,Rea,👨 Carlos,01/03/24,3,2024,,,Personal
+Glasses and contacts,Rea,👩 Anna,01/01/25,1,2025,0,,Anna
+Dentist,Rea,👨 Carlos,01/05/24,5,2024,-9000,Implant,Personal
+Dentist,Rea,👨 Carlos,01/06/24,6,2024,,,Personal
+Dentist,Rea,👨 Carlos,01/07/24,7,2024,-1300,Tooth Reconstruction,Personal
+Dentist,Rea,👨 Carlos,01/08/24,8,2024,,,Personal
+Dentist,Rea,👨 Carlos,01/09/24,9,2024,-4000,Crown,Personal
+Dentist,Rea,👨 Carlos,01/10/24,10,2024,,,Personal
+Dentist,Rea,👨 Carlos,01/11/24,11,2024,-823,,Personal
+Dentist,Rea,👨 Carlos,01/12/24,12,2024,-800,,Personal
+Massages,Rea,💊 Health,01/01/24,1,2024,,,Joint
+Massages,Rea,💊 Health,01/02/24,2,2024,,,Joint
+Massages,Rea,💊 Health,01/03/24,3,2024,,,Joint
+Bike repair,Rea,👩 Anna,01/01/25,1,2025,0,,Anna
+Cafe/bar/restaurant,Rea,👩 Anna,01/01/25,1,2025,-601,,Anna
+Massages,Rea,💊 Health,01/05/24,5,2024,,,Joint
+Massages,Rea,💊 Health,01/06/24,6,2024,,,Joint
+Massages,Rea,💊 Health,01/07/24,7,2024,,,Joint
+Massages,Rea,💊 Health,01/08/24,8,2024,,,Joint
+Massages,Rea,💊 Health,01/09/24,9,2024,,,Joint
+Massages,Rea,💊 Health,01/10/24,10,2024,-968,massages for december bcn,Joint
+Massages,Rea,💊 Health,01/11/24,11,2024,0,,Joint
+Massages,Rea,💊 Health,01/12/24,12,2024,0,,Joint
+Pharmacy,Rea,💊 Health,01/01/24,1,2024,,,Joint
+Pharmacy,Rea,💊 Health,01/02/24,2,2024,0,,Joint
+Pharmacy,Rea,💊 Health,01/03/24,3,2024,0,,Joint
+Clothes,Rea,👩 Anna,01/01/25,1,2025,-60,,Anna
+Pharmacy,Rea,💊 Health,01/05/24,5,2024,0,,Joint
+Pharmacy,Rea,💊 Health,01/06/24,6,2024,-180,medicine,Joint
+Pharmacy,Rea,💊 Health,01/06/24,6,2024,0,,Joint
+Pharmacy,Rea,💊 Health,01/07/24,7,2024,-33,,Joint
+Pharmacy,Rea,💊 Health,01/08/24,8,2024,0,,Joint
+Pharmacy,Rea,💊 Health,01/09/24,9,2024,-144,,Joint
+Pharmacy,Rea,💊 Health,01/10/24,10,2024,-279,,Joint
+Pharmacy,Rea,💊 Health,01/11/24,11,2024,0,,Joint
+Pharmacy,Rea,💊 Health,01/12/24,12,2024,-179,,Joint
+Psicologist,Rea,👩 Anna,01/01/24,1,2024,0,,Anna
+Psicologist,Rea,👩 Anna,01/02/24,2,2024,-356,,Anna
+Psicologist,Rea,👩 Anna,01/03/24,3,2024,-356,,Anna
+Subscriptions,Rea,👨 Carlos,01/11/24,11,2024,-900,NordVPN,Personal
+Psicologist,Rea,👩 Anna,01/05/24,5,2024,0,,Anna
+Psicologist,Rea,👩 Anna,01/06/24,6,2024,-186,,Anna
+Psicologist,Rea,👩 Anna,01/07/24,7,2024,-372,,Anna
+Psicologist,Rea,👩 Anna,01/08/24,8,2024,0,,Anna
+Psicologist,Rea,👩 Anna,01/09/24,9,2024,-186,,Anna
+Psicologist,Rea,👩 Anna,01/10/24,10,2024,-192,,Anna
+Psicologist,Rea,👩 Anna,01/11/24,11,2024,-192,25 Nov,Anna
+Psicologist,Rea,👩 Anna,01/12/24,12,2024,-192,,Anna
+Psicologist,Rea,👨 Carlos,01/01/24,1,2024,-894,,Personal
+Psicologist,Rea,👨 Carlos,01/02/24,2,2024,-600,,Personal
+Psicologist,Rea,👨 Carlos,01/03/24,3,2024,-600,,Personal
+Bars & Restaurants,Rea,👨 Carlos,01/12/24,12,2024,-1000,"Food, Beers & Groceries",Personal
+Psicologist,Rea,👨 Carlos,01/05/24,5,2024,-300,,Personal
+Psicologist,Rea,👨 Carlos,01/06/24,6,2024,-150,,Personal
+Psicologist,Rea,👨 Carlos,01/07/24,7,2024,-300,,Personal
+Psicologist,Rea,👨 Carlos,01/08/24,8,2024,-300,,Personal
+Psicologist,Rea,👨 Carlos,01/09/24,9,2024,-600,,Personal
+Psicologist,Rea,👨 Carlos,01/10/24,10,2024,-900,,Personal
+Psicologist,Rea,👨 Carlos,01/11/24,11,2024,-598,,Personal
+Psicologist,Rea,👨 Carlos,01/12/24,12,2024,-298,,Personal
+Airbnb,Rea,💰 Income,01/01/24,1,2024,,,Joint
+Airbnb,Rea,💰 Income,01/02/24,2,2024,,,Joint
+Airbnb,Rea,💰 Income,01/03/24,3,2024,,,Joint
+Flight Tickets,Rea,👨 Carlos,01/12/24,12,2024,0,,Personal
+Airbnb,Rea,💰 Income,01/05/24,5,2024,23216,,Joint
+Airbnb,Rea,💰 Income,01/06/24,6,2024,,,Joint
+Airbnb,Rea,💰 Income,01/07/24,7,2024,,,Joint
+Airbnb,Rea,💰 Income,01/08/24,8,2024,,,Joint
+Airbnb,Rea,💰 Income,01/09/24,9,2024,,,Joint
+Airbnb,Rea,💰 Income,01/10/24,10,2024,,,Joint
+Airbnb,Rea,💰 Income,01/11/24,11,2024,0,,Joint
+Anna Skat Return,Rea,💰 Income,01/01/24,1,2024,,,Joint
+Anna Skat Return,Rea,💰 Income,01/02/24,2,2024,,,Joint
+Anna Skat Return,Rea,💰 Income,01/03/24,3,2024,,,Joint
+Subscriptions,Rea,👨 Carlos,01/12/24,12,2024,-109,Spotify x3 months,Personal
+Anna Skat Return,Rea,💰 Income,01/05/24,5,2024,,,Joint
+Anna Skat Return,Rea,💰 Income,01/06/24,6,2024,,,Joint
+Anna Skat Return,Rea,💰 Income,01/07/24,7,2024,,,Joint
+Anna Skat Return,Rea,💰 Income,01/08/24,8,2024,,,Joint
+Anna Skat Return,Rea,💰 Income,01/09/24,9,2024,,,Joint
+Anna Skat Return,Rea,💰 Income,01/10/24,10,2024,,,Joint
+Anna Skat Return,Rea,💰 Income,01/11/24,11,2024,0,,Joint
+Anna Skat Return,Rea,💰 Income,01/12/24,12,2024,0,,Joint
+Anna's Salary,Rea,💰 Income,01/01/24,1,2024,29250,,Joint
+Anna's Salary,Rea,💰 Income,01/02/24,2,2024,29525,,Joint
+Anna's Salary,Rea,💰 Income,01/03/24,3,2024,31350,,Joint
+Music Forening,Rea,👨 Carlos,01/12/24,12,2024,-252,,Personal
+Anna's Salary,Rea,💰 Income,01/05/24,5,2024,31350,,Joint
+Anna's Salary,Rea,💰 Income,01/06/24,6,2024,31850,,Joint
+Anna's Salary,Rea,💰 Income,01/07/24,7,2024,10550,,Joint
+Anna's Salary,Rea,💰 Income,01/08/24,8,2024,30200,,Joint
+Anna's Salary,Rea,💰 Income,01/09/24,9,2024,27050,,Joint
+Anna's Salary,Rea,💰 Income,01/10/24,10,2024,27200,,Joint
+Anna's Salary,Rea,💰 Income,01/11/24,11,2024,22740,,Joint
+Anna's Salary,Rea,💰 Income,01/12/24,12,2024,23066,,Joint
+Børne og Unge Ydelse Anna,Rea,💰 Income,01/01/24,1,2024,3850,,Joint
+Børne og Unge Ydelse Anna,Rea,💰 Income,01/02/24,2,2024,,,Joint
+Børne og Unge Ydelse Anna,Rea,💰 Income,01/03/24,3,2024,,,Joint
+Rejsekort,Rea,👨 Carlos,01/12/24,12,2024,-34,,Personal
+Børne og Unge Ydelse Anna,Rea,💰 Income,01/05/24,5,2024,,,Joint
+Børne og Unge Ydelse Anna,Rea,💰 Income,01/06/24,6,2024,,,Joint
+Børne og Unge Ydelse Anna,Rea,💰 Income,01/07/24,7,2024,4300,,Joint
+Børne og Unge Ydelse Anna,Rea,💰 Income,01/08/24,8,2024,,,Joint
+Børne og Unge Ydelse Anna,Rea,💰 Income,01/09/24,9,2024,,,Joint
+Børne og Unge Ydelse Anna,Rea,💰 Income,01/10/24,10,2024,4300,,Joint
+Børne og Unge Ydelse Anna,Rea,💰 Income,01/11/24,11,2024,0,,Joint
+Børne og Unge Ydelse Anna,Rea,💰 Income,01/12/24,12,2024,0,,Joint
+Børne og Unge Ydelse Carlos,Rea,💰 Income,01/01/24,1,2024,4300,,Joint
+Børne og Unge Ydelse Carlos,Rea,💰 Income,01/02/24,2,2024,,,Joint
+Børne og Unge Ydelse Carlos,Rea,💰 Income,01/03/24,3,2024,,,Joint
+Presents,Rea,👨 Carlos,01/12/24,12,2024,0,,Personal
+Børne og Unge Ydelse Carlos,Rea,💰 Income,01/05/24,5,2024,,,Joint
+Børne og Unge Ydelse Carlos,Rea,💰 Income,01/06/24,6,2024,,,Joint
+Børne og Unge Ydelse Carlos,Rea,💰 Income,01/07/24,7,2024,4300,,Joint
+Børne og Unge Ydelse Carlos,Rea,💰 Income,01/08/24,8,2024,,,Joint
+Børne og Unge Ydelse Carlos,Rea,💰 Income,01/09/24,9,2024,,,Joint
+Børne og Unge Ydelse Carlos,Rea,💰 Income,01/10/24,10,2024,4300,,Joint
+Børne og Unge Ydelse Carlos,Rea,💰 Income,01/11/24,11,2024,0,,Joint
+Børne og Unge Ydelse Carlos,Rea,💰 Income,01/12/24,12,2024,0,,Joint
+Carlos Salary,Rea,💰 Income,01/01/24,1,2024,30000,,Joint
+Carlos Salary,Rea,💰 Income,01/02/24,2,2024,30000,,Joint
+Carlos Salary,Rea,💰 Income,01/03/24,3,2024,30000,,Joint
+Hobby,Rea,👩 Anna,01/01/25,1,2025,0,,Anna
+Carlos Salary,Rea,💰 Income,01/05/24,5,2024,31500,,Joint
+Carlos Salary,Rea,💰 Income,01/06/24,6,2024,31500,Salary Increase,Joint
+Carlos Salary,Rea,💰 Income,01/07/24,7,2024,31500,,Joint
+Carlos Salary,Rea,💰 Income,01/08/24,8,2024,31500,,Joint
+Carlos Salary,Rea,💰 Income,01/09/24,9,2024,31500,,Joint
+Carlos Salary,Rea,💰 Income,01/10/24,10,2024,101500,Retention Bonus 2,Joint
+Carlos Salary,Rea,💰 Income,01/11/24,11,2024,34747,,Joint
+Carlos Salary,Rea,💰 Income,01/12/24,12,2024,34952,,Joint
+Carlos Skat return,Rea,💰 Income,01/01/24,1,2024,,,Joint
+Carlos Skat return,Rea,💰 Income,01/02/24,2,2024,,,Joint
+Carlos Skat return,Rea,💰 Income,01/03/24,3,2024,,,Joint
+Misc,Rea,👩 Anna,01/01/25,1,2025,-575,"Spa day anna, app",Anna
+Carlos Skat return,Rea,💰 Income,01/05/24,5,2024,,,Joint
+Carlos Skat return,Rea,💰 Income,01/06/24,6,2024,,,Joint
+Carlos Skat return,Rea,💰 Income,01/07/24,7,2024,7614,,Joint
+Carlos Skat return,Rea,💰 Income,01/08/24,8,2024,,,Joint
+Carlos Skat return,Rea,💰 Income,01/09/24,9,2024,,,Joint
+Carlos Skat return,Rea,💰 Income,01/10/24,10,2024,,,Joint
+Carlos Skat return,Rea,💰 Income,01/11/24,11,2024,0,,Joint
+Carlos Skat return,Rea,💰 Income,01/12/24,12,2024,0,,Joint
+Danmark forsikring,Rea,💊 Health,01/01/24,1,2024,-1300,,Joint
+Danmark forsikring,Rea,💊 Health,01/02/24,2,2024,,,Joint
+Danmark forsikring,Rea,💊 Health,01/03/24,3,2024,,,Joint
+Phone,Rea,👩 Anna,01/01/25,1,2025,-25,,Anna
+Danmark forsikring,Rea,💊 Health,01/05/24,5,2024,,,Joint
+Danmark forsikring,Rea,💊 Health,01/06/24,6,2024,,,Joint
+Danmark forsikring,Rea,💊 Health,01/07/24,7,2024,-1300,,Joint
+Danmark forsikring,Rea,💊 Health,01/08/24,8,2024,,,Joint
+Danmark forsikring,Rea,💊 Health,01/09/24,9,2024,,,Joint
+Danmark forsikring,Rea,💊 Health,01/10/24,10,2024,-1300,,Joint
+Danmark forsikring,Rea,💊 Health,01/11/24,11,2024,0,,Joint
+Danmark forsikring,Rea,💊 Health,01/12/24,12,2024,300,,Joint
+Content Insurance,Rea,🏠 Home,01/01/24,1,2024,-149,,Joint
+Content Insurance,Rea,🏠 Home,01/02/24,2,2024,-149,,Joint
+Content Insurance,Rea,🏠 Home,01/03/24,3,2024,-149,,Joint
+Presents,Rea,👩 Anna,01/01/25,1,2025,-1554,"gin, mom present (glade vanvid)",Anna
+Content Insurance,Rea,🏠 Home,01/05/24,5,2024,-149,,Joint
+Content Insurance,Rea,🏠 Home,01/06/24,6,2024,-149,,Joint
+Content Insurance,Rea,🏠 Home,01/07/24,7,2024,-227,,Joint
+Content Insurance,Rea,🏠 Home,01/08/24,8,2024,-146,,Joint
+Content Insurance,Rea,🏠 Home,01/09/24,9,2024,-146,,Joint
+Content Insurance,Rea,🏠 Home,01/10/24,10,2024,-146,,Joint
+Content Insurance,Rea,🏠 Home,01/11/24,11,2024,-146,,Joint
+Content Insurance,Rea,🏠 Home,01/12/24,12,2024,-146,,Joint
+Dentist,Rea,👩 Anna,01/01/25,1,2025,0,,Anna
+Psicologist,Rea,👩 Anna,01/01/25,1,2025,-191,,Anna
+Activities,Rea,👶 Kids,01/01/24,1,2024,-145,Pool,Joint
+Activities,Rea,👶 Kids,01/02/24,2,2024,-145,Pool,Joint
+Activities,Rea,👶 Kids,01/03/24,3,2024,-480,Pool,Joint
+Activities,Rea,👶 Kids,01/03/24,3,2024,-405,Experimentarium,Joint
+Rejsekort,Rea,👩 Anna,01/01/25,1,2025,-100,,Anna
+Activities,Rea,👶 Kids,01/05/24,5,2024,-145,Pool,Joint
+Activities,Rea,👶 Kids,01/06/24,6,2024,-65,Pool,Joint
+Activities,Rea,👶 Kids,01/07/24,7,2024,-415,Pool,Joint
+Activities,Rea,👶 Kids,01/08/24,8,2024,-160,Pool,Joint
+Activities,Rea,👶 Kids,01/09/24,9,2024,-1112,Pool,Joint
+Activities,Rea,👶 Kids,01/10/24,10,2024,-145,Pool,Joint
+Activities,Rea,👶 Kids,01/11/24,11,2024,-400,Gymnastik,Joint
+Activities,Rea,👶 Kids,01/12/24,12,2024,-457,,Joint
+Clothes,Rea,👶 Kids,01/01/24,1,2024,0,,Joint
+Clothes,Rea,👶 Kids,01/02/24,2,2024,-450,Flyvedragt second hand elizabeth,Joint
+Clothes,Rea,👶 Kids,01/03/24,3,2024,0,,Joint
+Activities,Rea,🎉 Entertainment,01/04/24,4,2024,,,Joint
+Clothes,Rea,👶 Kids,01/05/24,5,2024,0,,Joint
+Clothes,Rea,👶 Kids,01/06/24,6,2024,0,,Joint
+Clothes,Rea,👶 Kids,01/07/24,7,2024,0,,Joint
+Clothes,Rea,👶 Kids,01/08/24,8,2024,0,,Joint
+Clothes,Rea,👶 Kids,01/09/24,9,2024,0,,Joint
+Clothes,Rea,👶 Kids,01/10/24,10,2024,-1685,"shoes joana, pyjamas, flyverdragt elizabeth",Joint
+Clothes,Rea,👶 Kids,01/11/24,11,2024,-1550,zalando name it ,Joint
+Clothes,Rea,👶 Kids,01/12/24,12,2024,0,,Joint
+Kindergarden,Rea,👶 Kids,01/01/24,1,2024,-4171,,Joint
+Kindergarden,Rea,👶 Kids,01/02/24,2,2024,-4171,,Joint
+Kindergarden,Rea,👶 Kids,01/03/24,3,2024,-4171,,Joint
+Bars & Restaurants,Rea,🎉 Entertainment,01/04/24,4,2024,-1000,,Joint
+Kindergarden,Rea,👶 Kids,01/05/24,5,2024,-4171,,Joint
+Kindergarden,Rea,👶 Kids,01/06/24,6,2024,-4171,,Joint
+Kindergarden,Rea,👶 Kids,01/07/24,7,2024,0,,Joint
+Kindergarden,Rea,👶 Kids,01/08/24,8,2024,-4742,,Joint
+Kindergarden,Rea,👶 Kids,01/09/24,9,2024,-6563,,Joint
+Kindergarden,Rea,👶 Kids,01/10/24,10,2024,-6783,,Joint
+Kindergarden,Rea,👶 Kids,01/11/24,11,2024,-6783,,Joint
+Kindergarden,Rea,👶 Kids,01/12/24,12,2024,-6783,,Joint
+Misc,Rea,👶 Kids,01/01/24,1,2024,,,Joint
+Misc,Rea,👶 Kids,01/02/24,2,2024,,,Joint
+Misc,Rea,👶 Kids,01/03/24,3,2024,,,Joint
+Netflix,Rea,🎉 Entertainment,01/04/24,4,2024,,,Joint
+Misc,Rea,👶 Kids,01/05/24,5,2024,,,Joint
+Misc,Rea,👶 Kids,01/06/24,6,2024,-400,Vitamins,Joint
+Misc,Rea,👶 Kids,01/06/24,6,2024,,,Joint
+Misc,Rea,👶 Kids,01/07/24,7,2024,,,Joint
+Misc,Rea,👶 Kids,01/08/24,8,2024,,,Joint
+Misc,Rea,👶 Kids,01/09/24,9,2024,,,Joint
+Misc,Rea,👶 Kids,01/10/24,10,2024,,,Joint
+Misc,Rea,👶 Kids,01/11/24,11,2024,-188,photo album materials,Joint
+Misc,Rea,👶 Kids,01/12/24,12,2024,0,,Joint
+Gear,Rea,🛍️ Shopping,01/01/24,1,2024,-1000,Suitcase,Joint
+Gear,Rea,🛍️ Shopping,01/02/24,2,2024,,,Joint
+Gear,Rea,🛍️ Shopping,01/03/24,3,2024,,,Joint
+Port Aventura,Rea,🎉 Entertainment,01/04/24,4,2024,,,Joint
+Gear,Rea,🛍️ Shopping,01/05/24,5,2024,-4000,Camping gear Decathlon,Joint
+Gear,Rea,🛍️ Shopping,01/06/24,6,2024,,,Joint
+Gear,Rea,🛍️ Shopping,01/07/24,7,2024,,,Joint
+Gear,Rea,🛍️ Shopping,01/08/24,8,2024,,,Joint
+Gear,Rea,🛍️ Shopping,01/09/24,9,2024,,,Joint
+Gear,Rea,🛍️ Shopping,01/10/24,10,2024,,,Joint
+Gear,Rea,🛍️ Shopping,01/11/24,11,2024,,,Joint
+Misc,Rea,🛍️ Shopping,01/12/24,12,2024,-628,,Joint
+Boui les Baronnes & Barcelona,Rea,✈️ Traveling,01/01/24,1,2024,,,Joint
+Boui les Baronnes & Barcelona,Rea,✈️ Traveling,01/02/24,2,2024,,,Joint
+Boui les Baronnes & Barcelona,Rea,✈️ Traveling,01/03/24,3,2024,,,Joint
+Sports,Rea,🎉 Entertainment,01/04/24,4,2024,,,Joint
+Boui les Baronnes & Barcelona,Rea,✈️ Traveling,01/05/24,5,2024,-25000,,Joint
+Boui les Baronnes & Barcelona,Rea,✈️ Traveling,01/06/24,6,2024,,,Joint
+Boui les Baronnes & Barcelona,Rea,✈️ Traveling,01/07/24,7,2024,,,Joint
+Boui les Baronnes & Barcelona,Rea,✈️ Traveling,01/08/24,8,2024,,,Joint
+Boui les Baronnes & Barcelona,Rea,✈️ Traveling,01/09/24,9,2024,,,Joint
+Accomodation,Rea,✈️ Traveling,01/11/24,11,2024,-2459,Casa rural with Carlos Brothers,Joint
+Flight Tickets,Rea,✈️ Traveling,01/01/24,1,2024,,,Joint
+Flight Tickets,Rea,✈️ Traveling,01/02/24,2,2024,,,Joint
+Flight Tickets,Rea,✈️ Traveling,01/03/24,3,2024,,,Joint
+Subscriptions,Rea,🎉 Entertainment,01/04/24,4,2024,,,Joint
+Flight Tickets,Rea,✈️ Traveling,01/05/24,5,2024,,,Joint
+Flight Tickets,Rea,✈️ Traveling,01/06/24,6,2024,,,Joint
+Flight Tickets,Rea,✈️ Traveling,01/07/24,7,2024,,,Joint
+Flight Tickets,Rea,✈️ Traveling,01/08/24,8,2024,,,Joint
+Flight Tickets,Rea,✈️ Traveling,01/09/24,9,2024,,,Joint
+Flight Tickets,Rea,✈️ Traveling,01/10/24,10,2024,-7000,Barcelona Xmas,Joint
+Flight Tickets,Rea,✈️ Traveling,01/11/24,11,2024,0,,Joint
+Nuria,Rea,✈️ Traveling,01/01/24,1,2024,-800,,Joint
+Nuria,Rea,✈️ Traveling,01/02/24,2,2024,,,Joint
+Nuria,Rea,✈️ Traveling,01/03/24,3,2024,,,Joint
+TV2Play,Rea,🎉 Entertainment,01/04/24,4,2024,,,Joint
+Nuria,Rea,✈️ Traveling,01/05/24,5,2024,,,Joint
+Nuria,Rea,✈️ Traveling,01/06/24,6,2024,,,Joint
+Nuria,Rea,✈️ Traveling,01/07/24,7,2024,,,Joint
+Nuria,Rea,✈️ Traveling,01/08/24,8,2024,,,Joint
+Nuria,Rea,✈️ Traveling,01/09/24,9,2024,,,Joint
+Misc,Rea,✈️ Traveling,01/12/24,12,2024,-197,Taxis,Joint
+Roadtrip,Rea,✈️ Traveling,01/01/24,1,2024,,,Joint
+Roadtrip,Rea,✈️ Traveling,01/02/24,2,2024,,,Joint
+Roadtrip,Rea,✈️ Traveling,01/03/24,3,2024,,,Joint
+Youtube,Rea,🎉 Entertainment,01/04/24,4,2024,-119,,Joint
+Roadtrip,Rea,✈️ Traveling,01/05/24,5,2024,,,Joint
+Roadtrip,Rea,✈️ Traveling,01/06/24,6,2024,,,Joint
+Roadtrip,Rea,✈️ Traveling,01/07/24,7,2024,-3000,Fyn,Joint
+Roadtrip,Rea,✈️ Traveling,01/08/24,8,2024,,,Joint
+Roadtrip,Rea,✈️ Traveling,01/09/24,9,2024,,,Joint
+Roadtrip,Rea,✈️ Traveling,01/11/24,11,2024,0,,Joint
+Roadtrip,Rea,✈️ Traveling,01/12/24,12,2024,0,,Joint
+Summerhouse trips,Rea,✈️ Traveling,01/01/24,1,2024,,,Joint
+Summerhouse trips,Rea,✈️ Traveling,01/02/24,2,2024,,,Joint
+Summerhouse trips,Rea,✈️ Traveling,01/03/24,3,2024,,,Joint
+Travel personal,Rea,👩 Anna,01/01/25,1,2025,-6400,Narvik,Anna
+Summerhouse trips,Rea,✈️ Traveling,01/05/24,5,2024,,,Joint
+Summerhouse trips,Rea,✈️ Traveling,01/06/24,6,2024,,,Joint
+Summerhouse trips,Rea,✈️ Traveling,01/07/24,7,2024,-3250,Johanna visit food and rent gas,Joint
+Summerhouse trips,Rea,✈️ Traveling,01/08/24,8,2024,,,Joint
+Summerhouse trips,Rea,✈️ Traveling,01/09/24,9,2024,,,Joint
+Summerhouse trips,Rea,✈️ Traveling,01/11/24,11,2024,-250,Summerhouse bathtab wood,Joint
+Summerhouse trips,Rea,✈️ Traveling,01/12/24,12,2024,0,,Joint
+Electricity,Rea,🏠 Home,01/01/24,1,2024,-665,,Joint
+Electricity,Rea,🏠 Home,01/02/24,2,2024,-788,,Joint
+Electricity,Rea,🏠 Home,01/03/24,3,2024,-319,,Joint
+Electricity,Rea,🏠 Home,01/05/24,5,2024,-550,,Joint
+Electricity,Rea,🏠 Home,01/06/24,6,2024,-485,,Joint
+Electricity,Rea,🏠 Home,01/07/24,7,2024,-333,,Joint
+Electricity,Rea,🏠 Home,01/08/24,8,2024,-440,,Joint
+Electricity,Rea,🏠 Home,01/09/24,9,2024,-490,,Joint
+Electricity,Rea,🏠 Home,01/10/24,10,2024,-435,,Joint
+Electricity,Rea,🏠 Home,01/11/24,11,2024,-496,,Joint
+Electricity,Rea,🏠 Home,01/12/24,12,2024,-612,,Joint
+Hot Water / Gas,Rea,🏠 Home,01/01/24,1,2024,-650,,Joint
+Hot Water / Gas,Rea,🏠 Home,01/02/24,2,2024,-650,,Joint
+Hot Water / Gas,Rea,🏠 Home,01/03/24,3,2024,-650,,Joint
+Hot Water / Gas,Rea,🏠 Home,01/05/24,5,2024,-650,,Joint
+Hot Water / Gas,Rea,🏠 Home,01/06/24,6,2024,-650,,Joint
+Hot Water / Gas,Rea,🏠 Home,01/07/24,7,2024,-650,,Joint
+Hot Water / Gas,Rea,🏠 Home,01/08/24,8,2024,-650,,Joint
+Hot Water / Gas,Rea,🏠 Home,01/09/24,9,2024,-650,,Joint
+Hot Water / Gas,Rea,🏠 Home,01/10/24,10,2024,-650,,Joint
+Hot Water / Gas,Rea,🏠 Home,01/11/24,11,2024,-450,,Joint
+Hot Water / Gas,Rea,🏠 Home,01/12/24,12,2024,-450,,Joint
+Water,Rea,🏠 Home,01/01/24,1,2024,-300,,Joint
+Water,Rea,🏠 Home,01/02/24,2,2024,-300,,Joint
+Water,Rea,🏠 Home,01/03/24,3,2024,-300,,Joint
+Water,Rea,🏠 Home,01/05/24,5,2024,-300,,Joint
+Water,Rea,🏠 Home,01/06/24,6,2024,-300,,Joint
+Water,Rea,🏠 Home,01/07/24,7,2024,-300,,Joint
+Water,Rea,🏠 Home,01/08/24,8,2024,-300,,Joint
+Water,Rea,🏠 Home,01/09/24,9,2024,-300,,Joint
+Water,Rea,🏠 Home,01/10/24,10,2024,-300,,Joint
+Water,Rea,🏠 Home,01/11/24,11,2024,-200,,Joint
+Water,Rea,🏠 Home,01/12/24,12,2024,-200,,Joint
+Presents,Rea,👩 Anna,01/11/24,11,2024,-2850,"ida,carlos",Anna
+Presents,Rea,👩 Anna,01/12/24,12,2024,-100,novo present,Anna
+Rejsekort,Rea,👩 Anna,01/01/24,1,2024,0,,Anna
+Rejsekort,Rea,👩 Anna,01/02/24,2,2024,-300,,Anna
+Rejsekort,Rea,👩 Anna,01/03/24,3,2024,0,,Anna
+Rejsekort,Rea,👩 Anna,01/05/24,5,2024,0,,Anna
+Rejsekort,Rea,👩 Anna,01/06/24,6,2024,0,,Anna
+Rejsekort,Rea,👩 Anna,01/07/24,7,2024,-300,,Anna
+Rejsekort,Rea,👩 Anna,01/08/24,8,2024,0,,Anna
+Rejsekort,Rea,👩 Anna,01/09/24,9,2024,0,,Anna
+Rejsekort,Rea,👩 Anna,01/10/24,10,2024,0,,Anna
+Rejsekort,Rea,👩 Anna,01/11/24,11,2024,0,,Anna
+Rejsekort,Rea,👩 Anna,01/12/24,12,2024,-420,,Anna
+Travel personal,Rea,👩 Anna,01/01/24,1,2024,0,,Anna
+Travel personal,Rea,👩 Anna,01/02/24,2,2024,-750,Berlin,Anna
+Travel personal,Rea,👩 Anna,01/03/24,3,2024,0,,Anna
+Travel personal,Rea,👩 Anna,01/05/24,5,2024,0,,Anna
+Travel personal,Rea,👩 Anna,01/06/24,6,2024,0,,Anna
+Travel personal,Rea,👩 Anna,01/07/24,7,2024,0,,Anna
+Travel personal,Rea,👩 Anna,01/08/24,8,2024,-3467,sweden with mom,Anna
+Travel personal,Rea,👩 Anna,01/09/24,9,2024,0,,Anna
+Travel personal,Rea,👩 Anna,01/10/24,10,2024,0,,Anna
+Travel personal,Rea,👩 Anna,01/11/24,11,2024,-1270,marienlyst m elizabeth,Anna
+Travel personal,Rea,👩 Anna,01/12/24,12,2024,0,,Anna
+Presents,Rea,🎁 Presents,01/01/24,1,2024,,,Joint
+Presents,Rea,🎁 Presents,01/02/24,2,2024,,,Joint
+Presents,Rea,🎁 Presents,01/03/24,3,2024,,,Joint
+Presents,Rea,🎁 Presents,01/05/24,5,2024,,,Joint
+Presents,Rea,🎁 Presents,01/06/24,6,2024,,,Joint
+Presents,Rea,🎁 Presents,01/07/24,7,2024,,,Joint
+Presents,Rea,🎁 Presents,01/08/24,8,2024,,,Joint
+Presents,Rea,🎁 Presents,01/09/24,9,2024,,,Joint
+Presents,Rea,🎁 Presents,01/10/24,10,2024,,,Joint
+Presents,Rea,🎁 Presents,01/11/24,11,2024,,,Joint
+Presents,Rea,🎁 Presents,01/12/24,12,2024,-5000,Xmas gifts,Joint
+Akasse,Rea,👩 Anna,01/02/25,2,2025,0,,Anna
+Glasses and contacts,Rea,👩 Anna,01/02/25,2,2025,,MISSING ,Anna
+Bike repair,Rea,👩 Anna,01/02/25,2,2025,0,,Anna
+Cafe/bar/restaurant,Rea,👩 Anna,01/02/25,2,2025,-107,,Anna
+Clothes,Rea,👩 Anna,01/02/25,2,2025,0,,Anna
+Hobby,Rea,👩 Anna,01/02/25,2,2025,0,,Anna
+Misc,Rea,👩 Anna,01/02/25,2,2025,-481,"spa with cousins,",Anna
+Phone,Rea,👩 Anna,01/02/25,2,2025,0,,Anna
+Presents,Rea,👩 Anna,01/02/25,2,2025,-80,,Anna
+Dentist,Rea,👩 Anna,01/02/25,2,2025,-2384,Permanent filling up left,Anna
+Psicologist,Rea,👩 Anna,01/02/25,2,2025,0,,Anna
+Rejsekort,Rea,👩 Anna,01/02/25,2,2025,-68,,Anna
+Travel personal,Rea,👩 Anna,01/02/25,2,2025,-953,,Anna
+Akasse,Rea,👩 Anna,01/03/25,3,2025,0,,Anna
+Glasses and contacts,Rea,👩 Anna,01/03/25,3,2025,-833,year lenses,Anna
+Bike repair,Rea,👩 Anna,01/03/25,3,2025,0,,Anna
+Cafe/bar/restaurant,Rea,👩 Anna,01/03/25,3,2025,-375,,Anna
+Clothes,Rea,👩 Anna,01/03/25,3,2025,0,,Anna
+Hobby,Rea,👩 Anna,01/03/25,3,2025,0,,Anna
+Misc,Rea,👩 Anna,01/03/25,3,2025,-1000,frederiksberg spa + frisør + parkering,Anna
+Phone,Rea,👩 Anna,01/03/25,3,2025,0,,Anna
+Presents,Rea,👩 Anna,01/03/25,3,2025,,,Anna
+Dentist,Rea,👩 Anna,01/03/25,3,2025,,,Anna
+Psicologist,Rea,👩 Anna,01/03/25,3,2025,-190,,Anna
+Rejsekort,Rea,👩 Anna,01/03/25,3,2025,-30,,Anna
+Travel personal,Rea,👩 Anna,01/03/25,3,2025,,,Anna
+Akasse,Rea,👩 Anna,01/04/25,4,2025,-1497,,Anna
+Glasses and contacts,Rea,👩 Anna,01/04/25,4,2025,0,,Anna
+Bike repair,Rea,👩 Anna,01/04/25,4,2025,0,,Anna
+Cafe/bar/restaurant,Rea,👩 Anna,01/04/25,4,2025,-216,,Anna
+Clothes,Rea,👩 Anna,01/04/25,4,2025,0,,Anna
+Hobby,Rea,👩 Anna,01/04/25,4,2025,0,,Anna
+Misc,Rea,👩 Anna,01/04/25,4,2025,-60,swimming,Anna
+Phone,Rea,👩 Anna,01/04/25,4,2025,0,,Anna
+Presents,Rea,👩 Anna,01/04/25,4,2025,-20,,Anna
+Rejsekort,Rea,👩 Anna,01/04/25,4,2025,-32,,Anna
+Travel personal,Rea,👩 Anna,01/04/25,4,2025,0,,Anna
+Dentist,Rea,👩 Anna,01/04/25,4,2025,,,Anna
+Psicologist,Rea,👩 Anna,01/04/25,4,2025,-191,,Anna
+Akasse,Rea,👩 Anna,01/05/25,5,2025,0,,Anna
+Glasses and contacts,Rea,👩 Anna,01/05/25,5,2025,0,,Anna
+Bike repair,Rea,👩 Anna,01/05/25,5,2025,0,,Anna
+Cafe/bar/restaurant,Rea,👩 Anna,01/05/25,5,2025,0,,Anna
+Clothes,Rea,👩 Anna,01/05/25,5,2025,-50,,Anna
+Hobby,Rea,👩 Anna,01/05/25,5,2025,0,,Anna
+Misc,Rea,👩 Anna,01/05/25,5,2025,0,,Anna
+Phone,Rea,👩 Anna,01/05/25,5,2025,0,,Anna
+Presents,Rea,👩 Anna,01/05/25,5,2025,-50,,Anna
+Dentist,Rea,👩 Anna,01/05/25,5,2025,0,,Anna
+Psicologist,Rea,👩 Anna,01/05/25,5,2025,-191,,Anna
+Rejsekort,Rea,👩 Anna,01/05/25,5,2025,-77,,Anna
+Travel personal,Rea,👩 Anna,01/05/25,5,2025,0,,Anna
+Anna Skat Return,Rea,💰 Income,01/06/25,6,2025,-1226,extra tax from year 2023,Joint
+Anna's Salary,Rea,💰 Income,01/06/25,6,2025,30206,,Joint
+Børne og Unge Ydelse Anna,Rea,💰 Income,01/06/25,6,2025,0,,Joint
+Børne og Unge Ydelse Carlos,Rea,💰 Income,01/06/25,6,2025,0,,Joint
+Carlos Salary,Rea,💰 Income,01/06/25,6,2025,36144,,Joint
+Sell,Rea,💰 Income,01/06/25,6,2025,50,Osprey cover,Joint
+Carlos Skat return,Rea,💰 Income,01/06/25,6,2025,0,,Joint
+Cleaning,Rea,🏠 Home,01/06/25,6,2025,-1600,,Joint
+Rent,Rea,🏠 Home,01/06/25,6,2025,-12541,,Joint
+Content Insurance,Rea,🏠 Home,01/06/25,6,2025,-150,,Joint
+Electricity,Rea,🏠 Home,01/06/25,6,2025,-405,,Joint
+Hot Water / Gas,Rea,🏠 Home,01/06/25,6,2025,-585,,Joint
+Water,Rea,🏠 Home,01/06/25,6,2025,-200,,Joint
+Anna Skat Return,Rea,💰 Income,01/07/25,7,2025,0,,Joint
+Anna's Salary,Rea,💰 Income,01/07/25,7,2025,29499,,Joint
+Børne og Unge Ydelse Anna,Rea,💰 Income,01/07/25,7,2025,4742,,Joint
+Børne og Unge Ydelse Carlos,Rea,💰 Income,01/07/25,7,2025,4742,,Joint
+Carlos Salary,Rea,💰 Income,01/07/25,7,2025,36765,,Joint
+Carlos Skat return,Rea,💰 Income,01/07/25,7,2025,0,,Joint
+Cleaning,Rea,🏠 Home,01/07/25,7,2025,-400,,Joint
+Rent,Rea,🏠 Home,01/07/25,7,2025,-12541,,Joint
+Content Insurance,Rea,🏠 Home,01/07/25,7,2025,-258,,Joint
+Electricity,Rea,🏠 Home,01/07/25,7,2025,-399,,Joint
+Hot Water / Gas,Rea,🏠 Home,01/07/25,7,2025,-585,,Joint
+Water,Rea,🏠 Home,01/07/25,7,2025,-200,,Joint
+Food,Rea,🛒 Groceries,01/07/25,7,2025,-9747,,Joint
+Anna Skat Return,Rea,💰 Income,01/08/25,8,2025,0,,Joint
+Anna's Salary,Rea,💰 Income,01/08/25,8,2025,30795,,Joint
+Børne og Unge Ydelse Anna,Rea,💰 Income,01/08/25,8,2025,0,,Joint
+Børne og Unge Ydelse Carlos,Rea,💰 Income,01/08/25,8,2025,,,Joint
+Carlos Salary,Rea,💰 Income,01/08/25,8,2025,36767,,Joint
+Carlos Skat return,Rea,💰 Income,01/08/25,8,2025,,,Joint
+Anna Skat Return,Rea,💰 Income,01/09/25,9,2025,0,,Joint
+Anna's Salary,Rea,💰 Income,01/09/25,9,2025,30385,,Joint
+Børne og Unge Ydelse Anna,Rea,💰 Income,01/09/25,9,2025,0,,Joint
+Børne og Unge Ydelse Carlos,Rea,💰 Income,01/09/25,9,2025,0,,Joint
+Carlos Salary,Rea,💰 Income,01/09/25,9,2025,36500,,Joint
+Carlos Skat return,Rea,💰 Income,01/09/25,9,2025,0,,Joint
+Cleaning,Rea,🏠 Home,01/08/25,8,2025,-1600,,Joint
+Rent,Rea,🏠 Home,01/08/25,8,2025,-12541,,Joint
+Cleaning,Rea,🏠 Home,01/09/25,9,2025,-2000,,Joint
+Rent,Rea,🏠 Home,01/09/25,9,2025,-12541,,Joint
+Content Insurance,Rea,🏠 Home,01/08/25,8,2025,-212,,Joint
+Content Insurance,Rea,🏠 Home,01/09/25,9,2025,-212,,Joint
+Electricity,Rea,🏠 Home,01/08/25,8,2025,-447,,Joint
+Hot Water / Gas,Rea,🏠 Home,01/08/25,8,2025,-585,,Joint
+Water,Rea,🏠 Home,01/08/25,8,2025,-200,,Joint
+Electricity,Rea,🏠 Home,01/09/25,9,2025,-376,,Joint
+Hot Water / Gas,Rea,🏠 Home,01/09/25,9,2025,-585,,Joint
+Water,Rea,🏠 Home,01/09/25,9,2025,-200,,Joint
+Food,Rea,🛒 Groceries,01/08/25,8,2025,-5336,,Joint
+Food,Rea,🛒 Groceries,01/09/25,9,2025,-5059,,Joint
+Flight Tickets,Rea,✈️ Traveling,01/08/25,8,2025,,,Joint
+Anna Skat Return,Rea,💰 Income,01/10/25,10,2025,0,,Joint
+Anna Skat Return,Rea,💰 Income,01/11/25,11,2025,0,,Joint
+Anna's Salary,Rea,💰 Income,01/10/25,10,2025,30497,,Joint
+Anna's Salary,Rea,💰 Income,01/11/25,11,2025,32022,Salary + working for ida,Joint
+Børne og Unge Ydelse Anna,Rea,💰 Income,01/10/25,10,2025,4742,,Joint
+Børne og Unge Ydelse Anna,Rea,💰 Income,01/11/25,11,2025,0,,Joint
+Børne og Unge Ydelse Carlos,Rea,💰 Income,01/10/25,10,2025,4742,,Joint
+Børne og Unge Ydelse Carlos,Rea,💰 Income,01/11/25,11,2025,0,,Joint
+Carlos Salary,Rea,💰 Income,01/10/25,10,2025,47578,,Joint
+Carlos Salary,Rea,💰 Income,01/11/25,11,2025,36324,,Joint
+Carlos Skat return,Rea,💰 Income,01/10/25,10,2025,0,,Joint
+Carlos Skat return,Rea,💰 Income,01/11/25,11,2025,0,,Joint
+Cleaning,Rea,🏠 Home,01/10/25,10,2025,-1200,,Joint
+Anna Skat Return,Rea,💰 Income,01/12/25,12,2025,0,,Joint
+Electricity,Rea,🏠 Home,01/10/25,10,2025,-461,,Joint
+Anna's Salary,Rea,💰 Income,01/12/25,12,2025,30832,,Joint
+Furniture Misc,Rea,🏠 Home,01/10/25,10,2025,-480,"Light bulb, Kitchen utensils",Joint
+Børne og Unge Ydelse Anna,Rea,💰 Income,01/12/25,12,2025,0,,Joint
+House Insurance,Rea,🏠 Home,01/10/25,10,2025,-18758,Ejerskifte forskikring,Joint
+Børne og Unge Ydelse Carlos,Rea,💰 Income,01/12/25,12,2025,0,,Joint
+Hot Water / Gas,Rea,🏠 Home,01/10/25,10,2025,-585,,Joint
+Carlos Salary,Rea,💰 Income,01/12/25,12,2025,36528,,Joint
+Carlos Skat return,Rea,💰 Income,01/12/25,12,2025,0,,Joint
+Cleaning,Rea,🏠 Home,01/11/25,11,2025,-1600,,Joint
+Rent,Rea,🏠 Home,01/10/25,10,2025,-12541,,Joint
+Electricity,Rea,🏠 Home,01/11/25,11,2025,-409,,Joint
+Furniture Misc,Rea,🏠 Home,01/11/25,11,2025,-255,IKEA trip,Joint
+Content Insurance,Rea,🏠 Home,01/10/25,10,2025,-241,,Joint
+Content Insurance,Rea,🏠 Home,01/11/25,11,2025,-241,,Joint
+Hot Water / Gas,Rea,🏠 Home,01/11/25,11,2025,-585,,Joint
+Mortgage,Rea,🏠 Home,01/11/25,11,2025,-7500,Lawyer,Joint
+Mortgage,Rea,🏠 Home,01/11/25,11,2025,-38500,Tinglysning,Joint
+Rent,Rea,🏠 Home,01/11/25,11,2025,-12541,,Joint
+Water,Rea,🏠 Home,01/11/25,11,2025,-200,,Joint
+Cleaning,Rea,🏠 Home,01/12/25,12,2025,-1200,,Joint
+Rent,Rea,🏠 Home,01/12/25,12,2025,-12541,,Joint
+Content Insurance,Rea,🏠 Home,01/12/25,12,2025,-225,,Joint
+Electricity,Rea,🏠 Home,01/12/25,12,2025,-555,,Joint
+Hot Water / Gas,Rea,🏠 Home,01/12/25,12,2025,-585,,Joint
+Water,Rea,🏠 Home,01/12/25,12,2025,-200,,Joint
+Cleaning,Rea,🏠 Home,01/01/25,1,2025,-1200,,Joint
+Furniture Misc,Rea,🏠 Home,01/01/25,1,2025,-360,Pee bedsheets,Joint
+Rent,Rea,🏠 Home,01/01/25,1,2025,-14342,"+ depositum for the 1,35% rise in rent",Joint
+Cleaning,Rea,🏠 Home,01/02/25,2,2025,-800,,Joint
+Furniture Misc,Rea,🏠 Home,01/02/25,2,2025,-473,"sweater cleaner bought in berlin, Pee sheets in Jysk",Joint
+Rent,Rea,🏠 Home,01/02/25,2,2025,-12541,,Joint
+Cleaning,Rea,🏠 Home,01/03/25,3,2025,-1400,,Joint
+Furniture Misc,Rea,🏠 Home,01/03/25,3,2025,0,,Joint
+Rent,Rea,🏠 Home,01/03/25,3,2025,-12541,,Joint
+Cleaning,Rea,🏠 Home,01/04/25,4,2025,-1600,,Joint
+Furniture Misc,Rea,🏠 Home,01/04/25,4,2025,-170,Gardening,Joint
+Rent,Rea,🏠 Home,01/04/25,4,2025,-12541,,Joint
+Cleaning,Rea,🏠 Home,01/05/25,5,2025,-1600,,Joint
+Furniture Misc,Rea,🏠 Home,01/05/25,5,2025,-445,Shelves bunk bed,Joint
+Rent,Rea,🏠 Home,01/05/25,5,2025,-12541,,Joint
+Food,Rea,🛒 Groceries,01/06/25,6,2025,-4965,,Joint
+Flight Tickets,Rea,✈️ Traveling,01/06/25,6,2025,0,,Joint
+Accomodation,Rea,✈️ Traveling,01/06/25,6,2025,0,,Joint
+Compensation,Rea,✈️ Traveling,01/07/25,7,2025,4000,Refund from Victor and Alex,Joint
+Accomodation,Rea,✈️ Traveling,01/07/25,7,2025,-4452,Camping and AirBnb Sweeden,Joint
+Accomodation,Rea,✈️ Traveling,01/07/25,7,2025,-1100,Summerhouse,Joint
+Accomodation,Rea,✈️ Traveling,01/08/25,8,2025,-1100,Sommerhus,Joint
+Transport,Rea,✈️ Traveling,01/08/25,8,2025,,,Joint
+Bars & Restaurants,Rea,✈️ Traveling,01/08/25,8,2025,,,Joint
+Flight Tickets,Rea,✈️ Traveling,01/09/25,9,2025,0,,Joint
+Accomodation,Rea,✈️ Traveling,01/09/25,9,2025,-3345,Bed linens,Joint
+Transport,Rea,✈️ Traveling,01/09/25,9,2025,-1420,Bornholm ferry+Toll+ Gas,Joint
+Water,Rea,🏠 Home,01/10/25,10,2025,-200,,Joint
+Food,Rea,🛒 Groceries,01/11/25,11,2025,-4141,,Joint
+Food,Rea,🛒 Groceries,01/10/25,10,2025,-5401,,Joint
+Food,Rea,🛒 Groceries,01/12/25,12,2025,-3778,,Joint
+Accomodation,Rea,✈️ Traveling,01/11/25,11,2025,0,,Joint
+Bars & Restaurants,Rea,✈️ Traveling,01/11/25,11,2025,0,,Joint
+Flight Tickets,Rea,✈️ Traveling,01/11/25,11,2025,0,,Joint
+Transport,Rea,✈️ Traveling,01/11/25,11,2025,0,,Joint
+Accomodation,Rea,✈️ Traveling,01/12/25,12,2025,0,,Joint
+Car Service,Rea,🚗 Car,01/01/25,1,2025,0,,Joint
+Ejer afgifter,Rea,🚗 Car,01/01/25,1,2025,0,,Joint
+Misc,Rea,🚗 Car,01/01/25,1,2025,0,,Joint
+Gasoline,Rea,🚗 Car,01/01/25,1,2025,-804,,Joint
+Misc,Rea,🚗 Car,01/01/25,1,2025,0,,Joint
+Insurance,Rea,🚗 Car,01/01/25,1,2025,-177,,Joint
+Car Service,Rea,🚗 Car,01/02/25,2,2025,0,,Joint
+Ejer afgifter,Rea,🚗 Car,01/02/25,2,2025,0,,Joint
+Misc,Rea,🚗 Car,01/02/25,2,2025,-241,Frame for bike plate,Joint
+Gasoline,Rea,🚗 Car,01/02/25,2,2025,-700,,Joint
+Misc,Rea,🚗 Car,01/02/25,2,2025,-143,Parking,Joint
+Insurance,Rea,🚗 Car,01/02/25,2,2025,-390,,Joint
+Car Service,Rea,🚗 Car,01/03/25,3,2025,-4666,Change of tyres,Joint
+Ejer afgifter,Rea,🚗 Car,01/03/25,3,2025,-2360,,Joint
+Misc,Rea,🚗 Car,01/03/25,3,2025,,,Joint
+Gasoline,Rea,🚗 Car,01/03/25,3,2025,-1310,,Joint
+Misc,Rea,🚗 Car,01/03/25,3,2025,-576,Road insurance,Joint
+Insurance,Rea,🚗 Car,01/03/25,3,2025,-390,,Joint
+Car Service,Rea,🚗 Car,01/04/25,4,2025,0,,Joint
+Misc,Rea,🚗 Car,01/04/25,4,2025,0,,Joint
+Gasoline,Rea,🚗 Car,01/04/25,4,2025,-703,,Joint
+Misc,Rea,🚗 Car,01/04/25,4,2025,0,,Joint
+Insurance,Rea,🚗 Car,01/04/25,4,2025,-390,,Joint
+Car Service,Rea,🚗 Car,01/05/25,5,2025,0,,Joint
+Misc,Rea,🚗 Car,01/05/25,5,2025,0,,Joint
+Gasoline,Rea,🚗 Car,01/05/25,5,2025,-690,,Joint
+Misc,Rea,🚗 Car,01/05/25,5,2025,-223,Parking,Joint
+Insurance,Rea,🚗 Car,01/05/25,5,2025,-390,,Joint
+Transport,Rea,✈️ Traveling,01/06/25,6,2025,0,,Joint
+Bars & Restaurants,Rea,✈️ Traveling,01/06/25,6,2025,0,,Joint
+Activities,Rea,👶 Kids,01/06/25,6,2025,-90,Vestbadet,Joint
+Clothes,Rea,👶 Kids,01/06/25,6,2025,-195,Babysam,Joint
+Kindergarden,Rea,👶 Kids,01/06/25,6,2025,-6117,,Joint
+Transport,Rea,✈️ Traveling,01/07/25,7,2025,-2676,Bridge to Sweeden x 2 plus gas to Gotheborg + Audi tank and clean,Joint
+Bars & Restaurants,Rea,✈️ Traveling,01/07/25,7,2025,-2005,,Joint
+Activities,Rea,👶 Kids,01/07/25,7,2025,-150,Vestbadet,Joint
+Clothes,Rea,👶 Kids,01/07/25,7,2025,0,,Joint
+Kindergarden,Rea,👶 Kids,01/07/25,7,2025,-467,,Joint
+Bars & Restaurants,Rea,✈️ Traveling,01/09/25,9,2025,-1010,,Joint
+Activities,Rea,👶 Kids,01/08/25,8,2025,-210,Vestbadet,Joint
+Clothes,Rea,👶 Kids,01/08/25,8,2025,-22,,Joint
+Kindergarden,Rea,👶 Kids,01/08/25,8,2025,-6117,,Joint
+Misc,Rea,👶 Kids,01/08/25,8,2025,-70,,Joint
+Activities,Rea,👶 Kids,01/09/25,9,2025,0,,Joint
+Clothes,Rea,👶 Kids,01/09/25,9,2025,0,,Joint
+Kindergarden,Rea,👶 Kids,01/09/25,9,2025,-6584,,Joint
+Misc,Rea,👶 Kids,01/09/25,9,2025,0,,Joint
+Car Service,Rea,🚗 Car,01/08/25,8,2025,,,Joint
+Flight Tickets,Rea,✈️ Traveling,01/10/25,10,2025,0,,Joint
+Transport,Rea,✈️ Traveling,01/12/25,12,2025,-800,Taxis forth & back to airport + Gava party,Joint
+Flight Tickets,Rea,✈️ Traveling,01/12/25,12,2025,-6483,Barcelona,Joint
+Activities,Rea,👶 Kids,01/10/25,10,2025,-240,,Joint
+Bars & Restaurants,Rea,✈️ Traveling,01/12/25,12,2025,0,,Joint
+Clothes,Rea,👶 Kids,01/10/25,10,2025,-1310,Shoes,Joint
+Activities,Rea,👶 Kids,01/11/25,11,2025,-150,Vestbadet,Joint
+Kindergarden,Rea,👶 Kids,01/10/25,10,2025,-6585,,Joint
+Clothes,Rea,👶 Kids,01/11/25,11,2025,-910,,Joint
+Misc,Rea,👶 Kids,01/10/25,10,2025,-280,Passport Joana,Joint
+Kindergarden,Rea,👶 Kids,01/11/25,11,2025,-6585,,Joint
+Misc,Rea,👶 Kids,01/11/25,11,2025,0,Clothes,Joint
+Activities,Rea,👶 Kids,01/12/25,12,2025,-150,,Joint
+Clothes,Rea,👶 Kids,01/12/25,12,2025,-180,,Joint
+Kindergarden,Rea,👶 Kids,01/12/25,12,2025,-6585,,Joint
+Misc,Rea,👶 Kids,01/12/25,12,2025,,,Joint
+Clothes,Rea,👨 Carlos,01/01/25,1,2025,-200,Socks,Personal
+Flight Tickets,Rea,👨 Carlos,01/01/25,1,2025,,,Personal
+Bars & Restaurants,Rea,👨 Carlos,01/01/25,1,2025,-572,,Personal
+Music Forening,Rea,👨 Carlos,01/01/25,1,2025,-252,,Personal
+Rejsekort,Rea,👨 Carlos,01/01/25,1,2025,-36,,Personal
+Bank fees,Rea,👨 Carlos,01/01/25,1,2025,-75,,Personal
+Dentist,Rea,👨 Carlos,01/01/25,1,2025,0,,Personal
+Psicologist,Rea,👨 Carlos,01/01/25,1,2025,-600,,Personal
+Subscriptions,Rea,👨 Carlos,01/02/25,2,2025,-596,New Scientist & Dashlane Anual,Personal
+Flight Tickets,Rea,👨 Carlos,01/02/25,2,2025,-1998,Going to Bcn with Laia in March,Personal
+Bank fees,Rea,👨 Carlos,01/02/25,2,2025,-75,,Personal
+Bars & Restaurants,Rea,👨 Carlos,01/02/25,2,2025,-320,,Personal
+Music Forening,Rea,👨 Carlos,01/02/25,2,2025,-252,,Personal
+Rejsekort,Rea,👨 Carlos,01/02/25,2,2025,-164,,Personal
+Presents,Rea,👨 Carlos,01/02/25,2,2025,-75,OLZM leaving work,Personal
+Misc,Rea,👨 Carlos,01/02/25,2,2025,-1143,VPN router & FFVII rebirth,Personal
+Dentist,Rea,👨 Carlos,01/02/25,2,2025,,,Personal
+Psicologist,Rea,👨 Carlos,01/02/25,2,2025,-595,,Personal
+Clothes,Rea,👨 Carlos,01/03/25,3,2025,-746,"New shoes Decathlon, watch band",Personal
+Flight Tickets,Rea,👨 Carlos,01/03/25,3,2025,,,Personal
+Bars & Restaurants,Rea,👨 Carlos,01/03/25,3,2025,-1175,Barcelona 🛒 Groceries,Personal
+Music Forening,Rea,👨 Carlos,01/03/25,3,2025,-252,,Personal
+Rejsekort,Rea,👨 Carlos,01/03/25,3,2025,-372,Barcelona commute Airport,Personal
+Travel personal,Rea,👨 Carlos,01/03/25,3,2025,,,Personal
+Bank fees,Rea,👨 Carlos,01/03/25,3,2025,-75,,Personal
+Subscriptions,Rea,👨 Carlos,01/03/25,3,2025,-109,Spotify,Personal
+Misc,Rea,👨 Carlos,01/03/25,3,2025,-387,New Scientist,Personal
+Dentist,Rea,👨 Carlos,01/03/25,3,2025,,,Personal
+Psicologist,Rea,👨 Carlos,01/03/25,3,2025,-597,,Personal
+Dentist,Rea,👨 Carlos,01/04/25,4,2025,,,Personal
+Psicologist,Rea,👨 Carlos,01/04/25,4,2025,-298,,Personal
+Clothes,Rea,👨 Carlos,01/04/25,4,2025,0,,Personal
+Flight Tickets,Rea,👨 Carlos,01/04/25,4,2025,0,,Personal
+Subscriptions,Rea,👨 Carlos,01/04/25,4,2025,-109,Spotify,Personal
+Bars & Restaurants,Rea,👨 Carlos,01/04/25,4,2025,-776,,Personal
+Music Forening,Rea,👨 Carlos,01/04/25,4,2025,-252,,Personal
+Rejsekort,Rea,👨 Carlos,01/04/25,4,2025,-179,,Personal
+Bank fees,Rea,👨 Carlos,01/04/25,4,2025,-75,,Personal
+Clothes,Rea,👨 Carlos,01/05/25,5,2025,,,Personal
+Misc,Rea,🚗 Car,01/08/25,8,2025,0,,Joint
+Subscriptions,Rea,👨 Carlos,01/05/25,5,2025,-109,Spotify,Personal
+Bars & Restaurants,Rea,👨 Carlos,01/05/25,5,2025,-170,,Personal
+Music Forening,Rea,👨 Carlos,01/05/25,5,2025,-252,,Personal
+Rejsekort,Rea,👨 Carlos,01/05/25,5,2025,-125,,Personal
+Bank fees,Rea,👨 Carlos,01/05/25,5,2025,-780,All year Revolut,Personal
+Misc,Rea,👨 Carlos,01/05/25,5,2025,-100,Sammarreta i botella,Personal
+Psicologist,Rea,👨 Carlos,01/05/25,5,2025,-298,,Personal
+Misc,Rea,👶 Kids,01/06/25,6,2025,0,,Joint
+Car Service,Rea,🚗 Car,01/06/25,6,2025,0,,Joint
+Misc,Rea,🚗 Car,01/06/25,6,2025,0,,Joint
+Gasoline,Rea,🚗 Car,01/06/25,6,2025,-600,,Joint
+Misc,Rea,🚗 Car,01/06/25,6,2025,0,,Joint
+Insurance,Rea,🚗 Car,01/06/25,6,2025,-390,,Joint
+Akasse,Rea,👩 Anna,01/06/25,6,2025,0,,Anna
+Glasses and contacts,Rea,👩 Anna,01/06/25,6,2025,0,,Anna
+Misc,Rea,👶 Kids,01/07/25,7,2025,-403,"Stickers tattos, slide for outside",Joint
+Misc,Rea,🚗 Car,01/07/25,7,2025,-70,,Joint
+Misc,Rea,🚗 Car,01/07/25,7,2025,0,,Joint
+Gasoline,Rea,🚗 Car,01/07/25,7,2025,-723,,Joint
+Misc,Rea,🚗 Car,01/07/25,7,2025,-365,Brobizz subscription,Joint
+Gasoline,Rea,🚗 Car,01/08/25,8,2025,-2335,,Joint
+Insurance,Rea,🚗 Car,01/07/25,7,2025,-390,,Joint
+Akasse,Rea,👩 Anna,01/07/25,7,2025,-1497,,Anna
+Misc,Rea,🚗 Car,01/08/25,8,2025,-70,parking,Joint
+Insurance,Rea,🚗 Car,01/08/25,8,2025,-389,,Joint
+Car Service,Rea,🚗 Car,01/09/25,9,2025,0,,Joint
+Ejer afgifter,Rea,🚗 Car,01/09/25,9,2025,-2370,,Joint
+Misc,Rea,🚗 Car,01/09/25,9,2025,0,,Joint
+Gasoline,Rea,🚗 Car,01/09/25,9,2025,-1200,,Joint
+Misc,Rea,🚗 Car,01/09/25,9,2025,0,,Joint
+Insurance,Rea,🚗 Car,01/09/25,9,2025,-389,,Joint
+Akasse,Rea,👩 Anna,01/08/25,8,2025,0,,Anna
+Glasses and contacts,Rea,👩 Anna,01/08/25,8,2025,0,,Anna
+Bike repair,Rea,👩 Anna,01/08/25,8,2025,-11264,New bike and accessories,Anna
+Cafe/bar/restaurant,Rea,👩 Anna,01/08/25,8,2025,-337,,Anna
+Clothes,Rea,👩 Anna,01/08/25,8,2025,-250,,Anna
+Hobby,Rea,👩 Anna,01/08/25,8,2025,-521,Paintings ,Anna
+Misc,Rea,👩 Anna,01/08/25,8,2025,-220,vikinge museujm,Anna
+Misc,Rea,👩 Anna,01/08/25,8,2025,2000,sold bike,Anna
+Car Service,Rea,🚗 Car,01/10/25,10,2025,0,,Joint
+Car Service,Rea,🚗 Car,01/12/25,12,2025,-12100,"Fixing key, big service",Joint
+Misc,Rea,🚗 Car,01/10/25,10,2025,0,,Joint
+Misc,Rea,🚗 Car,01/12/25,12,2025,0,,Joint
+Gasoline,Rea,🚗 Car,01/10/25,10,2025,-751,,Joint
+Gasoline,Rea,🚗 Car,01/12/25,12,2025,-676,Anna betalt,Joint
+Misc,Rea,🚗 Car,01/10/25,10,2025,,,Joint
+Misc,Rea,🚗 Car,01/12/25,12,2025,0,,Joint
+Insurance,Rea,🚗 Car,01/10/25,10,2025,-389,,Joint
+Insurance,Rea,🚗 Car,01/10/25,10,2025,,,Joint
+Insurance,Rea,🚗 Car,01/12/25,12,2025,-389,,Joint
+Akasse,Rea,👩 Anna,01/10/25,10,2025,-1497,,Anna
+Car Service,Rea,🚗 Car,01/11/25,11,2025,,,Joint
+Bike repair,Rea,👩 Anna,01/10/25,10,2025,0,,Anna
+Misc,Rea,🚗 Car,01/11/25,11,2025,,,Joint
+Cafe/bar/restaurant,Rea,👩 Anna,01/10/25,10,2025,-544,DEJ,Anna
+Gasoline,Rea,🚗 Car,01/11/25,11,2025,-724,,Joint
+Clothes,Rea,👩 Anna,01/10/25,10,2025,0,,Anna
+Misc,Rea,🚗 Car,01/11/25,11,2025,,,Joint
+Insurance,Rea,🚗 Car,01/11/25,11,2025,-389,,Joint
+Akasse,Rea,👩 Anna,01/12/25,12,2025,0,,Anna
+Glasses and contacts,Rea,👩 Anna,01/12/25,12,2025,0,,Anna
+Bike repair,Rea,👩 Anna,01/12/25,12,2025,0,,Anna
+Cafe/bar/restaurant,Rea,👩 Anna,01/12/25,12,2025,-765,"Glogg tivoli, DEJ",Anna
+Clothes,Rea,👩 Anna,01/12/25,12,2025,-61,,Anna
+Hobby,Rea,👩 Anna,01/12/25,12,2025,-1800,"kor til H1 2026,  blomsterværksted",Anna
+Misc,Rea,👩 Anna,01/12/25,12,2025,-841,"Spejderfest, gasoline",Anna
+Activities,Rea,🎉 Entertainment,01/01/25,1,2025,,,Joint
+Bars & Restaurants,Rea,🎉 Entertainment,01/01/25,1,2025,-1386,,Joint
+Netflix,Rea,🎉 Entertainment,01/01/25,1,2025,-89,,Joint
+Sports,Rea,🎉 Entertainment,01/01/25,1,2025,,,Joint
+Disney+,Rea,🎉 Entertainment,01/01/25,1,2025,-74,,Joint
+TV2Play,Rea,🎉 Entertainment,01/01/25,1,2025,,,Joint
+Youtube,Rea,🎉 Entertainment,01/01/25,1,2025,,,Joint
+Activities,Rea,🎉 Entertainment,01/02/25,2,2025,,,Joint
+Bars & Restaurants,Rea,🎉 Entertainment,01/02/25,2,2025,-680,,Joint
+Netflix,Rea,🎉 Entertainment,01/02/25,2,2025,,,Joint
+Port Aventura,Rea,🎉 Entertainment,01/02/25,2,2025,,,Joint
+Sports,Rea,🎉 Entertainment,01/02/25,2,2025,,,Joint
+Subscriptions,Rea,🎉 Entertainment,01/02/25,2,2025,-45,Disney+,Joint
+TV2Play,Rea,🎉 Entertainment,01/02/25,2,2025,,,Joint
+Youtube,Rea,🎉 Entertainment,01/02/25,2,2025,,,Joint
+Activities,Rea,🎉 Entertainment,01/03/25,3,2025,,,Joint
+Bars & Restaurants,Rea,🎉 Entertainment,01/03/25,3,2025,-1222,,Joint
+Netflix,Rea,🎉 Entertainment,01/03/25,3,2025,,,Joint
+Subscriptions,Rea,👨 Carlos,01/03/25,3,2025,0,Spotify,Personal
+Sports,Rea,🎉 Entertainment,01/03/25,3,2025,,,Joint
+Subscriptions,Rea,🎉 Entertainment,01/03/25,3,2025,-58,Disney+,Joint
+Activities,Rea,🎉 Entertainment,01/04/25,4,2025,,,Joint
+Bars & Restaurants,Rea,🎉 Entertainment,01/04/25,4,2025,-664,,Joint
+Netflix,Rea,🎉 Entertainment,01/04/25,4,2025,,,Joint
+Port Aventura,Rea,🎉 Entertainment,01/04/25,4,2025,,,Joint
+Sports,Rea,🎉 Entertainment,01/04/25,4,2025,,,Joint
+Subscriptions,Rea,🎉 Entertainment,01/04/25,4,2025,-138,Disney+,Joint
+TV2Play,Rea,🎉 Entertainment,01/04/25,4,2025,,,Joint
+Food,Rea,🛒 Groceries,01/04/24,4,2024,-6236,,Joint
+Youtube,Rea,🎉 Entertainment,01/04/25,4,2025,,,Joint
+Activities,Rea,🎉 Entertainment,01/05/25,5,2025,0,,Joint
+Bars & Restaurants,Rea,🎉 Entertainment,01/05/25,5,2025,-1952,,Joint
+Sports,Rea,🎉 Entertainment,01/05/25,5,2025,0,,Joint
+Subscriptions,Rea,🎉 Entertainment,01/05/25,5,2025,-49,Disney +,Joint
+Dentist,Rea,👩 Anna,01/04/24,4,2024,,,Anna
+Bike repair,Rea,👩 Anna,01/06/25,6,2025,0,,Anna
+Cafe/bar/restaurant,Rea,👩 Anna,01/06/25,6,2025,-320,,Anna
+Clothes,Rea,👩 Anna,01/06/25,6,2025,-120,,Anna
+Hobby,Rea,👩 Anna,01/06/25,6,2025,-1603,choir for start september,Anna
+Dentist,Rea,👨 Carlos,01/04/24,4,2024,,,Personal
+Glasses and contacts,Rea,👩 Anna,01/07/25,7,2025,0,,Anna
+Massages,Rea,💊 Health,01/04/24,4,2024,-500,massage,Joint
+Phone,Rea,👩 Anna,01/08/25,8,2025,0,,Anna
+Presents,Rea,👩 Anna,01/08/25,8,2025,-250,,Anna
+Massages,Rea,💊 Health,01/04/24,4,2024,-1000,Thai massage,Joint
+Dentist,Rea,👩 Anna,01/08/25,8,2025,-1433,,Anna
+Psicologist,Rea,👩 Anna,01/08/25,8,2025,0,,Anna
+Rejsekort,Rea,👩 Anna,01/08/25,8,2025,0,,Anna
+Travel personal,Rea,👩 Anna,01/08/25,8,2025,0,,Anna
+Pharmacy,Rea,💊 Health,01/04/24,4,2024,-411,Laia medicine & creme,Joint
+Akasse,Rea,👩 Anna,01/09/25,9,2025,0,,Anna
+Glasses and contacts,Rea,👩 Anna,01/09/25,9,2025,0,,Anna
+Bike repair,Rea,👩 Anna,01/09/25,9,2025,0,,Anna
+Cafe/bar/restaurant,Rea,👩 Anna,01/09/25,9,2025,-1180,,Anna
+Clothes,Rea,👩 Anna,01/09/25,9,2025,0,,Anna
+Hobby,Rea,👩 Anna,01/09/25,9,2025,-56,,Anna
+Psicologist,Rea,👩 Anna,01/04/24,4,2024,-372,,Anna
+Dentist,Rea,👩 Anna,01/10/25,10,2025,0,,Anna
+Phone,Rea,👩 Anna,01/12/25,12,2025,0,,Anna
+Glasses and contacts,Rea,👩 Anna,01/10/25,10,2025,0,,Anna
+Dentist,Rea,👩 Anna,01/12/25,12,2025,0,,Anna
+Hobby,Rea,👩 Anna,01/10/25,10,2025,-935,"concert w. mom (4/8), + dr shefali concious group",Anna
+Psicologist,Rea,👩 Anna,01/12/25,12,2025,0,,Anna
+Misc,Rea,👩 Anna,01/10/25,10,2025,-200,,Anna
+Presents,Rea,👩 Anna,01/12/25,12,2025,-1906,"december present carlos, Ida pan + shoes, Hannah",Anna
+Psicologist,Rea,👨 Carlos,01/04/24,4,2024,-600,,Personal
+Phone,Rea,👩 Anna,01/10/25,10,2025,0,,Anna
+Rejsekort,Rea,👩 Anna,01/12/25,12,2025,-104,,Anna
+Presents,Rea,👩 Anna,01/10/25,10,2025,-350,jeanette gave,Anna
+Travel personal,Rea,👩 Anna,01/12/25,12,2025,0,,Anna
+Psicologist,Rea,👩 Anna,01/10/25,10,2025,0,,Anna
+Akasse,Rea,👩 Anna,01/11/25,11,2025,0,,Anna
+Rejsekort,Rea,👩 Anna,01/10/25,10,2025,-44,,Anna
+Bike repair,Rea,👩 Anna,01/11/25,11,2025,0,,Anna
+Cafe/bar/restaurant,Rea,👩 Anna,01/11/25,11,2025,-255,,Anna
+Clothes,Rea,👩 Anna,01/11/25,11,2025,-167,,Anna
+Dentist,Rea,👩 Anna,01/11/25,11,2025,0,,Anna
+Glasses and contacts,Rea,👩 Anna,01/11/25,11,2025,0,,Anna
+Hobby,Rea,👩 Anna,01/11/25,11,2025,0,,Anna
+Food,Rea,🛒 Groceries,01/01/25,1,2025,-3081,,Joint
+Food,Rea,🛒 Groceries,01/02/25,2,2025,-5697,shopping berlin,Joint
+Food,Rea,🛒 Groceries,01/03/25,3,2025,-4911,,Joint
+Food,Rea,🛒 Groceries,01/04/25,4,2025,-4584,,Joint
+Food,Rea,🛒 Groceries,01/05/25,5,2025,-5141,,Joint
+Misc,Rea,👩 Anna,01/06/25,6,2025,-664,food snacks + charity + gebyr + earplugs+ parking,Anna
+Bike repair,Rea,👩 Anna,01/07/25,7,2025,0,,Anna
+Misc,Rea,👩 Anna,01/09/25,9,2025,-470,frisør,Anna
+Phone,Rea,👩 Anna,01/09/25,9,2025,0,,Anna
+Misc,Rea,👩 Anna,01/11/25,11,2025,-1900,Withings ur og remme,Anna
+Travel personal,Rea,👩 Anna,01/10/25,10,2025,0,,Anna
+Phone,Rea,👩 Anna,01/11/25,11,2025,0,,Anna
+Massages,Rea,💊 Health,01/01/25,1,2025,-462,Spa Frederiksberg,Joint
+Pharmacy,Rea,💊 Health,01/01/25,1,2025,-396,Svampe medicin Carlos,Joint
+Massages,Rea,💊 Health,01/02/25,2,2025,0,,Joint
+Pharmacy,Rea,💊 Health,01/02/25,2,2025,-95,,Joint
+Massages,Rea,💊 Health,01/03/25,3,2025,,,Joint
+Pharmacy,Rea,💊 Health,01/03/25,3,2025,-101,,Joint
+Massages,Rea,💊 Health,01/04/25,4,2025,,,Joint
+Massages,Rea,💊 Health,01/04/25,4,2025,,,Joint
+Pharmacy,Rea,💊 Health,01/04/25,4,2025,-412,Creams for Joana & Antibiotics,Joint
+Massages,Rea,💊 Health,01/05/25,5,2025,0,,Joint
+Pharmacy,Rea,💊 Health,01/05/25,5,2025,-274,,Joint
+Phone,Rea,👩 Anna,01/06/25,6,2025,0,,Anna
+Presents,Rea,👩 Anna,01/06/25,6,2025,-2087,carlos present and drinks w. mom ida + present signe,Anna
+Dentist,Rea,👩 Anna,01/06/25,6,2025,0,,Anna
+Cafe/bar/restaurant,Rea,👩 Anna,01/07/25,7,2025,-295,,Anna
+Presents,Rea,👩 Anna,01/09/25,9,2025,0,,Anna
+Dentist,Rea,👩 Anna,01/09/25,9,2025,0,,Anna
+Psicologist,Rea,👩 Anna,01/09/25,9,2025,0,,Anna
+Rejsekort,Rea,👩 Anna,01/09/25,9,2025,-60,,Anna
+Presents,Rea,👩 Anna,01/11/25,11,2025,0,,Anna
+Psicologist,Rea,👩 Anna,01/11/25,11,2025,0,,Anna
+Bars & Restaurants,Rea,👨 Carlos,01/10/25,10,2025,-430,,Personal
+Rejsekort,Rea,👩 Anna,01/11/25,11,2025,-300,taget fra faelles ved fej,Anna
+Travel personal,Rea,👩 Anna,01/11/25,11,2025,-2800,Vipassana ophold og bil leje,Anna
+Bars & Restaurants,Rea,👨 Carlos,01/12/25,12,2025,-749,,Personal
+Airbnb,Rea,💰 Income,01/04/24,4,2024,,,Joint
+Anna's Salary,Rea,💰 Income,01/01/25,1,2025,24696,,Joint
+Børne og Unge Ydelse Anna,Rea,💰 Income,01/01/25,1,2025,4852,,Joint
+Børne og Unge Ydelse Carlos,Rea,💰 Income,01/01/25,1,2025,4852,,Joint
+Carlos Salary,Rea,💰 Income,01/01/25,1,2025,35943,,Joint
+Anna Skat Return,Rea,💰 Income,01/02/25,2,2025,0,,Joint
+Anna's Salary,Rea,💰 Income,01/02/25,2,2025,24532,,Joint
+Anna Skat Return,Rea,💰 Income,01/04/24,4,2024,8600,,Joint
+Børne og Unge Ydelse Anna,Rea,💰 Income,01/02/25,2,2025,0,,Joint
+Anna's Salary,Rea,💰 Income,01/04/24,4,2024,70000,,Joint
+Børne og Unge Ydelse Carlos,Rea,💰 Income,01/02/25,2,2025,0,,Joint
+Carlos Salary,Rea,💰 Income,01/02/25,2,2025,35539,,Joint
+Carlos Skat return,Rea,💰 Income,01/02/25,2,2025,0,,Joint
+Misc,Rea,💰 Income,01/02/25,2,2025,2700,Selling stroller,Joint
+Anna Skat Return,Rea,💰 Income,01/03/25,3,2025,,,Joint
+Anna's Salary,Rea,💰 Income,01/03/25,3,2025,51127,,Joint
+Børne og Unge Ydelse Anna,Rea,💰 Income,01/03/25,3,2025,,,Joint
+Børne og Unge Ydelse Anna,Rea,💰 Income,01/04/24,4,2024,3850,,Joint
+Børne og Unge Ydelse Carlos,Rea,💰 Income,01/03/25,3,2025,,,Joint
+Carlos Salary,Rea,💰 Income,01/03/25,3,2025,78888,,Joint
+Carlos Skat return,Rea,💰 Income,01/03/25,3,2025,-5880,,Joint
+Anna Skat Return,Rea,💰 Income,01/04/25,4,2025,14331,,Joint
+Anna's Salary,Rea,💰 Income,01/04/25,4,2025,24858,,Joint
+Børne og Unge Ydelse Anna,Rea,💰 Income,01/04/25,4,2025,4348,,Joint
+Børne og Unge Ydelse Carlos,Rea,💰 Income,01/04/24,4,2024,3844,,Joint
+Børne og Unge Ydelse Carlos,Rea,💰 Income,01/04/25,4,2025,4348,,Joint
+Carlos Salary,Rea,💰 Income,01/04/25,4,2025,36554,,Joint
+Carlos Skat return,Rea,💰 Income,01/04/25,4,2025,-5880,,Joint
+Anna Skat Return,Rea,💰 Income,01/05/25,5,2025,-613,Extra skat 2023,Joint
+Anna's Salary,Rea,💰 Income,01/05/25,5,2025,25189,,Joint
+Børne og Unge Ydelse Anna,Rea,💰 Income,01/05/25,5,2025,0,,Joint
+Børne og Unge Ydelse Carlos,Rea,💰 Income,01/05/25,5,2025,0,,Joint
+Carlos Salary,Rea,💰 Income,01/05/25,5,2025,36610,,Joint
+Carlos Salary,Rea,💰 Income,01/04/24,4,2024,75000,,Joint
+Carlos Skat return,Rea,💰 Income,01/05/25,5,2025,0,,Joint
+Psicologist,Rea,👩 Anna,01/06/25,6,2025,-191,,Anna
+Rejsekort,Rea,👩 Anna,01/06/25,6,2025,-67,,Anna
+Travel personal,Rea,👩 Anna,01/06/25,6,2025,0,,Anna
+Clothes,Rea,👨 Carlos,01/06/25,6,2025,-125,2nd hand Shirts,Personal
+Carlos Skat return,Rea,💰 Income,01/04/24,4,2024,,,Joint
+Flight Tickets,Rea,👨 Carlos,01/06/25,6,2025,0,,Personal
+Bars & Restaurants,Rea,👨 Carlos,01/06/25,6,2025,-370,,Personal
+Music Forening,Rea,👨 Carlos,01/06/25,6,2025,-252,,Personal
+Clothes,Rea,👩 Anna,01/07/25,7,2025,-150,,Anna
+Hobby,Rea,👩 Anna,01/07/25,7,2025,0,,Anna
+Misc,Rea,👩 Anna,01/07/25,7,2025,-420,"miriam srom,  google one",Anna
+Phone,Rea,👩 Anna,01/07/25,7,2025,0,,Anna
+Presents,Rea,👩 Anna,01/07/25,7,2025,0,,Anna
+Dentist,Rea,👩 Anna,01/07/25,7,2025,0,,Anna
+Travel personal,Rea,👩 Anna,01/09/25,9,2025,-515,Sommerhus med katie,Anna
+Flight Tickets,Rea,👨 Carlos,01/09/25,9,2025,-1474,Barelona September,Personal
+Travel personal,Rea,👨 Carlos,01/09/25,9,2025,-1460,Refugees Hiking trip,Personal
+Clothes,Rea,👨 Carlos,01/08/25,8,2025,,,Personal
+Flight Tickets,Rea,👨 Carlos,01/08/25,8,2025,,,Personal
+Bars & Restaurants,Rea,👨 Carlos,01/08/25,8,2025,-172,,Personal
+Music Forening,Rea,👨 Carlos,01/08/25,8,2025,-252,,Personal
+Rejsekort,Rea,👨 Carlos,01/08/25,8,2025,-126,,Personal
+Subscriptions,Rea,👨 Carlos,01/08/25,8,2025,-109,,Personal
+Dentist,Rea,👨 Carlos,01/08/25,8,2025,0,,Personal
+Psicologist,Rea,👨 Carlos,01/08/25,8,2025,-298,,Personal
+Presents,Rea,👨 Carlos,01/09/25,9,2025,-40,Rune's collegue farewell,Personal
+Clothes,Rea,👨 Carlos,01/10/25,10,2025,-1768,Shoes x 3 and running pants,Personal
+Bike repair,Rea,👨 Carlos,01/12/25,12,2025,-3000,3k on bike maintanance,Personal
+Dentist,Rea,👨 Carlos,01/10/25,10,2025,,,Personal
+Subscriptions,Rea,👨 Carlos,01/12/25,12,2025,-7,,Personal
+Music Forening,Rea,👨 Carlos,01/12/25,12,2025,-252,,Personal
+Rejsekort,Rea,👨 Carlos,01/12/25,12,2025,-898,,Personal
+Music Forening,Rea,👨 Carlos,01/10/25,10,2025,-252,,Personal
+Presents,Rea,👨 Carlos,01/12/25,12,2025,-2165,Cumple mama i Nadal,Personal
+Presents,Rea,👨 Carlos,01/10/25,10,2025,-900,,Personal
+Phone,Rea,👨 Carlos,01/12/25,12,2025,-175,From gross salary,Personal
+Psicologist,Rea,👨 Carlos,01/10/25,10,2025,-598,,Personal
+Psicologist,Rea,👨 Carlos,01/12/25,12,2025,-597,,Personal
+Akasse,Rea,👨 Carlos,01/11/25,11,2025,-1746,,Personal
+Bars & Restaurants,Rea,👨 Carlos,01/11/25,11,2025,-350,,Personal
+Clothes,Rea,👨 Carlos,01/11/25,11,2025,0,,Personal
+Dentist,Rea,👨 Carlos,01/11/25,11,2025,0,,Personal
+Misc,Rea,👨 Carlos,01/11/25,11,2025,-60,Fine for bibliotek,Personal
+Misc,Rea,👨 Carlos,01/11/25,11,2025,-627,UNRWA,Personal
+Danmark forsikring,Rea,💊 Health,01/01/25,1,2025,-735,Carlos,Joint
+Content Insurance,Rea,🏠 Home,01/01/25,1,2025,-190,,Joint
+Danmark forsikring,Rea,💊 Health,01/02/25,2,2025,0,,Joint
+Content Insurance,Rea,🏠 Home,01/02/25,2,2025,-150,,Joint
+Danmark forsikring,Rea,💊 Health,01/03/25,3,2025,,,Joint
+Content Insurance,Rea,🏠 Home,01/03/25,3,2025,-150,,Joint
+Danmark forsikring,Rea,💊 Health,01/04/25,4,2025,-838,Carlos anna,Joint
+Content Insurance,Rea,🏠 Home,01/04/25,4,2025,-150,,Joint
+Danmark forsikring,Rea,💊 Health,01/05/25,5,2025,0,,Joint
+Danmark forsikring,Rea,💊 Health,01/04/24,4,2024,-1300,,Joint
+Content Insurance,Rea,🏠 Home,01/05/25,5,2025,-151,,Joint
+Rejsekort,Rea,👨 Carlos,01/06/25,6,2025,-468,STA in Ørestad,Personal
+Subscriptions,Rea,👨 Carlos,01/06/25,6,2025,-239,High note + Spotify,Personal
+Psicologist,Rea,👩 Anna,01/07/25,7,2025,0,,Anna
+Rejsekort,Rea,👩 Anna,01/07/25,7,2025,0,,Anna
+Content Insurance,Rea,🏠 Home,01/04/24,4,2024,-149,,Joint
+Subscriptions,Rea,👨 Carlos,01/09/25,9,2025,-109,Spotify,Personal
+Bars & Restaurants,Rea,👨 Carlos,01/09/25,9,2025,-1052,Barcelona,Personal
+Music Forening,Rea,👨 Carlos,01/09/25,9,2025,-352,,Personal
+Rejsekort,Rea,👨 Carlos,01/09/25,9,2025,-72,,Personal
+Rejsekort,Rea,👨 Carlos,01/10/25,10,2025,-91,,Personal
+Music Forening,Rea,👨 Carlos,01/11/25,11,2025,-252,,Personal
+Subscriptions,Rea,👨 Carlos,01/10/25,10,2025,-75,Movistar+,Personal
+Presents,Rea,👨 Carlos,01/11/25,11,2025,-2400,Olya's farewell & Pagament festa mama,Personal
+Psicologist,Rea,👨 Carlos,01/11/25,11,2025,-302,,Personal
+Rejsekort,Rea,👨 Carlos,01/11/25,11,2025,-209,,Personal
+Activities,Rea,👶 Kids,01/04/24,4,2024,-115,Pool,Joint
+Activities,Rea,👶 Kids,01/01/25,1,2025,-710,"Gimnastik, Legeland, Pool",Joint
+Clothes,Rea,👶 Kids,01/01/25,1,2025,0,,Joint
+Kindergarden,Rea,👶 Kids,01/01/25,1,2025,-7332,,Joint
+Misc,Rea,👶 Kids,01/01/25,1,2025,,,Joint
+Activities,Rea,👶 Kids,01/02/25,2,2025,-430,"Vestbad, Legeland",Joint
+Clothes,Rea,👶 Kids,01/02/25,2,2025,-312,?,Joint
+Kindergarden,Rea,👶 Kids,01/02/25,2,2025,-6117,,Joint
+Clothes,Rea,👶 Kids,01/04/24,4,2024,0,,Joint
+Activities,Rea,👶 Kids,01/03/25,3,2025,-210,Vestbadet + farm,Joint
+Activities,Rea,👶 Kids,01/03/25,3,2025,,,Joint
+Clothes,Rea,👶 Kids,01/03/25,3,2025,-440,Thermodragts,Joint
+Kindergarden,Rea,👶 Kids,01/03/25,3,2025,-6117,,Joint
+Misc,Rea,👶 Kids,01/03/25,3,2025,-172,stroller,Joint
+Kindergarden,Rea,👶 Kids,01/04/24,4,2024,-4171,,Joint
+Activities,Rea,👶 Kids,01/04/25,4,2025,-450,Vestbadet og krumspring gymnastik,Joint
+Clothes,Rea,👶 Kids,01/04/25,4,2025,-300,Krumspring.dk?,Joint
+Kindergarden,Rea,👶 Kids,01/04/25,4,2025,-6117,,Joint
+Misc,Rea,👶 Kids,01/04/25,4,2025,-250,Sleeping bag Joana,Joint
+Misc,Rea,👶 Kids,01/04/24,4,2024,,,Joint
+Activities,Rea,👶 Kids,01/05/25,5,2025,0,,Joint
+Clothes,Rea,👶 Kids,01/05/25,5,2025,-2050,Shoes,Joint
+Kindergarden,Rea,👶 Kids,01/05/25,5,2025,-6117,,Joint
+Misc,Rea,👶 Kids,01/05/25,5,2025,0,,Joint
+Presents,Rea,👨 Carlos,01/06/25,6,2025,-25,Denice from work,Personal
+Psicologist,Rea,👨 Carlos,01/06/25,6,2025,-599,,Personal
+Activities,Rea,🎉 Entertainment,01/06/25,6,2025,0,,Joint
+Bars & Restaurants,Rea,🎉 Entertainment,01/06/25,6,2025,-1258,,Joint
+Travel personal,Rea,👩 Anna,01/07/25,7,2025,0,,Anna
+Clothes,Rea,👨 Carlos,01/07/25,7,2025,-874,"Clothes, Volley ball",Personal
+Subscriptions,Rea,👨 Carlos,01/07/25,7,2025,-109,Spotify,Personal
+Bars & Restaurants,Rea,👨 Carlos,01/07/25,7,2025,-89,,Personal
+Dentist,Rea,👨 Carlos,01/09/25,9,2025,0,,Personal
+Psicologist,Rea,👨 Carlos,01/09/25,9,2025,-599,,Personal
+Activities,Rea,🎉 Entertainment,01/08/25,8,2025,,,Joint
+Bars & Restaurants,Rea,🎉 Entertainment,01/08/25,8,2025,-1671,,Joint
+Sports,Rea,🎉 Entertainment,01/08/25,8,2025,0,,Joint
+Subscriptions,Rea,🎉 Entertainment,01/08/25,8,2025,-89,Disney+,Joint
+Activities,Rea,🎉 Entertainment,01/09/25,9,2025,0,,Joint
+Activities,Rea,🎉 Entertainment,01/10/25,10,2025,0,,Joint
+Subscriptions,Rea,👨 Carlos,01/11/25,11,2025,-76,Movistar+,Personal
+Bars & Restaurants,Rea,🎉 Entertainment,01/10/25,10,2025,-517,,Joint
+Activities,Rea,🎉 Entertainment,01/12/25,12,2025,0,,Joint
+Bars & Restaurants,Rea,🎉 Entertainment,01/12/25,12,2025,-2300,Barcelona,Joint
+Port Aventura,Rea,🎉 Entertainment,01/10/25,10,2025,,,Joint
+Sports,Rea,🎉 Entertainment,01/10/25,10,2025,,,Joint
+Netflix,Rea,🎉 Entertainment,01/12/25,12,2025,0,,Joint
+Presents,Rea,🎁 Presents,01/04/24,4,2024,,,Joint
+Sports,Rea,🎉 Entertainment,01/12/25,12,2025,0,,Joint
+Subscriptions,Rea,🎉 Entertainment,01/12/25,12,2025,-141,,Joint
+Activities,Rea,🎉 Entertainment,01/11/25,11,2025,,,Joint
+Presents,Rea,🎁 Presents,01/01/25,1,2025,-1529,Concert Nadal Papes + emil dogsledding,Joint
+Presents,Rea,🎁 Presents,01/02/25,2,2025,0,,Joint
+Presents,Rea,🎁 Presents,01/03/25,3,2025,,,Joint
+Presents,Rea,🎁 Presents,01/04/25,4,2025,-930,mom present,Joint
+Presents,Rea,🎁 Presents,01/05/25,5,2025,-2408,Tivoli present to Peter & Gitte,Joint
+Sports,Rea,🎉 Entertainment,01/06/25,6,2025,0,,Joint
+Music Forening,Rea,👨 Carlos,01/07/25,7,2025,-250,,Personal
+Bars & Restaurants,Rea,🎉 Entertainment,01/09/25,9,2025,0,,Joint
+Netflix,Rea,🎉 Entertainment,01/09/25,9,2025,0,,Joint
+Gear,Rea,🛍️ Shopping,01/04/24,4,2024,-5924,New Camping Tent,Joint
+Subscriptions,Rea,🎉 Entertainment,01/10/25,10,2025,-89,Netflix,Joint
+Subscriptions,Rea,🎉 Entertainment,01/10/25,10,2025,,,Joint
+Bars & Restaurants,Rea,🎉 Entertainment,01/11/25,11,2025,-475,,Joint
+Gear,Rea,🛍️ Shopping,01/01/25,1,2025,0,,Joint
+Gear,Rea,🛍️ Shopping,01/02/25,2,2025,0,,Joint
+Gear,Rea,🛍️ Shopping,01/03/25,3,2025,-260,Ready beds for girls,Joint
+Gear,Rea,🛍️ Shopping,01/04/25,4,2025,-329,USB adapter + joana sleeping bag,Joint
+Gear,Rea,🛍️ Shopping,01/05/25,5,2025,0,,Joint
+Subscriptions,Rea,🎉 Entertainment,01/06/25,6,2025,-49,Disney+,Joint
+Rejsekort,Rea,👨 Carlos,01/07/25,7,2025,0,,Personal
+Port Aventura,Rea,🎉 Entertainment,01/09/25,9,2025,0,,Joint
+Sports,Rea,🎉 Entertainment,01/09/25,9,2025,0,,Joint
+Boui les Baronnes & Barcelona,Rea,✈️ Traveling,01/04/24,4,2024,,,Joint
+Netflix,Rea,🎉 Entertainment,01/11/25,11,2025,-89,,Joint
+TV2Play,Rea,🎉 Entertainment,01/10/25,10,2025,,,Joint
+Sports,Rea,🎉 Entertainment,01/11/25,11,2025,,,Joint
+Flight Tickets,Rea,✈️ Traveling,01/01/25,1,2025,0,,Joint
+Flight Tickets,Rea,✈️ Traveling,01/04/24,4,2024,,,Joint
+Accomodation,Rea,✈️ Traveling,01/01/25,1,2025,0,,Joint
+Transport,Rea,✈️ Traveling,01/01/25,1,2025,-805,Carlo's parents tank / Taxi Airport,Joint
+Bars & Restaurants,Rea,✈️ Traveling,01/01/25,1,2025,0,,Joint
+Flight Tickets,Rea,✈️ Traveling,01/02/25,2,2025,0,,Joint
+Accomodation,Rea,✈️ Traveling,01/02/25,2,2025,0,,Joint
+Transport,Rea,✈️ Traveling,01/02/25,2,2025,0,,Joint
+Bars & Restaurants,Rea,✈️ Traveling,01/02/25,2,2025,0,,Joint
+Nuria,Rea,✈️ Traveling,01/04/24,4,2024,,,Joint
+Bars & Restaurants,Rea,✈️ Traveling,01/03/25,3,2025,,,Joint
+Transport,Rea,✈️ Traveling,01/04/25,4,2025,-425,Ferry from Rødby,Joint
+Flight Tickets,Rea,✈️ Traveling,01/04/25,4,2025,,,Joint
+Roadtrip,Rea,✈️ Traveling,01/04/24,4,2024,,,Joint
+Accomodation,Rea,✈️ Traveling,01/04/25,4,2025,,,Joint
+Transport,Rea,✈️ Traveling,01/04/25,4,2025,,,Joint
+Bars & Restaurants,Rea,✈️ Traveling,01/04/25,4,2025,,,Joint
+Flight Tickets,Rea,✈️ Traveling,01/05/25,5,2025,0,,Joint
+Accomodation,Rea,✈️ Traveling,01/05/25,5,2025,0,,Joint
+Transport,Rea,✈️ Traveling,01/05/25,5,2025,0,,Joint
+Bars & Restaurants,Rea,✈️ Traveling,01/05/25,5,2025,0,,Joint
+Summerhouse trips,Rea,✈️ Traveling,01/04/24,4,2024,,,Joint
+Massages,Rea,💊 Health,01/06/25,6,2025,0,,Joint
+Pharmacy,Rea,💊 Health,01/06/25,6,2025,-326,,Joint
+Pharmacy,Rea,💊 Health,01/06/25,6,2025,0,,Joint
+Danmark forsikring,Rea,💊 Health,01/06/25,6,2025,0,,Joint
+Dentist,Rea,👨 Carlos,01/07/25,7,2025,-562,,Personal
+Psicologist,Rea,👨 Carlos,01/07/25,7,2025,-299,,Personal
+Subscriptions,Rea,🎉 Entertainment,01/07/25,7,2025,-89,Disney+,Joint
+Pharmacy,Rea,💊 Health,01/07/25,7,2025,-185,Anti ticks,Joint
+Danmark forsikring,Rea,💊 Health,01/07/25,7,2025,-838,,Joint
+Subscriptions,Rea,🎉 Entertainment,01/09/25,9,2025,-89,Disney+,Joint
+TV2Play,Rea,🎉 Entertainment,01/09/25,9,2025,0,,Joint
+Youtube,Rea,🎉 Entertainment,01/09/25,9,2025,0,,Joint
+Massages,Rea,💊 Health,01/08/25,8,2025,0,,Joint
+Pharmacy,Rea,💊 Health,01/08/25,8,2025,0,,Joint
+Massages,Rea,💊 Health,01/09/25,9,2025,0,,Joint
+Pharmacy,Rea,💊 Health,01/09/25,9,2025,0,,Joint
+Danmark forsikring,Rea,💊 Health,01/08/25,8,2025,908,Refund?,Joint
+Danmark forsikring,Rea,💊 Health,01/09/25,9,2025,0,,Joint
+Subscriptions,Rea,🎉 Entertainment,01/11/25,11,2025,,,Joint
+Youtube,Rea,🎉 Entertainment,01/10/25,10,2025,,,Joint
+TV2Play,Rea,🎉 Entertainment,01/11/25,11,2025,,,Joint
+Danmark forsikring,Rea,💊 Health,01/10/25,10,2025,-838,,Joint
+Youtube,Rea,🎉 Entertainment,01/11/25,11,2025,,,Joint
+Massages,Rea,💊 Health,01/12/25,12,2025,0,,Joint
+Pharmacy,Rea,💊 Health,01/12/25,12,2025,-73,,Joint
+Danmark forsikring,Rea,💊 Health,01/12/25,12,2025,0,,Joint
+Danmark forsikring,Rea,💊 Health,01/11/25,11,2025,586,Return Anna,Joint
+Electricity,Rea,🏠 Home,01/04/24,4,2024,-629,,Joint
+Electricity,Rea,🏠 Home,01/01/25,1,2025,-672,,Joint
+Hot Water / Gas,Rea,🏠 Home,01/01/25,1,2025,-450,,Joint
+Water,Rea,🏠 Home,01/01/25,1,2025,-200,,Joint
+Electricity,Rea,🏠 Home,01/02/25,2,2025,-616,,Joint
+Hot Water / Gas,Rea,🏠 Home,01/02/25,2,2025,-450,,Joint
+Water,Rea,🏠 Home,01/02/25,2,2025,-1064,Adjusting yearly water expenses,Joint
+Hot Water / Gas,Rea,🏠 Home,01/04/24,4,2024,-650,,Joint
+Electricity,Rea,🏠 Home,01/03/25,3,2025,-200,,Joint
+Hot Water / Gas,Rea,🏠 Home,01/03/25,3,2025,-550,,Joint
+Water,Rea,🏠 Home,01/03/25,3,2025,-585,,Joint
+Electricity,Rea,🏠 Home,01/04/25,4,2025,-550,,Joint
+Hot Water / Gas,Rea,🏠 Home,01/04/25,4,2025,-585,,Joint
+Water,Rea,🏠 Home,01/04/25,4,2025,-200,,Joint
+Water,Rea,🏠 Home,01/04/24,4,2024,-300,,Joint
+Electricity,Rea,🏠 Home,01/05/25,5,2025,-405,,Joint
+Hot Water / Gas,Rea,🏠 Home,01/05/25,5,2025,-1898,,Joint
+Water,Rea,🏠 Home,01/05/25,5,2025,-200,,Joint
+Presents,Rea,🎁 Presents,01/06/25,6,2025,0,,Joint
+Furniture Misc,Rea,🏠 Home,01/06/25,6,2025,-624,Gardening+ biltema wood for shelf,Joint
+Gear,Rea,🛍️ Shopping,01/06/25,6,2025,0,,Joint
+Presents,Rea,🎁 Presents,01/07/25,7,2025,0,,Joint
+Furniture Misc,Rea,🏠 Home,01/07/25,7,2025,-2365,"IKEA trip, Jysk Jem og fix",Joint
+Gear,Rea,🛍️ Shopping,01/07/25,7,2025,-842,Camping kitchen + Camping chairs,Joint
+Presents,Rea,🎁 Presents,01/08/25,8,2025,,,Joint
+Presents,Rea,🎁 Presents,01/09/25,9,2025,0,,Joint
+Furniture Misc,Rea,🏠 Home,01/08/25,8,2025,,,Joint
+Furniture Misc,Rea,🏠 Home,01/09/25,9,2025,-352,Rechargable batteries,Joint
+Gear,Rea,🛍️ Shopping,01/08/25,8,2025,,,Joint
+Gear,Rea,🛍️ Shopping,01/09/25,9,2025,0,,Joint
+Massages,Rea,💊 Health,01/10/25,10,2025,0,,Joint
+Massages,Rea,💊 Health,01/11/25,11,2025,-50,Antibiotics,Joint
+Pharmacy,Rea,💊 Health,01/10/25,10,2025,-733,"Vitamins, Anna medicine",Joint
+Pharmacy,Rea,💊 Health,01/11/25,11,2025,,,Joint
+Presents,Rea,🎁 Presents,01/10/25,10,2025,,,Joint
+Presents,Rea,🎁 Presents,01/12/25,12,2025,-543,Lene louisiana,Joint
+Presents,Rea,🎁 Presents,01/11/25,11,2025,,,Joint
+Gear,Rea,🛍️ Shopping,01/10/25,10,2025,,,Joint
+Furniture Misc,Rea,🏠 Home,01/12/25,12,2025,0,,Joint
+Gear,Rea,🛍️ Shopping,01/12/25,12,2025,0,,Joint
+Furniture Misc,Rea,🏠 Home,01/11/25,11,2025,,,Joint
+Gear,Rea,🛍️ Shopping,01/11/25,11,2025,-352,Plantorama Harald nybord,Joint
+Akasse,Rea,👩 Anna,01/01/26,1,2026,,,Anna
+Glasses and contacts,Rea,👩 Anna,01/01/26,1,2026,,,Anna
+Bike repair,Rea,👩 Anna,01/01/26,1,2026,1,,Anna
+Cafe/bar/restaurant,Rea,👩 Anna,01/01/26,1,2026,,,Anna
+Clothes,Rea,👩 Anna,01/01/26,1,2026,,,Anna
+Hobby,Rea,👩 Anna,01/01/26,1,2026,,,Anna
+Misc,Rea,👩 Anna,01/01/26,1,2026,,,Anna
+Phone,Rea,👩 Anna,01/01/26,1,2026,,,Anna
+Presents,Rea,👩 Anna,01/01/26,1,2026,-30,,Anna
+Dentist,Rea,👩 Anna,01/01/26,1,2026,,,Anna
+Psicologist,Rea,👩 Anna,01/01/26,1,2026,,,Anna
+Rejsekort,Rea,👩 Anna,01/01/26,1,2026,,,Anna
+Travel personal,Rea,👩 Anna,01/01/26,1,2026,,,Anna
+Akasse,Rea,👩 Anna,01/02/26,2,2026,0,,Anna
+Glasses and contacts,Rea,👩 Anna,01/02/26,2,2026,0,,Anna
+Bike repair,Rea,👩 Anna,01/02/26,2,2026,-60,,Anna
+Cafe/bar/restaurant,Rea,👩 Anna,01/02/26,2,2026,-400,,Anna
+Clothes,Rea,👩 Anna,01/02/26,2,2026,0,,Anna
+Hobby,Rea,👩 Anna,01/02/26,2,2026,0,,Anna
+Misc,Rea,👩 Anna,01/02/26,2,2026,0,,Anna
+Phone,Rea,👩 Anna,01/02/26,2,2026,0,,Anna
+Presents,Rea,👩 Anna,01/02/26,2,2026,0,,Anna
+Dentist,Rea,👩 Anna,01/02/26,2,2026,-641,,Anna
+Psicologist,Rea,👩 Anna,01/02/26,2,2026,0,,Anna
+Rejsekort,Rea,👩 Anna,01/02/26,2,2026,0,,Anna
+Travel personal,Rea,👩 Anna,01/02/26,2,2026,0,,Anna
+Akasse,Rea,👩 Anna,01/03/26,3,2026,0,,Anna
+Glasses and contacts,Rea,👩 Anna,01/03/26,3,2026,0,,Anna
+Bike repair,Rea,👩 Anna,01/03/26,3,2026,0,,Anna
+Cafe/bar/restaurant,Rea,👩 Anna,01/03/26,3,2026,-1611,,Anna
+Clothes,Rea,👩 Anna,01/03/26,3,2026,0,,Anna
+Hobby,Rea,👩 Anna,01/03/26,3,2026,-55,,Anna
+Misc,Rea,👩 Anna,01/03/26,3,2026,-933,medicine + concert,Anna
+Phone,Rea,👩 Anna,01/03/26,3,2026,0,,Anna
+Presents,Rea,👩 Anna,01/03/26,3,2026,-40,,Anna
+Dentist,Rea,👩 Anna,01/03/26,3,2026,0,,Anna
+Psicologist,Rea,👩 Anna,01/03/26,3,2026,0,,Anna
+Rejsekort,Rea,👩 Anna,01/03/26,3,2026,0,,Anna
+Travel personal,Rea,👩 Anna,01/03/26,3,2026,0,,Anna
+Akasse,Rea,👩 Anna,01/04/26,4,2026,-1551,,Anna
+Glasses and contacts,Rea,👩 Anna,01/04/26,4,2026,,,Anna
+Bike repair,Rea,👩 Anna,01/04/26,4,2026,,,Anna
+Cafe/bar/restaurant,Rea,👩 Anna,01/04/26,4,2026,-304,,Anna
+Clothes,Rea,👩 Anna,01/04/26,4,2026,,,Anna
+Hobby,Rea,👩 Anna,01/04/26,4,2026,,,Anna
+Misc,Rea,👩 Anna,01/04/26,4,2026,-410,google storage + wine,Anna
+Phone,Rea,👩 Anna,01/04/26,4,2026,0,,Anna
+Presents,Rea,👩 Anna,01/04/26,4,2026,-384,flora barnedåb,Anna
+Rejsekort,Rea,👩 Anna,01/04/26,4,2026,-60,,Anna
+Travel personal,Rea,👩 Anna,01/04/26,4,2026,,,Anna
+Dentist,Rea,👩 Anna,01/04/26,4,2026,0,,Anna
+Psicologist,Rea,👩 Anna,01/04/26,4,2026,0,,Anna
+Akasse,Rea,👩 Anna,01/05/26,5,2026,,,Anna
+Glasses and contacts,Rea,👩 Anna,01/05/26,5,2026,,,Anna
+Bike repair,Rea,👩 Anna,01/05/26,5,2026,,,Anna
+Cafe/bar/restaurant,Rea,👩 Anna,01/05/26,5,2026,,,Anna
+Clothes,Rea,👩 Anna,01/05/26,5,2026,,,Anna
+Hobby,Rea,👩 Anna,01/05/26,5,2026,,,Anna
+Misc,Rea,👩 Anna,01/05/26,5,2026,,,Anna
+Phone,Rea,👩 Anna,01/05/26,5,2026,,,Anna
+Presents,Rea,👩 Anna,01/05/26,5,2026,,,Anna
+Dentist,Rea,👩 Anna,01/05/26,5,2026,,,Anna
+Psicologist,Rea,👩 Anna,01/05/26,5,2026,,,Anna
+Rejsekort,Rea,👩 Anna,01/05/26,5,2026,,,Anna
+Travel personal,Rea,👩 Anna,01/05/26,5,2026,,,Anna
+Anna Skat Return,Rea,💰 Income,01/06/26,6,2026,,,Joint
+Anna's Salary,Rea,💰 Income,01/06/26,6,2026,,,Joint
+Børne og Unge Ydelse Anna,Rea,💰 Income,01/06/26,6,2026,,,Joint
+Børne og Unge Ydelse Carlos,Rea,💰 Income,01/06/26,6,2026,,,Joint
+Carlos Salary,Rea,💰 Income,01/06/26,6,2026,,,Joint
+Sell,Rea,💰 Income,01/06/26,6,2026,,,Joint
+Carlos Skat return,Rea,💰 Income,01/06/26,6,2026,,,Joint
+Cleaning,Rea,🏠 Home,01/06/26,6,2026,,,Joint
+Rent,Rea,🏠 Home,01/06/26,6,2026,,,Joint
+Content Insurance,Rea,🏠 Home,01/06/26,6,2026,,,Joint
+Electricity,Rea,🏠 Home,01/06/26,6,2026,,,Joint
+Hot Water / Gas,Rea,🏠 Home,01/06/26,6,2026,,,Joint
+Water,Rea,🏠 Home,01/06/26,6,2026,,,Joint
+Anna Skat Return,Rea,💰 Income,01/07/26,7,2026,,,Joint
+Anna's Salary,Rea,💰 Income,01/07/26,7,2026,,,Joint
+Børne og Unge Ydelse Anna,Rea,💰 Income,01/07/26,7,2026,,,Joint
+Børne og Unge Ydelse Carlos,Rea,💰 Income,01/07/26,7,2026,,,Joint
+Carlos Salary,Rea,💰 Income,01/07/26,7,2026,,,Joint
+Carlos Skat return,Rea,💰 Income,01/07/26,7,2026,,,Joint
+Cleaning,Rea,🏠 Home,01/07/26,7,2026,,,Joint
+Rent,Rea,🏠 Home,01/07/26,7,2026,,,Joint
+Content Insurance,Rea,🏠 Home,01/07/26,7,2026,,,Joint
+Electricity,Rea,🏠 Home,01/07/26,7,2026,,,Joint
+Hot Water / Gas,Rea,🏠 Home,01/07/26,7,2026,,,Joint
+Water,Rea,🏠 Home,01/07/26,7,2026,,,Joint
+Food,Rea,🛒 Groceries,01/07/26,7,2026,,,Joint
+Anna Skat Return,Rea,💰 Income,01/08/26,8,2026,,,Joint
+Anna's Salary,Rea,💰 Income,01/08/26,8,2026,,,Joint
+Børne og Unge Ydelse Anna,Rea,💰 Income,01/08/26,8,2026,,,Joint
+Børne og Unge Ydelse Carlos,Rea,💰 Income,01/08/26,8,2026,,,Joint
+Carlos Salary,Rea,💰 Income,01/08/26,8,2026,,,Joint
+Carlos Skat return,Rea,💰 Income,01/08/26,8,2026,,,Joint
+Anna Skat Return,Rea,💰 Income,01/09/26,9,2026,,,Joint
+Anna's Salary,Rea,💰 Income,01/09/26,9,2026,,,Joint
+Børne og Unge Ydelse Anna,Rea,💰 Income,01/09/26,9,2026,,,Joint
+Børne og Unge Ydelse Carlos,Rea,💰 Income,01/09/26,9,2026,,,Joint
+Carlos Salary,Rea,💰 Income,01/09/26,9,2026,,,Joint
+Carlos Skat return,Rea,💰 Income,01/09/26,9,2026,,,Joint
+Cleaning,Rea,🏠 Home,01/08/26,8,2026,,,Joint
+Rent,Rea,🏠 Home,01/08/26,8,2026,,,Joint
+Cleaning,Rea,🏠 Home,01/09/26,9,2026,,,Joint
+Rent,Rea,🏠 Home,01/09/26,9,2026,,,Joint
+Content Insurance,Rea,🏠 Home,01/08/26,8,2026,,,Joint
+Content Insurance,Rea,🏠 Home,01/09/26,9,2026,,,Joint
+Electricity,Rea,🏠 Home,01/08/26,8,2026,,,Joint
+Hot Water / Gas,Rea,🏠 Home,01/08/26,8,2026,,,Joint
+Water,Rea,🏠 Home,01/08/26,8,2026,,,Joint
+Electricity,Rea,🏠 Home,01/09/26,9,2026,,,Joint
+Hot Water / Gas,Rea,🏠 Home,01/09/26,9,2026,,,Joint
+Water,Rea,🏠 Home,01/09/26,9,2026,,,Joint
+Food,Rea,🛒 Groceries,01/08/26,8,2026,,,Joint
+Food,Rea,🛒 Groceries,01/09/26,9,2026,,,Joint
+Flight Tickets,Rea,✈️ Traveling,01/08/26,8,2026,,,Joint
+Anna Skat Return,Rea,💰 Income,01/10/26,10,2026,,,Joint
+Anna Skat Return,Rea,💰 Income,01/11/26,11,2026,,,Joint
+Anna's Salary,Rea,💰 Income,01/10/26,10,2026,,,Joint
+Anna's Salary,Rea,💰 Income,01/11/26,11,2026,,,Joint
+Børne og Unge Ydelse Anna,Rea,💰 Income,01/10/26,10,2026,,,Joint
+Børne og Unge Ydelse Anna,Rea,💰 Income,01/11/26,11,2026,,,Joint
+Børne og Unge Ydelse Carlos,Rea,💰 Income,01/10/26,10,2026,,,Joint
+Børne og Unge Ydelse Carlos,Rea,💰 Income,01/11/26,11,2026,,,Joint
+Carlos Salary,Rea,💰 Income,01/10/26,10,2026,,,Joint
+Carlos Salary,Rea,💰 Income,01/11/26,11,2026,,,Joint
+Carlos Skat return,Rea,💰 Income,01/10/26,10,2026,,,Joint
+Carlos Skat return,Rea,💰 Income,01/11/26,11,2026,,,Joint
+Cleaning,Rea,🏠 Home,01/10/26,10,2026,,,Joint
+Anna Skat Return,Rea,💰 Income,01/12/26,12,2026,,,Joint
+Electricity,Rea,🏠 Home,01/10/26,10,2026,,,Joint
+Anna's Salary,Rea,💰 Income,01/12/26,12,2026,,,Joint
+Furniture Misc,Rea,🏠 Home,01/10/26,10,2026,,,Joint
+Børne og Unge Ydelse Anna,Rea,💰 Income,01/12/26,12,2026,,,Joint
+Content Insurance,Rea,🏠 Home,01/10/26,10,2026,,,Joint
+Børne og Unge Ydelse Carlos,Rea,💰 Income,01/12/26,12,2026,,,Joint
+Hot Water / Gas,Rea,🏠 Home,01/10/26,10,2026,,,Joint
+Carlos Salary,Rea,💰 Income,01/12/26,12,2026,,,Joint
+Carlos Skat return,Rea,💰 Income,01/12/26,12,2026,,,Joint
+Cleaning,Rea,🏠 Home,01/11/26,11,2026,,,Joint
+Rent,Rea,🏠 Home,01/10/26,10,2026,,,Joint
+Electricity,Rea,🏠 Home,01/11/26,11,2026,,,Joint
+Furniture Misc,Rea,🏠 Home,01/11/26,11,2026,,,Joint
+Content Insurance,Rea,🏠 Home,01/11/26,11,2026,,,Joint
+Hot Water / Gas,Rea,🏠 Home,01/11/26,11,2026,,,Joint
+Rent,Rea,🏠 Home,01/11/26,11,2026,,,Joint
+Water,Rea,🏠 Home,01/11/26,11,2026,,,Joint
+Cleaning,Rea,🏠 Home,01/12/26,12,2026,,,Joint
+Rent,Rea,🏠 Home,01/12/26,12,2026,,,Joint
+Content Insurance,Rea,🏠 Home,01/12/26,12,2026,,,Joint
+Electricity,Rea,🏠 Home,01/12/26,12,2026,,,Joint
+Hot Water / Gas,Rea,🏠 Home,01/12/26,12,2026,,,Joint
+Water,Rea,🏠 Home,01/12/26,12,2026,,,Joint
+Cleaning,Rea,🏠 Home,01/01/26,1,2026,-900,,Joint
+Furniture Misc,Rea,🏠 Home,01/01/26,1,2026,-3427,Paint and tools,Joint
+Rent,Rea,🏠 Home,01/01/26,1,2026,-12823,,Joint
+Cleaning,Rea,🏠 Home,01/02/26,2,2026,-800,,Joint
+Furniture Misc,Rea,🏠 Home,01/02/26,2,2026,-11577,"Paint, Appliances, Moving needs",Joint
+Rent,Rea,🏠 Home,01/02/26,2,2026,-12823,,Joint
+Cleaning,Rea,🏠 Home,01/03/26,3,2026,-2395,,Joint
+Furniture Misc,Rea,🏠 Home,01/03/26,3,2026,-9810,"transfer to Anna's dad for Oil, paint / IKEA, Gardiner / Bunk bed...",Joint
+Cleaning,Rea,🏠 Home,01/04/26,4,2026,,,Joint
+Furniture Misc,Rea,🏠 Home,01/04/26,4,2026,,,Joint
+Rent,Rea,🏠 Home,01/04/26,4,2026,,,Joint
+Cleaning,Rea,🏠 Home,01/05/26,5,2026,,,Joint
+Furniture Misc,Rea,🏠 Home,01/05/26,5,2026,,,Joint
+Rent,Rea,🏠 Home,01/05/26,5,2026,,,Joint
+Food,Rea,🛒 Groceries,01/06/26,6,2026,,,Joint
+Flight Tickets,Rea,✈️ Traveling,01/06/26,6,2026,,,Joint
+Accomodation,Rea,✈️ Traveling,01/06/26,6,2026,,,Joint
+Compensation,Rea,✈️ Traveling,01/07/26,7,2026,,,Joint
+Accomodation,Rea,✈️ Traveling,01/07/26,7,2026,,,Joint
+Accomodation,Rea,✈️ Traveling,01/07/26,7,2026,,,Joint
+Accomodation,Rea,✈️ Traveling,01/08/26,8,2026,,,Joint
+Transport,Rea,✈️ Traveling,01/08/26,8,2026,,,Joint
+Bars & Restaurants,Rea,✈️ Traveling,01/08/26,8,2026,,,Joint
+Flight Tickets,Rea,✈️ Traveling,01/09/26,9,2026,-3312,Menorca flights (Part yaya included),Joint
+Accomodation,Rea,✈️ Traveling,01/09/26,9,2026,,,Joint
+Transport,Rea,✈️ Traveling,01/09/26,9,2026,-1639,Alquiler Cotxe,Joint
+Water,Rea,🏠 Home,01/10/26,10,2026,,,Joint
+Food,Rea,🛒 Groceries,01/11/26,11,2026,,,Joint
+Food,Rea,🛒 Groceries,01/10/26,10,2026,,,Joint
+Food,Rea,🛒 Groceries,01/12/26,12,2026,,,Joint
+Accomodation,Rea,✈️ Traveling,01/11/26,11,2026,,,Joint
+Bars & Restaurants,Rea,✈️ Traveling,01/11/26,11,2026,,,Joint
+Flight Tickets,Rea,✈️ Traveling,01/11/26,11,2026,,,Joint
+Transport,Rea,✈️ Traveling,01/11/26,11,2026,,,Joint
+Accomodation,Rea,✈️ Traveling,01/12/26,12,2026,,,Joint
+Car Service,Rea,🚗 Car,01/01/26,1,2026,0,,Joint
+Ejer afgifter,Rea,🚗 Car,01/01/26,1,2026,0,,Joint
+Misc,Rea,🚗 Car,01/01/26,1,2026,0,,Joint
+Gasoline,Rea,🚗 Car,01/01/26,1,2026,-1000,,Joint
+Misc,Rea,🚗 Car,01/01/26,1,2026,-70,light bulb and parking,Joint
+Insurance,Rea,🚗 Car,01/01/26,1,2026,-408,,Joint
+Car Service,Rea,🚗 Car,01/02/26,2,2026,,,Joint
+Ejer afgifter,Rea,🚗 Car,01/02/26,2,2026,0,,Joint
+Misc,Rea,🚗 Car,01/02/26,2,2026,0,,Joint
+Gasoline,Rea,🚗 Car,01/02/26,2,2026,-779,,Joint
+Misc,Rea,🚗 Car,01/02/26,2,2026,-150,Thule part replacement,Joint
+Insurance,Rea,🚗 Car,01/02/26,2,2026,-403,,Joint
+Car Service,Rea,🚗 Car,01/03/26,3,2026,0,,Joint
+Ejer afgifter,Rea,🚗 Car,01/03/26,3,2026,-2480,,Joint
+Gasoline,Rea,🚗 Car,01/03/26,3,2026,-1869,,Joint
+Misc,Rea,🚗 Car,01/03/26,3,2026,-1080,,Joint
+Insurance,Rea,🚗 Car,01/03/26,3,2026,-403,Vejhelp,Joint
+Car Service,Rea,🚗 Car,01/04/26,4,2026,,,Joint
+Misc,Rea,🚗 Car,01/04/26,4,2026,,,Joint
+Gasoline,Rea,🚗 Car,01/04/26,4,2026,,,Joint
+Misc,Rea,🚗 Car,01/04/26,4,2026,,,Joint
+Insurance,Rea,🚗 Car,01/04/26,4,2026,,,Joint
+Car Service,Rea,🚗 Car,01/05/26,5,2026,,,Joint
+Misc,Rea,🚗 Car,01/05/26,5,2026,,,Joint
+Gasoline,Rea,🚗 Car,01/05/26,5,2026,,,Joint
+Misc,Rea,🚗 Car,01/05/26,5,2026,,,Joint
+Insurance,Rea,🚗 Car,01/05/26,5,2026,,,Joint
+Transport,Rea,✈️ Traveling,01/06/26,6,2026,,,Joint
+Bars & Restaurants,Rea,✈️ Traveling,01/06/26,6,2026,,,Joint
+Activities,Rea,👶 Kids,01/06/26,6,2026,,,Joint
+Clothes,Rea,👶 Kids,01/06/26,6,2026,,,Joint
+Kindergarden,Rea,👶 Kids,01/06/26,6,2026,,,Joint
+Transport,Rea,✈️ Traveling,01/07/26,7,2026,,,Joint
+Bars & Restaurants,Rea,✈️ Traveling,01/07/26,7,2026,,,Joint
+Activities,Rea,👶 Kids,01/07/26,7,2026,,,Joint
+Clothes,Rea,👶 Kids,01/07/26,7,2026,,,Joint
+Kindergarden,Rea,👶 Kids,01/07/26,7,2026,,,Joint
+Bars & Restaurants,Rea,✈️ Traveling,01/09/26,9,2026,,,Joint
+Activities,Rea,👶 Kids,01/08/26,8,2026,,,Joint
+Clothes,Rea,👶 Kids,01/08/26,8,2026,,,Joint
+Kindergarden,Rea,👶 Kids,01/08/26,8,2026,,,Joint
+Misc,Rea,👶 Kids,01/08/26,8,2026,,,Joint
+Activities,Rea,👶 Kids,01/09/26,9,2026,,,Joint
+Clothes,Rea,👶 Kids,01/09/26,9,2026,,,Joint
+Kindergarden,Rea,👶 Kids,01/09/26,9,2026,,,Joint
+Misc,Rea,👶 Kids,01/09/26,9,2026,,,Joint
+Car Service,Rea,🚗 Car,01/08/26,8,2026,,,Joint
+Flight Tickets,Rea,✈️ Traveling,01/10/26,10,2026,,,Joint
+Transport,Rea,✈️ Traveling,01/12/26,12,2026,,,Joint
+Flight Tickets,Rea,✈️ Traveling,01/12/26,12,2026,,,Joint
+Activities,Rea,👶 Kids,01/10/26,10,2026,,,Joint
+Bars & Restaurants,Rea,✈️ Traveling,01/12/26,12,2026,,,Joint
+Clothes,Rea,👶 Kids,01/10/26,10,2026,,,Joint
+Activities,Rea,👶 Kids,01/11/26,11,2026,,,Joint
+Kindergarden,Rea,👶 Kids,01/10/26,10,2026,,,Joint
+Clothes,Rea,👶 Kids,01/11/26,11,2026,,,Joint
+Misc,Rea,👶 Kids,01/10/26,10,2026,,,Joint
+Kindergarden,Rea,👶 Kids,01/11/26,11,2026,,,Joint
+Misc,Rea,👶 Kids,01/11/26,11,2026,,,Joint
+Activities,Rea,👶 Kids,01/12/26,12,2026,,,Joint
+Clothes,Rea,👶 Kids,01/12/26,12,2026,,,Joint
+Kindergarden,Rea,👶 Kids,01/12/26,12,2026,,,Joint
+Misc,Rea,👶 Kids,01/12/26,12,2026,,,Joint
+Akasse,Rea,👨 Carlos,01/01/26,1,2026,-1551,,Personal
+Clothes,Rea,👨 Carlos,01/01/26,1,2026,-949,,Personal
+Phone,Rea,👨 Carlos,01/01/26,1,2026,-175,From gross salary,Personal
+Bars & Restaurants,Rea,👨 Carlos,01/01/26,1,2026,-600,,Personal
+Music Forening,Rea,👨 Carlos,01/01/26,1,2026,-302,,Personal
+Rejsekort,Rea,👨 Carlos,01/01/26,1,2026,-790,,Personal
+Misc,Rea,👨 Carlos,01/01/26,1,2026,-333,"Antibiotics, Massages from gross salary",Personal
+Dentist,Rea,👨 Carlos,01/01/26,1,2026,-754,,Personal
+Psicologist,Rea,👨 Carlos,01/01/26,1,2026,-373,,Personal
+Subscriptions,Rea,👨 Carlos,01/02/26,2,2026,,,Personal
+Flight Tickets,Rea,👨 Carlos,01/02/26,2,2026,,,Personal
+Phone,Rea,👨 Carlos,01/02/26,2,2026,-175,From gross salary,Personal
+Bars & Restaurants,Rea,👨 Carlos,01/02/26,2,2026,-104,,Personal
+Music Forening,Rea,👨 Carlos,01/02/26,2,2026,-302,,Personal
+Rejsekort,Rea,👨 Carlos,01/02/26,2,2026,-677,From gross salary,Personal
+Presents,Rea,👨 Carlos,01/02/26,2,2026,,,Personal
+Misc,Rea,👨 Carlos,01/02/26,2,2026,-183,Massage from gross salary,Personal
+Dentist,Rea,👨 Carlos,01/02/26,2,2026,,,Personal
+Psicologist,Rea,👨 Carlos,01/02/26,2,2026,-372,,Personal
+Clothes,Rea,👨 Carlos,01/03/26,3,2026,0,,Personal
+Flight Tickets,Rea,👨 Carlos,01/03/26,3,2026,0,,Personal
+Akasse,Rea,👨 Carlos,01/03/26,3,2026,-1551,,Personal
+Bars & Restaurants,Rea,👨 Carlos,01/03/26,3,2026,-105,,Personal
+Music Forening,Rea,👨 Carlos,01/03/26,3,2026,-302,,Personal
+Rejsekort,Rea,👨 Carlos,01/03/26,3,2026,-677,,Personal
+Travel personal,Rea,👨 Carlos,01/03/26,3,2026,0,,Personal
+Phone,Rea,👨 Carlos,01/03/26,3,2026,-175,,Personal
+Subscriptions,Rea,👨 Carlos,01/03/26,3,2026,-60,spotify,Personal
+Misc,Rea,👨 Carlos,01/03/26,3,2026,-183,Massage from gross salary,Personal
+Dentist,Rea,👨 Carlos,01/03/26,3,2026,0,,Personal
+Psicologist,Rea,👨 Carlos,01/03/26,3,2026,-746,,Personal
+Dentist,Rea,👨 Carlos,01/04/26,4,2026,,,Personal
+Psicologist,Rea,👨 Carlos,01/04/26,4,2026,,,Personal
+Clothes,Rea,👨 Carlos,01/04/26,4,2026,,,Personal
+Flight Tickets,Rea,👨 Carlos,01/04/26,4,2026,,,Personal
+Subscriptions,Rea,👨 Carlos,01/04/26,4,2026,,,Personal
+Bars & Restaurants,Rea,👨 Carlos,01/04/26,4,2026,,,Personal
+Music Forening,Rea,👨 Carlos,01/04/26,4,2026,,,Personal
+Rejsekort,Rea,👨 Carlos,01/04/26,4,2026,,,Personal
+Bank fees,Rea,👨 Carlos,01/04/26,4,2026,,,Personal
+Clothes,Rea,👨 Carlos,01/05/26,5,2026,,,Personal
+Misc,Rea,🚗 Car,01/08/26,8,2026,,,Joint
+Subscriptions,Rea,👨 Carlos,01/05/26,5,2026,,,Personal
+Bars & Restaurants,Rea,👨 Carlos,01/05/26,5,2026,,,Personal
+Music Forening,Rea,👨 Carlos,01/05/26,5,2026,,,Personal
+Rejsekort,Rea,👨 Carlos,01/05/26,5,2026,,,Personal
+Bank fees,Rea,👨 Carlos,01/05/26,5,2026,,,Personal
+Misc,Rea,👨 Carlos,01/05/26,5,2026,,,Personal
+Psicologist,Rea,👨 Carlos,01/05/26,5,2026,,,Personal
+Misc,Rea,👶 Kids,01/06/26,6,2026,,,Joint
+Car Service,Rea,🚗 Car,01/06/26,6,2026,,,Joint
+Misc,Rea,🚗 Car,01/06/26,6,2026,,,Joint
+Gasoline,Rea,🚗 Car,01/06/26,6,2026,,,Joint
+Misc,Rea,🚗 Car,01/06/26,6,2026,,,Joint
+Insurance,Rea,🚗 Car,01/06/26,6,2026,,,Joint
+Akasse,Rea,👩 Anna,01/06/26,6,2026,,,Anna
+Glasses and contacts,Rea,👩 Anna,01/06/26,6,2026,,,Anna
+Misc,Rea,👶 Kids,01/07/26,7,2026,,,Joint
+Misc,Rea,🚗 Car,01/07/26,7,2026,,,Joint
+Misc,Rea,🚗 Car,01/07/26,7,2026,,,Joint
+Gasoline,Rea,🚗 Car,01/07/26,7,2026,,,Joint
+Misc,Rea,🚗 Car,01/07/26,7,2026,,,Joint
+Gasoline,Rea,🚗 Car,01/08/26,8,2026,,,Joint
+Insurance,Rea,🚗 Car,01/07/26,7,2026,,,Joint
+Akasse,Rea,👩 Anna,01/07/26,7,2026,,,Anna
+Misc,Rea,🚗 Car,01/08/26,8,2026,,,Joint
+Insurance,Rea,🚗 Car,01/08/26,8,2026,,,Joint
+Car Service,Rea,🚗 Car,01/09/26,9,2026,,,Joint
+Ejer afgifter,Rea,🚗 Car,01/09/26,9,2026,,,Joint
+Misc,Rea,🚗 Car,01/09/26,9,2026,,,Joint
+Gasoline,Rea,🚗 Car,01/09/26,9,2026,,,Joint
+Misc,Rea,🚗 Car,01/09/26,9,2026,,,Joint
+Insurance,Rea,🚗 Car,01/09/26,9,2026,,,Joint
+Akasse,Rea,👩 Anna,01/08/26,8,2026,,,Anna
+Glasses and contacts,Rea,👩 Anna,01/08/26,8,2026,,,Anna
+Bike repair,Rea,👩 Anna,01/08/26,8,2026,,,Anna
+Cafe/bar/restaurant,Rea,👩 Anna,01/08/26,8,2026,,,Anna
+Clothes,Rea,👩 Anna,01/08/26,8,2026,,,Anna
+Hobby,Rea,👩 Anna,01/08/26,8,2026,,,Anna
+Misc,Rea,👩 Anna,01/08/26,8,2026,,,Anna
+Misc,Rea,👩 Anna,01/08/26,8,2026,,,Anna
+Car Service,Rea,🚗 Car,01/10/26,10,2026,,,Joint
+Car Service,Rea,🚗 Car,01/12/26,12,2026,,,Joint
+Misc,Rea,🚗 Car,01/10/26,10,2026,,,Joint
+Misc,Rea,🚗 Car,01/12/26,12,2026,,,Joint
+Gasoline,Rea,🚗 Car,01/10/26,10,2026,,,Joint
+Gasoline,Rea,🚗 Car,01/12/26,12,2026,,,Joint
+Misc,Rea,🚗 Car,01/10/26,10,2026,,,Joint
+Misc,Rea,🚗 Car,01/12/26,12,2026,,,Joint
+Insurance,Rea,🚗 Car,01/10/26,10,2026,,,Joint
+Insurance,Rea,🚗 Car,01/10/26,10,2026,,,Joint
+Insurance,Rea,🚗 Car,01/12/26,12,2026,,,Joint
+Akasse,Rea,👩 Anna,01/10/26,10,2026,,,Anna
+Car Service,Rea,🚗 Car,01/11/26,11,2026,,,Joint
+Bike repair,Rea,👩 Anna,01/10/26,10,2026,,,Anna
+Misc,Rea,🚗 Car,01/11/26,11,2026,,,Joint
+Cafe/bar/restaurant,Rea,👩 Anna,01/10/26,10,2026,,,Anna
+Gasoline,Rea,🚗 Car,01/11/26,11,2026,,,Joint
+Clothes,Rea,👩 Anna,01/10/26,10,2026,,,Anna
+Misc,Rea,🚗 Car,01/11/26,11,2026,,,Joint
+Insurance,Rea,🚗 Car,01/11/26,11,2026,,,Joint
+Akasse,Rea,👩 Anna,01/12/26,12,2026,,,Anna
+Glasses and contacts,Rea,👩 Anna,01/12/26,12,2026,,,Anna
+Bike repair,Rea,👩 Anna,01/12/26,12,2026,,,Anna
+Cafe/bar/restaurant,Rea,👩 Anna,01/12/26,12,2026,,,Anna
+Clothes,Rea,👩 Anna,01/12/26,12,2026,,,Anna
+Hobby,Rea,👩 Anna,01/12/26,12,2026,,,Anna
+Misc,Rea,👩 Anna,01/12/26,12,2026,,,Anna
+Activities,Rea,🎉 Entertainment,01/01/26,1,2026,-40,,Joint
+Bars & Restaurants,Rea,🎉 Entertainment,01/01/26,1,2026,-1862,,Joint
+Subscriptions,Rea,🎉 Entertainment,01/01/26,1,2026,-141,,Joint
+Activities,Rea,🎉 Entertainment,01/02/26,2,2026,,,Joint
+Bars & Restaurants,Rea,🎉 Entertainment,01/02/26,2,2026,-1641,,Joint
+Subscriptions,Rea,🎉 Entertainment,01/02/26,2,2026,-141,,Joint
+Activities,Rea,🎉 Entertainment,01/03/26,3,2026,0,,Joint
+Bars & Restaurants,Rea,🎉 Entertainment,01/03/26,3,2026,-361,,Joint
+Subscriptions,Rea,🎉 Entertainment,01/03/26,3,2026,-141,Netflix,Joint
+Activities,Rea,🎉 Entertainment,01/04/26,4,2026,,,Joint
+Bars & Restaurants,Rea,🎉 Entertainment,01/04/26,4,2026,,,Joint
+Netflix,Rea,🎉 Entertainment,01/04/26,4,2026,,,Joint
+Port Aventura,Rea,🎉 Entertainment,01/04/26,4,2026,,,Joint
+Sports,Rea,🎉 Entertainment,01/04/26,4,2026,,,Joint
+Subscriptions,Rea,🎉 Entertainment,01/04/26,4,2026,,,Joint
+TV2Play,Rea,🎉 Entertainment,01/04/26,4,2026,,,Joint
+Youtube,Rea,🎉 Entertainment,01/04/26,4,2026,,,Joint
+Activities,Rea,🎉 Entertainment,01/05/26,5,2026,,,Joint
+Bars & Restaurants,Rea,🎉 Entertainment,01/05/26,5,2026,,,Joint
+Sports,Rea,🎉 Entertainment,01/05/26,5,2026,,,Joint
+Subscriptions,Rea,🎉 Entertainment,01/05/26,5,2026,,,Joint
+Bike repair,Rea,👩 Anna,01/06/26,6,2026,,,Anna
+Cafe/bar/restaurant,Rea,👩 Anna,01/06/26,6,2026,,,Anna
+Clothes,Rea,👩 Anna,01/06/26,6,2026,,,Anna
+Hobby,Rea,👩 Anna,01/06/26,6,2026,,,Anna
+Glasses and contacts,Rea,👩 Anna,01/07/26,7,2026,,,Anna
+Phone,Rea,👩 Anna,01/08/26,8,2026,,,Anna
+Presents,Rea,👩 Anna,01/08/26,8,2026,,,Anna
+Dentist,Rea,👩 Anna,01/08/26,8,2026,,,Anna
+Psicologist,Rea,👩 Anna,01/08/26,8,2026,,,Anna
+Rejsekort,Rea,👩 Anna,01/08/26,8,2026,,,Anna
+Travel personal,Rea,👩 Anna,01/08/26,8,2026,,,Anna
+Akasse,Rea,👩 Anna,01/09/26,9,2026,,,Anna
+Glasses and contacts,Rea,👩 Anna,01/09/26,9,2026,,,Anna
+Bike repair,Rea,👩 Anna,01/09/26,9,2026,,,Anna
+Cafe/bar/restaurant,Rea,👩 Anna,01/09/26,9,2026,,,Anna
+Clothes,Rea,👩 Anna,01/09/26,9,2026,,,Anna
+Hobby,Rea,👩 Anna,01/09/26,9,2026,,,Anna
+Dentist,Rea,👩 Anna,01/10/26,10,2026,,,Anna
+Phone,Rea,👩 Anna,01/12/26,12,2026,,,Anna
+Glasses and contacts,Rea,👩 Anna,01/10/26,10,2026,,,Anna
+Dentist,Rea,👩 Anna,01/12/26,12,2026,,,Anna
+Hobby,Rea,👩 Anna,01/10/26,10,2026,,,Anna
+Psicologist,Rea,👩 Anna,01/12/26,12,2026,,,Anna
+Misc,Rea,👩 Anna,01/10/26,10,2026,,,Anna
+Presents,Rea,👩 Anna,01/12/26,12,2026,,,Anna
+Phone,Rea,👩 Anna,01/10/26,10,2026,,,Anna
+Rejsekort,Rea,👩 Anna,01/12/26,12,2026,,,Anna
+Presents,Rea,👩 Anna,01/10/26,10,2026,,,Anna
+Travel personal,Rea,👩 Anna,01/12/26,12,2026,,,Anna
+Psicologist,Rea,👩 Anna,01/10/26,10,2026,,,Anna
+Akasse,Rea,👩 Anna,01/11/26,11,2026,,,Anna
+Rejsekort,Rea,👩 Anna,01/10/26,10,2026,,,Anna
+Bike repair,Rea,👩 Anna,01/11/26,11,2026,,,Anna
+Cafe/bar/restaurant,Rea,👩 Anna,01/11/26,11,2026,,,Anna
+Clothes,Rea,👩 Anna,01/11/26,11,2026,,,Anna
+Dentist,Rea,👩 Anna,01/11/26,11,2026,,,Anna
+Glasses and contacts,Rea,👩 Anna,01/11/26,11,2026,,,Anna
+Hobby,Rea,👩 Anna,01/11/26,11,2026,,,Anna
+Food,Rea,🛒 Groceries,01/01/26,1,2026,-3727,,Joint
+Food,Rea,🛒 Groceries,01/02/26,2,2026,-5688,,Joint
+Food,Rea,🛒 Groceries,01/03/26,3,2026,-5604,,Joint
+Food,Rea,🛒 Groceries,01/04/26,4,2026,,,Joint
+Food,Rea,🛒 Groceries,01/05/26,5,2026,,,Joint
+Misc,Rea,👩 Anna,01/06/26,6,2026,,,Anna
+Bike repair,Rea,👩 Anna,01/07/26,7,2026,,,Anna
+Misc,Rea,👩 Anna,01/09/26,9,2026,,,Anna
+Phone,Rea,👩 Anna,01/09/26,9,2026,,,Anna
+Misc,Rea,👩 Anna,01/11/26,11,2026,,,Anna
+Travel personal,Rea,👩 Anna,01/10/26,10,2026,,,Anna
+Phone,Rea,👩 Anna,01/11/26,11,2026,,,Anna
+Massages,Rea,💊 Health,01/01/26,1,2026,0,,Joint
+Pharmacy,Rea,💊 Health,01/01/26,1,2026,-87,,Joint
+Massages,Rea,💊 Health,01/02/26,2,2026,0,,Joint
+Pharmacy,Rea,💊 Health,01/02/26,2,2026,0,,Joint
+Pharmacy,Rea,💊 Health,01/03/26,3,2026,-57,,Joint
+Massages,Rea,💊 Health,01/04/26,4,2026,,,Joint
+Massages,Rea,💊 Health,01/04/26,4,2026,,,Joint
+Pharmacy,Rea,💊 Health,01/04/26,4,2026,,,Joint
+Massages,Rea,💊 Health,01/05/26,5,2026,,,Joint
+Pharmacy,Rea,💊 Health,01/05/26,5,2026,,,Joint
+Phone,Rea,👩 Anna,01/06/26,6,2026,,,Anna
+Presents,Rea,👩 Anna,01/06/26,6,2026,,,Anna
+Dentist,Rea,👩 Anna,01/06/26,6,2026,,,Anna
+Cafe/bar/restaurant,Rea,👩 Anna,01/07/26,7,2026,,,Anna
+Presents,Rea,👩 Anna,01/09/26,9,2026,,,Anna
+Dentist,Rea,👩 Anna,01/09/26,9,2026,,,Anna
+Psicologist,Rea,👩 Anna,01/09/26,9,2026,,,Anna
+Rejsekort,Rea,👩 Anna,01/09/26,9,2026,,,Anna
+Presents,Rea,👩 Anna,01/11/26,11,2026,,,Anna
+Psicologist,Rea,👩 Anna,01/11/26,11,2026,,,Anna
+Bars & Restaurants,Rea,👨 Carlos,01/10/26,10,2026,,,Personal
+Rejsekort,Rea,👩 Anna,01/11/26,11,2026,,,Anna
+Travel personal,Rea,👩 Anna,01/11/26,11,2026,,,Anna
+Bars & Restaurants,Rea,👨 Carlos,01/12/26,12,2026,,,Personal
+Anna's Salary,Rea,💰 Income,01/01/26,1,2026,32106,,Joint
+Børne og Unge Ydelse Anna,Rea,💰 Income,01/01/26,1,2026,4809,,Joint
+Børne og Unge Ydelse Carlos,Rea,💰 Income,01/01/26,1,2026,4809,,Joint
+Carlos Salary,Rea,💰 Income,01/01/26,1,2026,42165,,Joint
+Anna Skat Return,Rea,💰 Income,01/02/26,2,2026,0,,Joint
+Anna's Salary,Rea,💰 Income,01/02/26,2,2026,32050,,Joint
+Børne og Unge Ydelse Anna,Rea,💰 Income,01/02/26,2,2026,0,,Joint
+Børne og Unge Ydelse Carlos,Rea,💰 Income,01/02/26,2,2026,0,,Joint
+Carlos Salary,Rea,💰 Income,01/02/26,2,2026,37651,,Joint
+Carlos Skat return,Rea,💰 Income,01/02/26,2,2026,0,,Joint
+Misc,Rea,💰 Income,01/02/26,2,2026,0,,Joint
+Anna Skat Return,Rea,💰 Income,01/03/26,3,2026,0,,Joint
+Anna's Salary,Rea,💰 Income,01/03/26,3,2026,49404,,Joint
+Børne og Unge Ydelse Anna,Rea,💰 Income,01/03/26,3,2026,0,,Joint
+Børne og Unge Ydelse Carlos,Rea,💰 Income,01/03/26,3,2026,0,,Joint
+Carlos Salary,Rea,💰 Income,01/03/26,3,2026,57150,,Joint
+Carlos Skat return,Rea,💰 Income,01/03/26,3,2026,0,,Joint
+Anna Skat Return,Rea,💰 Income,01/04/26,4,2026,,,Joint
+Anna's Salary,Rea,💰 Income,01/04/26,4,2026,,,Joint
+Børne og Unge Ydelse Anna,Rea,💰 Income,01/04/26,4,2026,,,Joint
+Børne og Unge Ydelse Carlos,Rea,💰 Income,01/04/26,4,2026,,,Joint
+Carlos Salary,Rea,💰 Income,01/04/26,4,2026,,,Joint
+Carlos Skat return,Rea,💰 Income,01/04/26,4,2026,,,Joint
+Anna Skat Return,Rea,💰 Income,01/05/26,5,2026,,,Joint
+Anna's Salary,Rea,💰 Income,01/05/26,5,2026,,,Joint
+Børne og Unge Ydelse Anna,Rea,💰 Income,01/05/26,5,2026,,,Joint
+Børne og Unge Ydelse Carlos,Rea,💰 Income,01/05/26,5,2026,,,Joint
+Carlos Salary,Rea,💰 Income,01/05/26,5,2026,,,Joint
+Carlos Skat return,Rea,💰 Income,01/05/26,5,2026,,,Joint
+Psicologist,Rea,👩 Anna,01/06/26,6,2026,,,Anna
+Rejsekort,Rea,👩 Anna,01/06/26,6,2026,,,Anna
+Travel personal,Rea,👩 Anna,01/06/26,6,2026,,,Anna
+Clothes,Rea,👨 Carlos,01/06/26,6,2026,,,Personal
+Flight Tickets,Rea,👨 Carlos,01/06/26,6,2026,,,Personal
+Bars & Restaurants,Rea,👨 Carlos,01/06/26,6,2026,,,Personal
+Music Forening,Rea,👨 Carlos,01/06/26,6,2026,,,Personal
+Clothes,Rea,👩 Anna,01/07/26,7,2026,,,Anna
+Hobby,Rea,👩 Anna,01/07/26,7,2026,,,Anna
+Misc,Rea,👩 Anna,01/07/26,7,2026,,,Anna
+Phone,Rea,👩 Anna,01/07/26,7,2026,,,Anna
+Presents,Rea,👩 Anna,01/07/26,7,2026,,,Anna
+Dentist,Rea,👩 Anna,01/07/26,7,2026,,,Anna
+Travel personal,Rea,👩 Anna,01/09/26,9,2026,,,Anna
+Flight Tickets,Rea,👨 Carlos,01/09/26,9,2026,,,Personal
+Travel personal,Rea,👨 Carlos,01/09/26,9,2026,,,Personal
+Clothes,Rea,👨 Carlos,01/08/26,8,2026,,,Personal
+Flight Tickets,Rea,👨 Carlos,01/08/26,8,2026,,,Personal
+Bars & Restaurants,Rea,👨 Carlos,01/08/26,8,2026,,,Personal
+Music Forening,Rea,👨 Carlos,01/08/26,8,2026,,,Personal
+Rejsekort,Rea,👨 Carlos,01/08/26,8,2026,,,Personal
+Subscriptions,Rea,👨 Carlos,01/08/26,8,2026,,,Personal
+Dentist,Rea,👨 Carlos,01/08/26,8,2026,,,Personal
+Psicologist,Rea,👨 Carlos,01/08/26,8,2026,,,Personal
+Presents,Rea,👨 Carlos,01/09/26,9,2026,,,Personal
+Clothes,Rea,👨 Carlos,01/10/26,10,2026,,,Personal
+Bike repair,Rea,👨 Carlos,01/12/26,12,2026,,,Personal
+Dentist,Rea,👨 Carlos,01/10/26,10,2026,,,Personal
+Subscriptions,Rea,👨 Carlos,01/12/26,12,2026,,,Personal
+Music Forening,Rea,👨 Carlos,01/12/26,12,2026,,,Personal
+Rejsekort,Rea,👨 Carlos,01/12/26,12,2026,,,Personal
+Music Forening,Rea,👨 Carlos,01/10/26,10,2026,,,Personal
+Presents,Rea,👨 Carlos,01/12/26,12,2026,,,Personal
+Presents,Rea,👨 Carlos,01/10/26,10,2026,,,Personal
+Dentist,Rea,👨 Carlos,01/12/26,12,2026,,,Personal
+Psicologist,Rea,👨 Carlos,01/10/26,10,2026,,,Personal
+Psicologist,Rea,👨 Carlos,01/12/26,12,2026,,,Personal
+Akasse,Rea,👨 Carlos,01/11/26,11,2026,,,Personal
+Bars & Restaurants,Rea,👨 Carlos,01/11/26,11,2026,,,Personal
+Clothes,Rea,👨 Carlos,01/11/26,11,2026,,,Personal
+Dentist,Rea,👨 Carlos,01/11/26,11,2026,,,Personal
+Misc,Rea,👨 Carlos,01/11/26,11,2026,,,Personal
+Misc,Rea,👨 Carlos,01/11/26,11,2026,,,Personal
+Danmark forsikring,Rea,💊 Health,01/01/26,1,2026,-870,,Joint
+Content Insurance,Rea,🏠 Home,01/01/26,1,2026,-235,,Joint
+House Insurance,Rea,🏠 Home,01/02/26,2,2026,-7816,,Joint
+Danmark forsikring,Rea,💊 Health,01/02/26,2,2026,0,,Joint
+House Insurance,Rea,🏠 Home,01/02/26,2,2026,6711,Refusionopgorelse,Joint
+Content Insurance,Rea,🏠 Home,01/02/26,2,2026,-235,,Joint
+Danmark forsikring,Rea,💊 Health,01/03/26,3,2026,0,,Joint
+Content Insurance,Rea,🏠 Home,01/03/26,3,2026,-242,,Joint
+Danmark forsikring,Rea,💊 Health,01/04/26,4,2026,-435,,Joint
+Content Insurance,Rea,🏠 Home,01/04/26,4,2026,,,Joint
+Danmark forsikring,Rea,💊 Health,01/05/26,5,2026,,,Joint
+Content Insurance,Rea,🏠 Home,01/05/26,5,2026,,,Joint
+Rejsekort,Rea,👨 Carlos,01/06/26,6,2026,,,Personal
+Subscriptions,Rea,👨 Carlos,01/06/26,6,2026,,,Personal
+Psicologist,Rea,👩 Anna,01/07/26,7,2026,,,Anna
+Rejsekort,Rea,👩 Anna,01/07/26,7,2026,,,Anna
+Subscriptions,Rea,👨 Carlos,01/09/26,9,2026,,,Personal
+Bars & Restaurants,Rea,👨 Carlos,01/09/26,9,2026,,,Personal
+Music Forening,Rea,👨 Carlos,01/09/26,9,2026,,,Personal
+Rejsekort,Rea,👨 Carlos,01/09/26,9,2026,,,Personal
+Rejsekort,Rea,👨 Carlos,01/10/26,10,2026,,,Personal
+Music Forening,Rea,👨 Carlos,01/11/26,11,2026,,,Personal
+Subscriptions,Rea,👨 Carlos,01/10/26,10,2026,,,Personal
+Presents,Rea,👨 Carlos,01/11/26,11,2026,,,Personal
+Psicologist,Rea,👨 Carlos,01/11/26,11,2026,,,Personal
+Rejsekort,Rea,👨 Carlos,01/11/26,11,2026,,,Personal
+Activities,Rea,👶 Kids,01/01/26,1,2026,0,,Joint
+Clothes,Rea,👶 Kids,01/01/26,1,2026,-530,,Joint
+Kindergarden,Rea,👶 Kids,01/01/26,1,2026,-6856,,Joint
+Misc,Rea,👶 Kids,01/01/26,1,2026,0,,Joint
+Activities,Rea,👶 Kids,01/02/26,2,2026,0,,Joint
+Clothes,Rea,👶 Kids,01/02/26,2,2026,-223,,Joint
+Kindergarden,Rea,👶 Kids,01/02/26,2,2026,-6856,,Joint
+Activities,Rea,👶 Kids,01/03/26,3,2026,-387,legeland,Joint
+Clothes,Rea,👶 Kids,01/03/26,3,2026,-1204,Helmet & Pijamas,Joint
+Kindergarden,Rea,👶 Kids,01/03/26,3,2026,-6856,,Joint
+Activities,Rea,👶 Kids,01/04/26,4,2026,,,Joint
+Clothes,Rea,👶 Kids,01/04/26,4,2026,,,Joint
+Kindergarden,Rea,👶 Kids,01/04/26,4,2026,,,Joint
+Misc,Rea,👶 Kids,01/04/26,4,2026,,,Joint
+Activities,Rea,👶 Kids,01/05/26,5,2026,,,Joint
+Clothes,Rea,👶 Kids,01/05/26,5,2026,,,Joint
+Kindergarden,Rea,👶 Kids,01/05/26,5,2026,,,Joint
+Misc,Rea,👶 Kids,01/05/26,5,2026,,,Joint
+Presents,Rea,👨 Carlos,01/06/26,6,2026,,,Personal
+Psicologist,Rea,👨 Carlos,01/06/26,6,2026,,,Personal
+Activities,Rea,🎉 Entertainment,01/06/26,6,2026,,,Joint
+Bars & Restaurants,Rea,🎉 Entertainment,01/06/26,6,2026,,,Joint
+Travel personal,Rea,👩 Anna,01/07/26,7,2026,,,Anna
+Clothes,Rea,👨 Carlos,01/07/26,7,2026,,,Personal
+Subscriptions,Rea,👨 Carlos,01/07/26,7,2026,,,Personal
+Bars & Restaurants,Rea,👨 Carlos,01/07/26,7,2026,,,Personal
+Dentist,Rea,👨 Carlos,01/09/26,9,2026,,,Personal
+Psicologist,Rea,👨 Carlos,01/09/26,9,2026,,,Personal
+Activities,Rea,🎉 Entertainment,01/08/26,8,2026,,,Joint
+Bars & Restaurants,Rea,🎉 Entertainment,01/08/26,8,2026,,,Joint
+Sports,Rea,🎉 Entertainment,01/08/26,8,2026,,,Joint
+Subscriptions,Rea,🎉 Entertainment,01/08/26,8,2026,,,Joint
+Activities,Rea,🎉 Entertainment,01/09/26,9,2026,,,Joint
+Activities,Rea,🎉 Entertainment,01/10/26,10,2026,,,Joint
+Subscriptions,Rea,👨 Carlos,01/11/26,11,2026,,,Personal
+Bars & Restaurants,Rea,🎉 Entertainment,01/10/26,10,2026,,,Joint
+Activities,Rea,🎉 Entertainment,01/12/26,12,2026,,,Joint
+Bars & Restaurants,Rea,🎉 Entertainment,01/12/26,12,2026,,,Joint
+Port Aventura,Rea,🎉 Entertainment,01/10/26,10,2026,,,Joint
+Sports,Rea,🎉 Entertainment,01/10/26,10,2026,,,Joint
+Netflix,Rea,🎉 Entertainment,01/12/26,12,2026,,,Joint
+Sports,Rea,🎉 Entertainment,01/12/26,12,2026,,,Joint
+Subscriptions,Rea,🎉 Entertainment,01/12/26,12,2026,,,Joint
+Activities,Rea,🎉 Entertainment,01/11/26,11,2026,,,Joint
+Presents,Rea,🎁 Presents,01/01/26,1,2026,-1118,"avi, yaya and elna",Joint
+Presents,Rea,🎁 Presents,01/02/26,2,2026,-900,Emil's & Laia's birthday,Joint
+Presents,Rea,🎁 Presents,01/03/26,3,2026,-278,Annas mum present,Joint
+Presents,Rea,🎁 Presents,01/04/26,4,2026,,,Joint
+Presents,Rea,🎁 Presents,01/05/26,5,2026,,,Joint
+Sports,Rea,🎉 Entertainment,01/06/26,6,2026,,,Joint
+Music Forening,Rea,👨 Carlos,01/07/26,7,2026,,,Personal
+Bars & Restaurants,Rea,🎉 Entertainment,01/09/26,9,2026,,,Joint
+Netflix,Rea,🎉 Entertainment,01/09/26,9,2026,,,Joint
+Subscriptions,Rea,🎉 Entertainment,01/10/26,10,2026,,,Joint
+Subscriptions,Rea,🎉 Entertainment,01/10/26,10,2026,,,Joint
+Bars & Restaurants,Rea,🎉 Entertainment,01/11/26,11,2026,,,Joint
+Gear,Rea,🛍️ Shopping,01/01/26,1,2026,0,,Joint
+Gear,Rea,🛍️ Shopping,01/02/26,2,2026,0,,Joint
+Gear,Rea,🛍️ Shopping,01/04/26,4,2026,,,Joint
+Gear,Rea,🛍️ Shopping,01/05/26,5,2026,,,Joint
+Subscriptions,Rea,🎉 Entertainment,01/06/26,6,2026,,,Joint
+Rejsekort,Rea,👨 Carlos,01/07/26,7,2026,,,Personal
+Port Aventura,Rea,🎉 Entertainment,01/09/26,9,2026,,,Joint
+Sports,Rea,🎉 Entertainment,01/09/26,9,2026,,,Joint
+Netflix,Rea,🎉 Entertainment,01/11/26,11,2026,,,Joint
+TV2Play,Rea,🎉 Entertainment,01/10/26,10,2026,,,Joint
+Sports,Rea,🎉 Entertainment,01/11/26,11,2026,,,Joint
+Flight Tickets,Rea,✈️ Traveling,01/01/26,1,2026,0,,Joint
+Accomodation,Rea,✈️ Traveling,01/01/26,1,2026,0,,Joint
+Transport,Rea,✈️ Traveling,01/01/26,1,2026,-247,Taxi to Airport,Joint
+Bars & Restaurants,Rea,✈️ Traveling,01/01/26,1,2026,0,,Joint
+Flight Tickets,Rea,✈️ Traveling,01/02/26,2,2026,0,,Joint
+Accomodation,Rea,✈️ Traveling,01/02/26,2,2026,0,,Joint
+Transport,Rea,✈️ Traveling,01/02/26,2,2026,0,,Joint
+Bars & Restaurants,Rea,✈️ Traveling,01/02/26,2,2026,0,,Joint
+Transport,Rea,✈️ Traveling,01/04/26,4,2026,,,Joint
+Flight Tickets,Rea,✈️ Traveling,01/04/26,4,2026,,,Joint
+Accomodation,Rea,✈️ Traveling,01/04/26,4,2026,,,Joint
+Transport,Rea,✈️ Traveling,01/04/26,4,2026,,,Joint
+Bars & Restaurants,Rea,✈️ Traveling,01/04/26,4,2026,,,Joint
+Flight Tickets,Rea,✈️ Traveling,01/05/26,5,2026,,,Joint
+Accomodation,Rea,✈️ Traveling,01/05/26,5,2026,,,Joint
+Transport,Rea,✈️ Traveling,01/05/26,5,2026,,,Joint
+Bars & Restaurants,Rea,✈️ Traveling,01/05/26,5,2026,,,Joint
+Massages,Rea,💊 Health,01/06/26,6,2026,,,Joint
+Pharmacy,Rea,💊 Health,01/06/26,6,2026,,,Joint
+Pharmacy,Rea,💊 Health,01/06/26,6,2026,,,Joint
+Danmark forsikring,Rea,💊 Health,01/06/26,6,2026,,,Joint
+Dentist,Rea,👨 Carlos,01/07/26,7,2026,,,Personal
+Psicologist,Rea,👨 Carlos,01/07/26,7,2026,,,Personal
+Subscriptions,Rea,🎉 Entertainment,01/07/26,7,2026,,,Joint
+Pharmacy,Rea,💊 Health,01/07/26,7,2026,,,Joint
+Danmark forsikring,Rea,💊 Health,01/07/26,7,2026,,,Joint
+Subscriptions,Rea,🎉 Entertainment,01/09/26,9,2026,,,Joint
+TV2Play,Rea,🎉 Entertainment,01/09/26,9,2026,,,Joint
+Youtube,Rea,🎉 Entertainment,01/09/26,9,2026,,,Joint
+Massages,Rea,💊 Health,01/08/26,8,2026,,,Joint
+Pharmacy,Rea,💊 Health,01/08/26,8,2026,,,Joint
+Massages,Rea,💊 Health,01/09/26,9,2026,,,Joint
+Pharmacy,Rea,💊 Health,01/09/26,9,2026,,,Joint
+Danmark forsikring,Rea,💊 Health,01/08/26,8,2026,,,Joint
+Danmark forsikring,Rea,💊 Health,01/09/26,9,2026,,,Joint
+Subscriptions,Rea,🎉 Entertainment,01/11/26,11,2026,,,Joint
+Youtube,Rea,🎉 Entertainment,01/10/26,10,2026,,,Joint
+TV2Play,Rea,🎉 Entertainment,01/11/26,11,2026,,,Joint
+Danmark forsikring,Rea,💊 Health,01/10/26,10,2026,,,Joint
+Youtube,Rea,🎉 Entertainment,01/11/26,11,2026,,,Joint
+Massages,Rea,💊 Health,01/12/26,12,2026,,,Joint
+Pharmacy,Rea,💊 Health,01/12/26,12,2026,,,Joint
+Danmark forsikring,Rea,💊 Health,01/12/26,12,2026,,,Joint
+Danmark forsikring,Rea,💊 Health,01/11/26,11,2026,,,Joint
+Electricity,Rea,🏠 Home,01/01/26,1,2026,-584,,Joint
+Hot Water / Gas,Rea,🏠 Home,01/01/26,1,2026,-885,,Joint
+Water,Rea,🏠 Home,01/01/26,1,2026,-200,,Joint
+Electricity,Rea,🏠 Home,01/02/26,2,2026,-494,,Joint
+Hot Water / Gas,Rea,🏠 Home,01/02/26,2,2026,-885,,Joint
+Water,Rea,🏠 Home,01/02/26,2,2026,-200,,Joint
+Electricity,Rea,🏠 Home,01/03/26,3,2026,-402,,Joint
+Hot Water / Gas,Rea,🏠 Home,01/03/26,3,2026,0,,Joint
+Mortgage,Rea,🏠 Home,01/03/26,3,2026,-30574,,Joint
+Maintanance,Rea,🏠 Home,01/03/26,3,2026,-668,,Joint
+Water,Rea,🏠 Home,01/03/26,3,2026,,,Joint
+Electricity,Rea,🏠 Home,01/04/26,4,2026,,,Joint
+Hot Water / Gas,Rea,🏠 Home,01/04/26,4,2026,,,Joint
+Water,Rea,🏠 Home,01/04/26,4,2026,,,Joint
+Electricity,Rea,🏠 Home,01/05/26,5,2026,,,Joint
+Hot Water / Gas,Rea,🏠 Home,01/05/26,5,2026,,,Joint
+Water,Rea,🏠 Home,01/05/26,5,2026,,,Joint
+Presents,Rea,🎁 Presents,01/06/26,6,2026,,,Joint
+Furniture Misc,Rea,🏠 Home,01/06/26,6,2026,,,Joint
+Gear,Rea,🛍️ Shopping,01/06/26,6,2026,,,Joint
+Presents,Rea,🎁 Presents,01/07/26,7,2026,,,Joint
+Furniture Misc,Rea,🏠 Home,01/07/26,7,2026,,,Joint
+Gear,Rea,🛍️ Shopping,01/07/26,7,2026,,,Joint
+Presents,Rea,🎁 Presents,01/08/26,8,2026,,,Joint
+Presents,Rea,🎁 Presents,01/09/26,9,2026,,,Joint
+Furniture Misc,Rea,🏠 Home,01/08/26,8,2026,,,Joint
+Furniture Misc,Rea,🏠 Home,01/09/26,9,2026,,,Joint
+Gear,Rea,🛍️ Shopping,01/08/26,8,2026,,,Joint
+Gear,Rea,🛍️ Shopping,01/09/26,9,2026,,,Joint
+Massages,Rea,💊 Health,01/10/26,10,2026,,,Joint
+Massages,Rea,💊 Health,01/11/26,11,2026,,,Joint
+Pharmacy,Rea,💊 Health,01/10/26,10,2026,,,Joint
+Pharmacy,Rea,💊 Health,01/11/26,11,2026,,,Joint
+Presents,Rea,🎁 Presents,01/10/26,10,2026,,,Joint
+Presents,Rea,🎁 Presents,01/12/26,12,2026,,,Joint
+Presents,Rea,🎁 Presents,01/11/26,11,2026,,,Joint
+Gear,Rea,🛍️ Shopping,01/10/26,10,2026,,,Joint
+Furniture Misc,Rea,🏠 Home,01/12/26,12,2026,,,Joint
+Gear,Rea,🛍️ Shopping,01/12/26,12,2026,,,Joint
+Furniture Misc,Rea,🏠 Home,01/11/26,11,2026,,,Joint
+Gear,Rea,🛍️ Shopping,01/11/26,11,2026,,,Joint

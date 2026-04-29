@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home Finance Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+</head>
+<body>
+
+<header>
+    <div class="header-content">
+        <div class="logo">
+            <span class="logo-icon">💰</span>
+            <h1>FinanceHome</h1>
+        </div>
+        <nav>
+            <div class="tab-switcher" id="tabSwitcher" style="display:none">
+                <button class="tab-btn active" onclick="switchTab('dashboard')">
+                    📊 Dashboard
+                </button>
+                <button class="tab-btn" onclick="switchTab('insights')">
+                    🔍 Deep Insights
+                </button>
+                <button class="tab-btn" onclick="switchTab('transactions')">
+                    📋 Transactions
+                </button>
+                <button class="tab-btn" onclick="switchTab('highlights')">
+                    💡 Highlights
+                </button>
+            </div>
+            <button class="nav-link nav-btn" onclick="openUploadModal()">⬆ Upload Data</button>
+        </nav>
+    </div>
+</header>
+
+<!-- Upload Modal -->
+<div class="modal-overlay" id="uploadModal" onclick="handleModalClick(event)">
+    <div class="modal">
+        <div class="modal-header">
+            <h2>Upload Financial Data</h2>
+            <button class="modal-close" onclick="closeUploadModal()">✕</button>
+        </div>
+        <p class="upload-desc">Upload your CSV file to load your financial data.</p>
+        <div class="upload-area" id="uploadArea">
+            <div class="upload-icon">📁</div>
+            <p>Drag & drop your CSV file here</p>
+            <p class="upload-sub">or</p>
+            <label for="fileInput" class="btn-upload">Browse Files</label>
+            <input type="file" id="fileInput" accept=".csv" hidden>
+            <p class="upload-format">
+                Expected: Expense, Planned/Rea, Type, Date, Month, Year, Amount, Comments, Account, Excluded
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- Transaction Drawer -->
+<div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="transactionDrawer">
+    <div class="drawer-header">
+        <div>
+            <h3 id="drawerTitle">Transactions</h3>
+            <p class="drawer-subtitle" id="drawerSubtitle"></p>
+        </div>
+        <div class="drawer-header-actions">
+            <button class="btn-tx-download" onclick="downloadCSV()" title="Download full dataset as CSV">⬇ Download CSV</button>
+            <button class="drawer-close" onclick="closeDrawer()">✕ Hide</button>
+        </div>
+    </div>
+    <div class="drawer-filters">
+        <input type="text" id="drawerSearch"
+            placeholder="🔍 Search..." oninput="renderDrawerTable()">
+        <select id="drawerPlannedReal" onchange="renderDrawerTable()">
+            <option value="all">All</option>
+            <option value="Planned">Planned</option>
+            <option value="Real">Real</option>
+        </select>
+    </div>
+    <div class="drawer-table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th onclick="sortDrawer('Date')">Date ↕</th>
+                    <th onclick="sortDrawer('Amount')">Amount ↕</th>
+                    <th>Sub-category</th>
+                    <th>Category</th>
+                    <th>Description</th>
+                    <th>Account</th>
+                    <th>Analytics</th>
+                </tr>
+            </thead>
+            <tbody id="drawerTableBody"></tbody>
+        </table>
+    </div>
+    <div class="drawer-pagination" id="drawerPagination"></div>
+    <div class="drawer-footer">
+        <div class="drawer-summary" id="drawerSummary"></div>
+    </div>
+</div>
+
+<main>
+    <!-- Empty State -->
+    <div id="emptyState" class="empty-state">
+        <div class="empty-icon">📊</div>
+        <h2>No data loaded yet</h2>
+        <p>Upload a CSV file to get started</p>
+        <button class="btn-upload-cta" onclick="openUploadModal()">⬆ Upload Data</button>
+    </div>
+
+    <!-- ═══════════════════════════════════════════
+         DASHBOARD TAB
+    ════════════════════════════════════════════ -->
+    <div id="tabDashboard" class="tab-panel" style="display:none">
+
+        <!-- Global Filters -->
+        <section class="filters-bar">
+            <div class="filter-group">
+                <label>Planned / Real</label>
+                <div class="toggle-group" id="plannedRealToggle">
+                    <button class="toggle-btn active" data-value="all">All</button>
+                    <button class="toggle-btn" data-value="Planned">Planned</button>
+                    <button class="toggle-btn" data-value="Real">Real</button>
+                </div>
+            </div>
+            <div class="filter-group">
+                <label>Year</label>
+                <select id="yearFilter"></select>
+            </div>
+            <div class="filter-group">
+                <label>Currency</label>
+                <div class="toggle-group" id="currencyToggle">
+                    <button class="toggle-btn active" data-value="DKK">DKK</button>
+                    <button class="toggle-btn" data-value="EUR">EUR</button>
+                </div>
+            </div>
+            <div class="filter-group">
+                <button class="btn-reset" onclick="resetFilters()">↺ Reset</button>
+            </div>
+        </section>
+
+        <!-- KPI Cards -->
+        <section class="kpi-section">
+            <div class="kpi-card expenses-card">
+                <div class="kpi-top">
+                    <span class="kpi-icon">📉</span>
+                    <span class="kpi-label">Total Expenses</span>
+                </div>
+                <div class="kpi-real" id="kpiExpensesReal">—</div>
+                <div class="kpi-planned-row">
+                    <span class="kpi-planned-label">Budget:</span>
+                    <span class="kpi-planned-val" id="kpiExpensesPlanned">—</span>
+                    <span class="kpi-badge" id="kpiExpensesBadge"></span>
+                </div>
+            </div>
+            <div class="kpi-card savings-card">
+                <div class="kpi-top">
+                    <span class="kpi-icon">📈</span>
+                    <span class="kpi-label">Total Income</span>
+                </div>
+                <div class="kpi-real" id="kpiSavingsReal">—</div>
+                <div class="kpi-planned-row">
+                    <span class="kpi-planned-label">Budget:</span>
+                    <span class="kpi-planned-val" id="kpiSavingsPlanned">—</span>
+                    <span class="kpi-badge" id="kpiSavingsBadge"></span>
+                </div>
+            </div>
+            <div class="kpi-card net-card">
+                <div class="kpi-top">
+                    <span class="kpi-icon">📊</span>
+                    <span class="kpi-label">Savings</span>
+                </div>
+                <div class="kpi-real" id="kpiNetReal">—</div>
+                <div class="kpi-planned-row">
+                    <span class="kpi-planned-label">Budget:</span>
+                    <span class="kpi-planned-val" id="kpiNetPlanned">—</span>
+                    <span class="kpi-badge" id="kpiNetBadge"></span>
+                </div>
+            </div>
+            <div class="kpi-card transactions-card">
+                <div class="kpi-top">
+                    <span class="kpi-icon">🧾</span>
+                    <span class="kpi-label">Transactions</span>
+                </div>
+                <div class="kpi-real" id="transactionCount">0</div>
+                <div class="kpi-planned-row">
+                    <span class="kpi-planned-label"
+                        style="font-size:0.78rem;color:var(--text-light)">
+                        After active filters
+                    </span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Charts -->
+        <section class="charts-section">
+            <div class="breadcrumbs-row">
+                <div class="breadcrumb" id="breadcrumbExpenses" style="display:none">
+                    <span class="breadcrumb-link"
+                        onclick="resetDrillDown('expenses')">💸 Expenses</span>
+                    <span> › </span>
+                    <span id="breadcrumbExpensesType"></span>
+                </div>
+                <div class="breadcrumb" id="breadcrumbSavings" style="display:none">
+                    <span class="breadcrumb-link"
+                        onclick="resetDrillDown('savings')">💰 Income</span>
+                    <span> › </span>
+                    <span id="breadcrumbSavingsType"></span>
+                </div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="chart-container" id="expensesChartBox">
+                    <div class="chart-header">
+                        <h3 id="expensesChartTitle">💸 Expenses by Type</h3>
+                        <span class="chart-hint">Click to drill down & open transactions</span>
+                    </div>
+                    <canvas id="expensesChart"></canvas>
+                </div>
+                <div class="chart-container" id="savingsChartBox">
+                    <div class="chart-header">
+                        <h3 id="savingsChartTitle">💰 Income by Type</h3>
+                        <span class="chart-hint">Click to drill down & open transactions</span>
+                    </div>
+                    <canvas id="savingsChart"></canvas>
+                </div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="chart-container full-width-cell" id="monthlyChartBox">
+                    <div class="chart-header">
+                        <h3>📅 Monthly Overview</h3>
+                        <div class="toggle-group">
+                            <button class="toggle-btn monthly-toggle-btn active" data-kind="expense"
+                                onclick="toggleMonthlyHeatmapKind('expense')">💸 Expenses</button>
+                            <button class="toggle-btn monthly-toggle-btn" data-kind="saving"
+                                onclick="toggleMonthlyHeatmapKind('saving')">💰 Income</button>
+                        </div>
+                    </div>
+                    <div class="breadcrumb" id="monthlyHeatmapBreadcrumb" style="display:none;margin-bottom:0.5rem">
+                        <span class="breadcrumb-link" onclick="resetMonthlyDrill()">All Categories</span>
+                        <span> › </span>
+                        <span id="monthlyDrillLabel"></span>
+                    </div>
+                    <div id="monthlyHeatmapContainer" class="heatmap-scroll"></div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- ═══════════════════════════════════════════
+         DEEP INSIGHTS TAB
+    ════════════════════════════════════════════ -->
+    <div id="tabInsights" class="tab-panel" style="display:none">
+
+        <!-- Insights Filters -->
+        <section class="filters-bar">
+            <div class="filter-group">
+                <label>Year</label>
+                <select id="insightsYearFilter">
+                    <option value="all">All Years</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Currency</label>
+                <div class="toggle-group" id="insightsCurrencyToggle">
+                    <button class="toggle-btn active" data-value="DKK">DKK</button>
+                    <button class="toggle-btn" data-value="EUR">EUR</button>
+                </div>
+            </div>
+            <div class="filter-group">
+                <button class="btn-reset" onclick="resetInsightsFilters()">↺ Reset</button>
+            </div>
+            <div class="filter-group" style="margin-left:auto">
+                <span class="filter-note">📌 Deep Insights shows Real data only</span>
+            </div>
+        </section>
+
+        <!-- YoY Charts Row -->
+        <div class="charts-grid">
+            <!-- YoY Expenses -->
+            <div class="chart-container" id="yoyExpensesBox">
+                <div class="chart-header">
+                    <h3>📊 Year-over-Year Expenses by Type</h3>
+                    <span class="chart-hint" id="yoyExpensesHint">
+                        Click to drill down & open transactions
+                    </span>
+                </div>
+                <div class="breadcrumb" id="breadcrumbYoyExpenses" style="display:none;margin-bottom:0.5rem">
+                    <span class="breadcrumb-link"
+                        onclick="resetYoyDrill('expenses')">💸 Expenses</span>
+                    <span> › </span>
+                    <span id="breadcrumbYoyExpensesType"></span>
+                </div>
+                <canvas id="yoyExpensesChart"></canvas>
+            </div>
+
+            <!-- YoY Income -->
+            <div class="chart-container" id="yoySavingsBox">
+                <div class="chart-header">
+                    <h3>📊 Year-over-Year Income by Type</h3>
+                    <span class="chart-hint" id="yoySavingsHint">
+                        Click to drill down & open transactions
+                    </span>
+                </div>
+                <div class="breadcrumb" id="breadcrumbYoySavings" style="display:none;margin-bottom:0.5rem">
+                    <span class="breadcrumb-link"
+                        onclick="resetYoyDrill('savings')">💰 Income</span>
+                    <span> › </span>
+                    <span id="breadcrumbYoySavingsType"></span>
+                </div>
+                <canvas id="yoySavingsChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Savings Projection -->
+        <div class="chart-container full-width-cell" id="savingsProjectionBox">
+            <div class="chart-header">
+                <h3 id="savingsProjectionTitle">📈 Cumulative Savings Projection — Month by Month</h3>
+                <span class="chart-hint">Real net savings accumulated over time. Dashed = linear projection from last data point.</span>
+            </div>
+            <canvas id="savingsProjectionChart"></canvas>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════
+         TRANSACTIONS TAB
+    ════════════════════════════════════════════ -->
+    <div id="tabTransactions" class="tab-panel" style="display:none">
+
+        <!-- Toolbar -->
+        <div class="tx-toolbar">
+            <input type="text" id="txSearch" class="tx-search-input"
+                placeholder="🔍 Search description, category, account..."
+                oninput="renderTransactionsTab()">
+            <select id="txAccountFilter" onchange="renderTransactionsTab()">
+                <option value="all">All accounts</option>
+                <option value="personal">Personal</option>
+                <option value="joint">Joint</option>
+            </select>
+            <select id="txExcludeFilter" onchange="renderTransactionsTab()">
+                <option value="all">All transactions</option>
+                <option value="included">Included in analytics</option>
+                <option value="excluded">Excluded from analytics</option>
+            </select>
+            <span id="txRowCount" class="tx-row-count"></span>
+            <button onclick="addTransaction()" class="btn-tx-add">＋ Add Transaction</button>
+            <button onclick="downloadCSV()" class="btn-tx-download">⬇ Download CSV</button>
+        </div>
+
+        <!-- Table -->
+        <div class="tx-table-wrap">
+            <table class="tx-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Account</th>
+                        <th>Description</th>
+                        <th>Amount</th>
+                        <th>Sub-category</th>
+                        <th>Category</th>
+                        <th title="Excluded rows are hidden from all charts and KPIs">Analytics</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="txTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+    <!-- ═══════════════════════════════════════════
+         HIGHLIGHTS TAB
+    ════════════════════════════════════════════ -->
+    <div id="tabHighlights" class="tab-panel" style="display:none">
+        <div id="highlightsContent"></div>
+    </div>
+
+</main>
+
+<datalist id="expenseOptions"></datalist>
+<datalist id="typeOptions"></datalist>
+
+<div id="toast" class="toast"></div>
+
+<footer>
+    <p>FinanceHome &mdash; Personal Finance Tracker</p>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
