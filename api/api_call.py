@@ -25,12 +25,12 @@ _TODAY = datetime.now()
 _EXECUTION_DATE = _TODAY.strftime('%Y%m%d')
 
 # Categorized files cover only current month and the previous month
-_FIRST_OF_THIS_MONTH = _TODAY.replace(day=1)
-_FIRST_OF_LAST_MONTH = (_FIRST_OF_THIS_MONTH - timedelta(days=1)).replace(day=1)
+_FIRST_OF_THIS_MONTH = _TODAY.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+_FIRST_OF_LAST_MONTH = (_FIRST_OF_THIS_MONTH - timedelta(days=1)).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 CATEGORIZED_DATE_FROM = _FIRST_OF_LAST_MONTH
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
-RAW_OUTPUT_FILE = f"{_EXECUTION_DATE}_raw.csv"
+RAW_OUTPUT_FILE = os.path.join(DATA_DIR, f"{_EXECUTION_DATE}_raw.csv")
 SESSION_FILE = "session.json"
 
 logging.basicConfig(level=logging.INFO)
@@ -475,6 +475,7 @@ def fetch_all_transactions():
         'Amount',           # Formatted amount with +/-
         'Comments',         # Clean description
         'Account',          # personal or joint
+        'Excluded',         # Always false by default
     ]
 
     try:
@@ -602,6 +603,7 @@ def fetch_all_transactions():
                                     remittance_info, debtor_name, creditor_name
                                 ),
                                 'Account': account_label,
+                                'Excluded': 'false',
                             }
                             cat_rows_by_month.setdefault(month_key, []).append(cat_row)
 

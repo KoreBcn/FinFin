@@ -42,6 +42,7 @@ let drawerFiltered = [];
 let drawerPage     = 1;
 const DRAWER_PER   = 15;
 let drawerSort     = { key: 'Date', dir: 'asc' };
+let txSort         = { key: 'DateSortKey', dir: 'desc' };
 
 let activeTab = 'dashboard';
 
@@ -224,17 +225,23 @@ function bootstrapApp() {
     document.getElementById('tabTransactions').style.display = 'none';
     document.getElementById('tabHighlights').style.display   = 'none';
     document.getElementById('tabSwitcher').style.display     = 'flex';
-    // Default to Real
+    // Default to Real + current year
+    const currentYear = new Date().getFullYear();
+    globalFilters.plannedReal = 'Real';
+    globalFilters.year = String(currentYear);
     document.querySelectorAll('#plannedRealToggle .toggle-btn').forEach(b => b.classList.remove('active'));
     document.querySelector('#plannedRealToggle .toggle-btn[data-value="Real"]').classList.add('active');
+    const yearSel = document.getElementById('yearFilter');
+    if (yearSel) yearSel.value = String(currentYear);
     applyGlobalFilters();
 }
 
 function populateYearFilter() {
     const years = [...new Set(rawData.map(d => d.Year))].sort();
+    const currentYear = new Date().getFullYear();
     document.getElementById('yearFilter').innerHTML =
         '<option value="all">All Years</option>' +
-        years.map(y => `<option value="${y}">${y}</option>`).join('');
+        years.map(y => `<option value="${y}" ${y === currentYear ? 'selected' : ''}>${y}</option>`).join('');
 }
 
 function populateInsightsYearFilter() {
@@ -554,42 +561,56 @@ function renderSavingsProjection() {
     base.forEach(d => { hasData[`${d.Year}-${d.Month}`] = true; });
 
     // For each year build cumulative array (12 points), null after last data month
+    const statsCards = [];
     const datasets = years.map((yr, i) => {
         let cumulative = 0;
+        // Track which months genuinely had transactions (for avg calculation)
+        const monthsWithData = [];
         const data = months.map(m => {
             if (hasData[`${yr}-${m}`] !== undefined) {
                 cumulative += net[yr][m];
+                monthsWithData.push(m);
                 return iDisp(cumulative, insightsFilters.currency);
             }
             // No transactions in this month — carry forward only if an earlier month had data
             const hasAny = months.slice(0, m - 1).some(pm => hasData[`${yr}-${pm}`]);
             if (hasAny) {
-                // Carry forward
                 return iDisp(cumulative, insightsFilters.currency);
             }
             return null;
         });
 
-        // Find last non-null index for projection
+        // Find last non-null index (for display line extent)
         let lastIdx = -1;
         data.forEach((v, idx) => { if (v !== null) lastIdx = idx; });
 
+        // Last index with REAL transaction data (not carry-forward) — used for projection
+        const lastDataIdx = monthsWithData.length > 0 ? monthsWithData[monthsWithData.length - 1] - 1 : -1;
+
         const c = yearColor(i);
 
-        // Actual line — stops at lastIdx
+        // Actual line — drawn up to lastIdx (includes carry-forward visually)
         const actualData = data.map((v, idx) => idx <= lastIdx ? v : null);
 
-        // Projection line — from lastIdx onwards as linear extrapolation
-        // slope = average monthly net over known months
-        const knownMonths = lastIdx + 1;
-        const endVal = lastIdx >= 0 ? actualData[lastIdx] : 0;
-        const slope  = knownMonths > 1 ? endVal / knownMonths : 0;
+        // slope = average monthly net over months that actually had transactions
+        const endValRaw = monthsWithData.reduce((s, m) => s + net[yr][m], 0);
+        const endVal = lastDataIdx >= 0 ? iDisp(endValRaw, insightsFilters.currency) : 0;
+        const avgMonthly = monthsWithData.length > 0 ? endValRaw / monthsWithData.length : 0;
+
+        // Projection anchor = current month for current year, last real data month for past years
+        const _todayMonth = new Date().getMonth() + 1; // 1-based
+        const _todayYear  = new Date().getFullYear();
+        const projStartIdx = yr === _todayYear ? Math.max(lastDataIdx, _todayMonth - 1) : lastDataIdx;
+        const remainingMonths = yr === _todayYear ? 12 - _todayMonth : 0;
+        const projectedYearEnd = endValRaw + avgMonthly * remainingMonths;
 
         const projData = months.map((_, idx) => {
-            if (idx < lastIdx) return null;
-            if (idx === lastIdx) return endVal; // anchor point
-            return iDisp(endVal + slope * (idx - lastIdx), insightsFilters.currency);
+            if (idx < lastDataIdx) return null;
+            if (idx <= projStartIdx) return endVal; // flat carry to current month
+            return iDisp(endValRaw + avgMonthly * (idx - projStartIdx), insightsFilters.currency);
         });
+
+        statsCards.push({ yr, avgMonthly, endVal, projectedYearEnd, monthsWithData: monthsWithData.length, remainingMonths });
 
         return [
             {
@@ -662,6 +683,35 @@ function renderSavingsProjection() {
             }
         }
     });
+
+    // Render stats cards
+    const statsEl = document.getElementById('savingsProjectionStats');
+    if (statsEl) {
+        statsEl.innerHTML = statsCards.map(s => {
+            const isPositive = s.projectedYearEnd >= 0;
+            const avgFmt  = iFormatMoney(iDisp(s.avgMonthly, insightsFilters.currency), insightsFilters.currency);
+            const curFmt  = iFormatMoney(iDisp(s.endVal, insightsFilters.currency), insightsFilters.currency);
+            const projFmt = iFormatMoney(iDisp(s.projectedYearEnd, insightsFilters.currency), insightsFilters.currency);
+            const projCls = isPositive ? 'proj-stat-positive' : 'proj-stat-negative';
+            return `
+            <div class="proj-stat-card">
+                <div class="proj-stat-year">${s.yr}</div>
+                <div class="proj-stat-row">
+                    <span class="proj-stat-label">Avg / month</span>
+                    <span class="proj-stat-val">${avgFmt}</span>
+                </div>
+                <div class="proj-stat-row">
+                    <span class="proj-stat-label">Savings so far</span>
+                    <span class="proj-stat-val">${curFmt}</span>
+                </div>
+                <div class="proj-stat-row">
+                    <span class="proj-stat-label">Projected year-end</span>
+                    <span class="proj-stat-val ${projCls}">${projFmt}</span>
+                </div>
+                <div class="proj-stat-months">${s.monthsWithData} month${s.monthsWithData !== 1 ? 's' : ''} of data · ${s.remainingMonths} remaining</div>
+            </div>`;
+        }).join('');
+    }
 }
 
 
@@ -1055,6 +1105,19 @@ function renderMonthlyChart() {
         html += `</tr>`;
     });
 
+    // Totals row
+    const monthTotals = months.map(m =>
+        catSet.reduce((s, c) => s + (map[c][m] || 0), 0)
+    );
+    html += `<tr class="heatmap-totals-row"><td class="row-label row-totals-label">Total</td>`;
+    months.forEach((m, mi) => {
+        const val = monthTotals[mi];
+        html += val
+            ? `<td class="heatmap-totals-cell">${iFormatShort(val, globalFilters.currency)}</td>`
+            : `<td class="heatmap-totals-cell">—</td>`;
+    });
+    html += `</tr>`;
+
     html += `</tbody></table>`;
     container.innerHTML = html;
 }
@@ -1383,6 +1446,16 @@ function escHtml(s) {
         .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+function txSortBy(key) {
+    if (txSort.key === key) {
+        txSort.dir = txSort.dir === 'asc' ? 'desc' : 'asc';
+    } else {
+        txSort.key = key;
+        txSort.dir = key === 'DateSortKey' || key === 'Amount' ? 'desc' : 'asc';
+    }
+    renderTransactionsTab();
+}
+
 function updateTxDataLists() {
     const exEl = document.getElementById('expenseOptions');
     const tyEl = document.getElementById('typeOptions');
@@ -1414,12 +1487,23 @@ function renderTransactionsTab() {
             }
             return true;
         })
-        .sort((a, b) => b.r.Date.localeCompare(a.r.Date)); // newest first
+        .sort((a, b) => {
+            let av = a.r[txSort.key], bv = b.r[txSort.key];
+            if (txSort.key === 'Amount') { av = Math.abs(a.r.Amount); bv = Math.abs(b.r.Amount); }
+            if (typeof av === 'string') return txSort.dir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+            return txSort.dir === 'asc' ? av - bv : bv - av;
+        });
 
     updateTxDataLists();
 
     const countEl = document.getElementById('txRowCount');
     if (countEl) countEl.textContent = `${shown.length} of ${rawData.length} rows`;
+
+    // Update sort arrows
+    document.querySelectorAll('.tx-sort-arrow').forEach(el => {
+        const col = el.dataset.col;
+        el.textContent = col === txSort.key ? (txSort.dir === 'asc' ? '↑' : '↓') : '↕';
+    });
 
     tbody.innerHTML = '';
     shown.forEach(({ r, i }) => {
@@ -1552,12 +1636,13 @@ function renderTransactionsTab() {
 function addTransaction() {
     const today = new Date();
     const pad = n => String(n).padStart(2, '0');
-    const dateStr = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+    const dateStr = `${pad(today.getDate())}/${pad(today.getMonth() + 1)}/${String(today.getFullYear()).slice(-2)}`;
     const newRow = {
         Expense:     'Misc',
-        PlannedReal: 'Rea',
+        PlannedReal: 'Real',
         Type:        '🛍️ Shopping',
         Date:        dateStr,
+        DateSortKey: parseDateSortKey(dateStr),
         Month:       today.getMonth() + 1,
         Year:        today.getFullYear(),
         Amount:      0,

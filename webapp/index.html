@@ -24,11 +24,11 @@
                 <button class="tab-btn" onclick="switchTab('insights')">
                     🔍 Deep Insights
                 </button>
-                <button class="tab-btn" onclick="switchTab('transactions')">
-                    📋 Transactions
-                </button>
                 <button class="tab-btn" onclick="switchTab('highlights')">
                     💡 Highlights
+                </button>
+                <button class="tab-btn" onclick="switchTab('transactions')">
+                    📋 Transactions
                 </button>
             </div>
             <button class="nav-link nav-btn" onclick="openUploadModal()">⬆ Upload Data</button>
@@ -319,8 +319,9 @@
         <div class="chart-container full-width-cell" id="savingsProjectionBox">
             <div class="chart-header">
                 <h3 id="savingsProjectionTitle">📈 Cumulative Savings Projection — Month by Month</h3>
-                <span class="chart-hint">Real net savings accumulated over time. Dashed = linear projection from last data point.</span>
+                <span class="chart-hint">Real net savings accumulated over time. Dashed = projection based on average monthly savings.</span>
             </div>
+            <div id="savingsProjectionStats" class="projection-stats-row"></div>
             <canvas id="savingsProjectionChart"></canvas>
         </div>
     </div>
@@ -355,12 +356,12 @@
             <table class="tx-table">
                 <thead>
                     <tr>
-                        <th>Date</th>
-                        <th>Account</th>
-                        <th>Description</th>
-                        <th>Amount</th>
-                        <th>Sub-category</th>
-                        <th>Category</th>
+                        <th class="tx-sortable" onclick="txSortBy('DateSortKey')">Date <span class="tx-sort-arrow" data-col="DateSortKey">↕</span></th>
+                        <th class="tx-sortable" onclick="txSortBy('Account')">Account <span class="tx-sort-arrow" data-col="Account">↕</span></th>
+                        <th class="tx-sortable" onclick="txSortBy('Comments')">Description <span class="tx-sort-arrow" data-col="Comments">↕</span></th>
+                        <th class="tx-sortable" onclick="txSortBy('Amount')">Amount <span class="tx-sort-arrow" data-col="Amount">↕</span></th>
+                        <th class="tx-sortable" onclick="txSortBy('Expense')">Sub-category <span class="tx-sort-arrow" data-col="Expense">↕</span></th>
+                        <th class="tx-sortable" onclick="txSortBy('Type')">Category <span class="tx-sort-arrow" data-col="Type">↕</span></th>
                         <th title="Excluded rows are hidden from all charts and KPIs">Analytics</th>
                         <th></th>
                     </tr>
@@ -387,6 +388,6 @@
     <p>FinanceHome &mdash; Personal Finance Tracker</p>
 </footer>
 
-<script src="app.js"></script>
+<script src="app.js?v=3"></script>
 </body>
 </html>

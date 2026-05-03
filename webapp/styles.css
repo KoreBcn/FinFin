@@ -327,6 +327,46 @@ main {
 }
 .full-width-cell { grid-column: 1 / -1; }
 
+/* ── Savings Projection stats strip ── */
+.projection-stats-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1.2rem;
+}
+.proj-stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.85rem 1.1rem;
+    min-width: 180px;
+    flex: 1;
+}
+.proj-stat-year {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 0.5rem;
+}
+.proj-stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.82rem;
+    margin-bottom: 0.25rem;
+}
+.proj-stat-label { color: var(--text-light); }
+.proj-stat-val   { font-weight: 600; color: var(--text); }
+.proj-stat-positive { color: #10b981; }
+.proj-stat-negative { color: #ef4444; }
+.proj-stat-months {
+    font-size: 0.72rem;
+    color: var(--text-light);
+    margin-top: 0.45rem;
+    border-top: 1px solid var(--border);
+    padding-top: 0.35rem;
+}
+
 /* ── Chart container: NO fixed height, canvas drives height ── */
 .chart-container {
     background: var(--card-bg);
@@ -407,6 +447,23 @@ main {
 .monthly-heatmap thead tr:first-child th:not(.row-header) { font-size: 0.82rem; }
 .monthly-heatmap thead tr:nth-child(2) th { font-size: 0.74rem; font-weight: 500; opacity: 0.85; }
 .monthly-heatmap { min-width: 480px; }
+
+/* Monthly heatmap — totals row */
+.heatmap-totals-row { border-top: 2px solid var(--border); }
+.heatmap-totals-row td.row-totals-label {
+    font-weight: 700;
+    font-size: 0.82rem;
+    color: var(--text-light);
+    cursor: default;
+}
+.heatmap-totals-row td.heatmap-totals-cell {
+    text-align: center;
+    font-weight: 700;
+    font-size: 0.78rem;
+    color: var(--text-light);
+    padding: 0.35rem 0.4rem;
+    background: var(--surface);
+}
 
 /* ===== SHARED ===== */
 .badge {
