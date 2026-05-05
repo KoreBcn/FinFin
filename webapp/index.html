@@ -31,6 +31,7 @@
                     📋 Transactions
                 </button>
             </div>
+            <button class="nav-btn-icon" id="themeToggle" onclick="toggleTheme()" title="Toggle dark mode">🌙</button>
             <button class="nav-link nav-btn" onclick="openUploadModal()">⬆ Upload Data</button>
         </nav>
     </div>
@@ -139,6 +140,15 @@
             <div class="filter-group">
                 <button class="btn-reset" onclick="resetFilters()">↺ Reset</button>
             </div>
+            <div class="filter-group" style="margin-left:auto">
+                <label>View</label>
+                <div class="toggle-group">
+                    <button class="toggle-btn charts-kind-btn active" data-kind="expense"
+                        onclick="toggleChartsKind('expense')">💸 Expenses</button>
+                    <button class="toggle-btn charts-kind-btn" data-kind="saving"
+                        onclick="toggleChartsKind('saving')">💰 Income</button>
+                </div>
+            </div>
         </section>
 
         <!-- KPI Cards -->
@@ -146,105 +156,70 @@
             <div class="kpi-card expenses-card">
                 <div class="kpi-top">
                     <span class="kpi-icon">📉</span>
-                    <span class="kpi-label">Total Expenses</span>
+                    <span class="kpi-label">Expenses</span>
                 </div>
-                <div class="kpi-real" id="kpiExpensesReal">—</div>
+                <div class="kpi-real" id="kpiExpTotal">—</div>
                 <div class="kpi-planned-row">
-                    <span class="kpi-planned-label">Budget:</span>
-                    <span class="kpi-planned-val" id="kpiExpensesPlanned">—</span>
-                    <span class="kpi-badge" id="kpiExpensesBadge"></span>
+                    <span class="kpi-planned-label">Monthly:</span>
+                    <span class="kpi-planned-val" id="kpiExpMonthly">—</span>
                 </div>
             </div>
             <div class="kpi-card savings-card">
                 <div class="kpi-top">
                     <span class="kpi-icon">📈</span>
-                    <span class="kpi-label">Total Income</span>
+                    <span class="kpi-label">Income</span>
                 </div>
-                <div class="kpi-real" id="kpiSavingsReal">—</div>
+                <div class="kpi-real" id="kpiIncTotal">—</div>
                 <div class="kpi-planned-row">
-                    <span class="kpi-planned-label">Budget:</span>
-                    <span class="kpi-planned-val" id="kpiSavingsPlanned">—</span>
-                    <span class="kpi-badge" id="kpiSavingsBadge"></span>
+                    <span class="kpi-planned-label">Monthly:</span>
+                    <span class="kpi-planned-val" id="kpiIncMonthly">—</span>
                 </div>
             </div>
             <div class="kpi-card net-card">
                 <div class="kpi-top">
-                    <span class="kpi-icon">📊</span>
+                    <span class="kpi-icon">💰</span>
                     <span class="kpi-label">Savings</span>
                 </div>
-                <div class="kpi-real" id="kpiNetReal">—</div>
+                <div class="kpi-real" id="kpiSavTotal">—</div>
                 <div class="kpi-planned-row">
-                    <span class="kpi-planned-label">Budget:</span>
-                    <span class="kpi-planned-val" id="kpiNetPlanned">—</span>
-                    <span class="kpi-badge" id="kpiNetBadge"></span>
-                </div>
-            </div>
-            <div class="kpi-card transactions-card">
-                <div class="kpi-top">
-                    <span class="kpi-icon">🧾</span>
-                    <span class="kpi-label">Transactions</span>
-                </div>
-                <div class="kpi-real" id="transactionCount">0</div>
-                <div class="kpi-planned-row">
-                    <span class="kpi-planned-label"
-                        style="font-size:0.78rem;color:var(--text-light)">
-                        After active filters
-                    </span>
+                    <span class="kpi-planned-label">Monthly:</span>
+                    <span class="kpi-planned-val" id="kpiSavMonthly">—</span>
                 </div>
             </div>
         </section>
 
         <!-- Charts -->
         <section class="charts-section">
-            <div class="breadcrumbs-row">
-                <div class="breadcrumb" id="breadcrumbExpenses" style="display:none">
-                    <span class="breadcrumb-link"
-                        onclick="resetDrillDown('expenses')">💸 Expenses</span>
-                    <span> › </span>
-                    <span id="breadcrumbExpensesType"></span>
-                </div>
-                <div class="breadcrumb" id="breadcrumbSavings" style="display:none">
-                    <span class="breadcrumb-link"
-                        onclick="resetDrillDown('savings')">💰 Income</span>
-                    <span> › </span>
-                    <span id="breadcrumbSavingsType"></span>
-                </div>
-            </div>
-
-            <div class="charts-grid">
-                <div class="chart-container" id="expensesChartBox">
-                    <div class="chart-header">
-                        <h3 id="expensesChartTitle">💸 Expenses by Type</h3>
-                        <span class="chart-hint">Click to drill down & open transactions</span>
+            <div class="charts-panel">
+                <div class="charts-grid-pie-heatmap">
+                    <div class="chart-container" id="monthlyChartBox">
+                        <div class="chart-header">
+                            <h3>📅 Monthly Overview</h3>
+                        </div>
+                        <div class="breadcrumb" id="monthlyHeatmapBreadcrumb" style="display:none;margin-bottom:0.5rem">
+                            <span class="breadcrumb-link" onclick="resetMonthlyDrill()">All Categories</span>
+                            <span> › </span>
+                            <span id="monthlyDrillLabel"></span>
+                        </div>
+                        <div id="monthlyHeatmapContainer" class="heatmap-scroll"></div>
                     </div>
-                    <canvas id="expensesChart"></canvas>
-                </div>
-                <div class="chart-container" id="savingsChartBox">
-                    <div class="chart-header">
-                        <h3 id="savingsChartTitle">💰 Income by Type</h3>
-                        <span class="chart-hint">Click to drill down & open transactions</span>
-                    </div>
-                    <canvas id="savingsChart"></canvas>
-                </div>
-            </div>
 
-            <div class="charts-grid">
-                <div class="chart-container full-width-cell" id="monthlyChartBox">
-                    <div class="chart-header">
-                        <h3>📅 Monthly Overview</h3>
-                        <div class="toggle-group">
-                            <button class="toggle-btn monthly-toggle-btn active" data-kind="expense"
-                                onclick="toggleMonthlyHeatmapKind('expense')">💸 Expenses</button>
-                            <button class="toggle-btn monthly-toggle-btn" data-kind="saving"
-                                onclick="toggleMonthlyHeatmapKind('saving')">💰 Income</button>
+                    <div class="chart-container" id="pieChartBox">
+                        <div class="chart-header">
+                            <div>
+                                <h3 id="pieChartTitle">💸 Expenses by Type</h3>
+                                <span class="chart-hint">Click a slice to drill down &amp; open transactions</span>
+                            </div>
+                        </div>
+                        <div class="breadcrumb" id="breadcrumbPie" style="display:none;margin-bottom:0.5rem">
+                            <span class="breadcrumb-link" onclick="resetPieDrill()">← Back</span>
+                            <span> › </span>
+                            <span id="breadcrumbPieType"></span>
+                        </div>
+                        <div class="pie-canvas-wrap">
+                            <canvas id="pieChart"></canvas>
                         </div>
                     </div>
-                    <div class="breadcrumb" id="monthlyHeatmapBreadcrumb" style="display:none;margin-bottom:0.5rem">
-                        <span class="breadcrumb-link" onclick="resetMonthlyDrill()">All Categories</span>
-                        <span> › </span>
-                        <span id="monthlyDrillLabel"></span>
-                    </div>
-                    <div id="monthlyHeatmapContainer" class="heatmap-scroll"></div>
                 </div>
             </div>
         </section>
@@ -340,6 +315,8 @@
                 <option value="all">All accounts</option>
                 <option value="personal">Personal</option>
                 <option value="joint">Joint</option>
+                <option value="anna">Anna</option>
+                <option value="carlos">Carlos</option>
             </select>
             <select id="txExcludeFilter" onchange="renderTransactionsTab()">
                 <option value="all">All transactions</option>

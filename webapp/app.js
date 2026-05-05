@@ -15,6 +15,9 @@ let insightsFilters = { year: 'all', currency: 'DKK' };
 let chartFilters = { monthKey: null, typeKey: null, typeLevel: null, kind: null };
 let drillDown    = { expenses: null, savings: null };
 
+// Pie chart toggle state
+let pieKind = 'expense';
+
 // Insights cross-chart filters
 let yoyFilter    = { typeKey: null, typeLevel: null, kind: null };
 let yoyDrill     = { expenses: null, savings: null };
@@ -187,6 +190,13 @@ function parseCSV(file) {
                 }
 
                 const dateRaw = norm['Date'] || '';
+
+                // Auto-assign account from Type when Type is Anna or Carlos
+                let account = norm['Account'] || '';
+                const typeLower = typeField.toLowerCase();
+                if (typeLower === 'anna')   account = 'anna';
+                else if (typeLower === 'carlos') account = 'carlos';
+
                 parsed.push({
                     Expense:      expenseField,
                     PlannedReal:  pr.toLowerCase().startsWith('plan') ? 'Planned' : 'Real',
@@ -197,7 +207,7 @@ function parseCSV(file) {
                     Year:         parseInt(norm['Year'])  || 0,
                     Amount:       amount,
                     Comments:     norm['Comments'] || '',
-                    Account:      norm['Account']  || '',
+                    Account:      account,
                     kind:         amount < 0 ? 'expense' : 'saving',
                     excluded,
                 });
@@ -300,8 +310,7 @@ function resetFilters() {
 
 function renderDashboard() {
     updateStats();
-    renderExpensesChart();
-    renderSavingsChart();
+    renderPieChart();
     renderMonthlyChart();
 }
 
@@ -801,24 +810,24 @@ function formatMoney(v) {
 //  KPI
 // =====================================================
 function updateStats() {
-    const data    = getChartData();
-    const realExp = sumRows(data, 'expense', 'Real',    true);
-    const planExp = sumRows(data, 'expense', 'Planned', true);
-    const realSav = sumRows(data, 'saving',  'Real',    false);
-    const planSav = sumRows(data, 'saving',  'Planned', false);
+    const data = filteredData;
 
-    document.getElementById('kpiExpensesReal').textContent    = formatMoney(toDisplay(realExp));
-    document.getElementById('kpiExpensesPlanned').textContent = formatMoney(toDisplay(planExp));
-    setKpiBadge('kpiExpensesBadge', realExp, planExp, 'expense');
-    document.getElementById('kpiSavingsReal').textContent     = formatMoney(toDisplay(realSav));
-    document.getElementById('kpiSavingsPlanned').textContent  = formatMoney(toDisplay(planSav));
-    setKpiBadge('kpiSavingsBadge', realSav, planSav, 'saving');
-    const realNet = realSav - realExp;
-    const planNet = planSav - planExp;
-    document.getElementById('kpiNetReal').textContent         = formatMoney(toDisplay(realNet));
-    document.getElementById('kpiNetPlanned').textContent      = formatMoney(toDisplay(planNet));
-    setKpiBadge('kpiNetBadge', realNet, planNet, 'net');
-    document.getElementById('transactionCount').textContent   = data.length;
+    const totalExp = data.filter(d => d.kind === 'expense')
+        .reduce((s, d) => s + Math.abs(d.Amount), 0);
+    const totalInc = data.filter(d => d.kind === 'saving')
+        .reduce((s, d) => s + d.Amount, 0);
+    const totalSav = totalInc - totalExp;
+
+    const expMonths = new Set(data.filter(d => d.kind === 'expense').map(d => `${d.Year}-${d.Month}`)).size || 1;
+    const incMonths = new Set(data.filter(d => d.kind === 'saving').map(d => `${d.Year}-${d.Month}`)).size || 1;
+    const allMonths = new Set(data.map(d => `${d.Year}-${d.Month}`)).size || 1;
+
+    document.getElementById('kpiExpTotal').textContent   = formatMoney(toDisplay(totalExp));
+    document.getElementById('kpiExpMonthly').textContent = formatMoney(toDisplay(totalExp / expMonths));
+    document.getElementById('kpiIncTotal').textContent   = formatMoney(toDisplay(totalInc));
+    document.getElementById('kpiIncMonthly').textContent = formatMoney(toDisplay(totalInc / incMonths));
+    document.getElementById('kpiSavTotal').textContent   = formatMoney(toDisplay(totalSav));
+    document.getElementById('kpiSavMonthly').textContent = formatMoney(toDisplay(totalSav / allMonths));
 }
 
 function sumRows(data, kind, pr, useAbs) {
@@ -879,110 +888,190 @@ function toggleTypeFilter(label, kind, level) {
 }
 
 
-// =====================================================
-//  DASHBOARD CHARTS
-// =====================================================
-function renderExpensesChart() {
-    const canvas = document.getElementById('expensesChart');
-    if (charts.expenses) { charts.expenses.destroy(); charts.expenses = null; }
-    const base = getChartData(false, true).filter(d => d.kind === 'expense');
-    if (!base.length) return;
+// Distinct colour palette for pie slices (12 colours, cycles for more)
+const PIE_PALETTE = [
+    '#ef4444','#f59e0b','#10b981','#3b82f6','#8b5cf6','#ec4899',
+    '#14b8a6','#f97316','#84cc16','#06b6d4','#a855f7','#eab308',
+];
 
-    let labels, plannedVals, realVals, isDrilled, title;
-    if (drillDown.expenses) {
-        const rows = base.filter(d => d.Type === drillDown.expenses);
-        ({ labels, plannedVals, realVals } = buildGrouped(rows, 'Expense'));
-        title = `💸 Expenses › ${drillDown.expenses}`; isDrilled = true;
-        document.getElementById('breadcrumbExpenses').style.display   = 'block';
-        document.getElementById('breadcrumbExpensesType').textContent = drillDown.expenses;
-    } else {
-        ({ labels, plannedVals, realVals } = buildGrouped(base, 'Type'));
-        title = '💸 Expenses by Type'; isDrilled = false;
-        document.getElementById('breadcrumbExpenses').style.display = 'none';
+// =====================================================
+//  DASHBOARD PIE CHART
+// =====================================================
+function toggleChartsKind(kind) {
+    pieKind            = kind;
+    monthlyHeatmapKind = kind;
+    monthlyDrillType   = null;
+    drillDown          = { expenses: null, savings: null };
+    chartFilters.typeKey = null; chartFilters.kind = null; chartFilters.typeLevel = null;
+    document.querySelectorAll('.charts-kind-btn').forEach(b =>
+        b.classList.toggle('active', b.dataset.kind === kind)
+    );
+
+    // Auto-drill into subcategories when switching to Income if there is only one Type
+    if (kind === 'saving') {
+        const incomeBase  = getChartData(false, true).filter(d => d.kind === 'saving');
+        const incomeTypes = [...new Set(incomeBase.map(d => d.Type))];
+        if (incomeTypes.length === 1) {
+            drillDown.savings  = incomeTypes[0];
+            monthlyDrillType   = incomeTypes[0];
+        }
     }
-    sortByTotal(labels, plannedVals, realVals);
-    document.getElementById('expensesChartTitle').textContent = title;
-    document.getElementById('expensesChartBox').classList.toggle(
-        'filtered', !!chartFilters.typeKey && chartFilters.kind === 'expense');
-    const vis = legendVisible.expenses;
 
-    charts.expenses = new Chart(canvas, {
-        type: 'bar',
-        data: {
-            labels,
-            datasets: [
-                { label:'Planned', data: plannedVals.map(v => toDisplay(v)),
-                  backgroundColor:'rgba(239,68,68,0.35)', borderColor:'#ef4444',
-                  borderWidth:2, borderRadius:4, hidden:!vis.Planned },
-                { label:'Real',    data: realVals.map(v => toDisplay(v)),
-                  backgroundColor:'rgba(239,68,68,0.82)', borderColor:'#ef4444',
-                  borderWidth:2, borderRadius:4, hidden:!vis.Real }
-            ]
-        },
-        options: makeBarOptions(idx => {
-            const clicked = labels[idx];
-            if (!isDrilled) {
-                drillDown.expenses = clicked;
-                toggleTypeFilter(clicked, 'expense', 'Type');
-                openDrawerForType(clicked, 'expense', 'Type', base);
-            } else {
-                toggleTypeFilter(clicked, 'expense', 'Expense');
-                openDrawerForType(clicked, 'expense', 'Expense',
-                    base.filter(d => d.Type === drillDown.expenses));
-            }
-        }, (lbl, hidden) => { legendVisible.expenses[lbl] = !hidden; }, true)
-    });
+    renderPieChart();
+    renderMonthlyChart();
 }
 
-function renderSavingsChart() {
-    const canvas = document.getElementById('savingsChart');
-    if (charts.savings) { charts.savings.destroy(); charts.savings = null; }
-    const base = getChartData(false, true).filter(d => d.kind === 'saving');
-    if (!base.length) return;
+// Keep individual functions as thin wrappers for back-compat
+function togglePieKind(kind)            { toggleChartsKind(kind); }
+function toggleMonthlyHeatmapKind(kind) { toggleChartsKind(kind); }
 
-    let labels, plannedVals, realVals, isDrilled, title;
-    if (drillDown.savings) {
-        const rows = base.filter(d => d.Type === drillDown.savings);
-        ({ labels, plannedVals, realVals } = buildGrouped(rows, 'Expense'));
-        title = `💰 Income › ${drillDown.savings}`; isDrilled = true;
-        document.getElementById('breadcrumbSavings').style.display   = 'block';
-        document.getElementById('breadcrumbSavingsType').textContent = drillDown.savings;
+function resetPieDrill() {
+    const which = pieKind === 'expense' ? 'expenses' : 'savings';
+    resetDrillDown(which);
+}
+
+function renderPieChart() {
+    const canvas = document.getElementById('pieChart');
+    if (charts.pie) { charts.pie.destroy(); charts.pie = null; }
+    const isExp    = pieKind === 'expense';
+    const base     = getChartData(false, true).filter(d => d.kind === pieKind);
+    const drillKey = isExp ? 'expenses' : 'savings';
+    const drilled  = drillDown[drillKey];
+
+    let groupRows, groupField, title, isDrilled;
+    if (drilled) {
+        groupRows  = base.filter(d => d.Type === drilled);
+        groupField = 'Expense';
+        title      = isExp ? `💸 Expenses › ${drilled}` : `💰 Income › ${drilled}`;
+        isDrilled  = true;
+        document.getElementById('breadcrumbPie').style.display   = 'flex';
+        document.getElementById('breadcrumbPieType').textContent = drilled;
     } else {
-        ({ labels, plannedVals, realVals } = buildGrouped(base, 'Type'));
-        title = '💰 Income by Type'; isDrilled = false;
-        document.getElementById('breadcrumbSavings').style.display = 'none';
+        groupRows  = base;
+        groupField = 'Type';
+        title      = isExp ? '💸 Expenses by Type' : '💰 Income by Type';
+        isDrilled  = false;
+        document.getElementById('breadcrumbPie').style.display = 'none';
     }
-    sortByTotal(labels, plannedVals, realVals);
-    document.getElementById('savingsChartTitle').textContent = title;
-    document.getElementById('savingsChartBox').classList.toggle(
-        'filtered', !!chartFilters.typeKey && chartFilters.kind === 'saving');
-    const vis = legendVisible.savings;
+    document.getElementById('pieChartTitle').textContent = title;
+    document.getElementById('pieChartBox').classList.toggle(
+        'filtered', !!chartFilters.typeKey && chartFilters.kind === pieKind);
 
-    charts.savings = new Chart(canvas, {
-        type: 'bar',
+    // Aggregate by group field
+    const map = {};
+    groupRows.forEach(d => {
+        const k = d[groupField];
+        map[k] = (map[k] || 0) + Math.abs(d.Amount);
+    });
+    const entries = Object.entries(map).sort((a, b) => b[1] - a[1]);
+    const labels  = entries.map(e => e[0]);
+    const values  = entries.map(e => toDisplay(e[1]));
+
+    if (!labels.length) return;
+
+    const bgColors     = labels.map((_, i) => PIE_PALETTE[i % PIE_PALETTE.length] + 'cc');
+    const borderColors = labels.map((_, i) => PIE_PALETTE[i % PIE_PALETTE.length]);
+
+    const pieSliceLabelPlugin = {
+        id: 'pieSliceLabel',
+        afterDraw(chart) {
+            const { ctx, data } = chart;
+            const ds    = data.datasets[0];
+            const total = ds.data.reduce((a, b) => a + b, 0);
+            const meta  = chart.getDatasetMeta(0);
+            ctx.save();
+            meta.data.forEach((arc, i) => {
+                const val = ds.data[i];
+                if (!val) return;
+                const pct      = (val / total) * 100;
+                const midAngle = (arc.startAngle + arc.endAngle) / 2;
+                const cx = arc.x, cy = arc.y;
+                const outerR = arc.outerRadius, innerR = arc.innerRadius;
+
+                // ── % text inside the slice ──────────────────
+                if (pct >= 3.5) {
+                    const r  = (outerR + innerR) / 2;
+                    const ix = cx + Math.cos(midAngle) * r;
+                    const iy = cy + Math.sin(midAngle) * r;
+                    ctx.font         = 'bold 11px system-ui,sans-serif';
+                    ctx.fillStyle    = '#ffffff';
+                    ctx.textAlign    = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(`${pct.toFixed(1)}%`, ix, iy);
+                }
+
+                // ── label outside with leader line ───────────
+                if (pct >= 2) {
+                    const lx1 = cx + Math.cos(midAngle) * (outerR + 6);
+                    const ly1 = cy + Math.sin(midAngle) * (outerR + 6);
+                    const lx2 = cx + Math.cos(midAngle) * (outerR + 20);
+                    const ly2 = cy + Math.sin(midAngle) * (outerR + 20);
+                    const isRight = Math.cos(midAngle) >= 0;
+                    const textX = lx2 + (isRight ? 5 : -5);
+
+                    ctx.strokeStyle = ds.borderColor[i];
+                    ctx.lineWidth   = 1.2;
+                    ctx.beginPath();
+                    ctx.moveTo(lx1, ly1);
+                    ctx.lineTo(lx2, ly2);
+                    ctx.stroke();
+
+                    ctx.font         = '11px system-ui,sans-serif';
+                    ctx.fillStyle    = '#334155';
+                    ctx.textAlign    = isRight ? 'left' : 'right';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(data.labels[i], textX, ly2);
+                }
+            });
+            ctx.restore();
+        }
+    };
+
+    charts.pie = new Chart(canvas, {
+        type: 'doughnut',
         data: {
             labels,
-            datasets: [
-                { label:'Planned', data: plannedVals.map(v => toDisplay(v)),
-                  backgroundColor:'rgba(16,185,129,0.35)', borderColor:'#10b981',
-                  borderWidth:2, borderRadius:4, hidden:!vis.Planned },
-                { label:'Real',    data: realVals.map(v => toDisplay(v)),
-                  backgroundColor:'rgba(16,185,129,0.82)', borderColor:'#10b981',
-                  borderWidth:2, borderRadius:4, hidden:!vis.Real }
-            ]
+            datasets: [{
+                data: values,
+                backgroundColor: bgColors,
+                borderColor: borderColors,
+                borderWidth: 2,
+                hoverOffset: 10,
+            }]
         },
-        options: makeBarOptions(idx => {
-            const clicked = labels[idx];
-            if (!isDrilled) {
-                drillDown.savings = clicked;
-                toggleTypeFilter(clicked, 'saving', 'Type');
-                openDrawerForType(clicked, 'saving', 'Type', base);
-            } else {
-                toggleTypeFilter(clicked, 'saving', 'Expense');
-                openDrawerForType(clicked, 'saving', 'Expense',
-                    base.filter(d => d.Type === drillDown.savings));
+        plugins: [pieSliceLabelPlugin],
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '38%',
+            layout: { padding: { left: 90, right: 90, top: 30, bottom: 30 } },
+            onClick(evt, elements) {
+                if (!elements.length) return;
+                const clicked = labels[elements[0].index];
+                if (!isDrilled) {
+                    drillDown[drillKey] = clicked;
+                    toggleTypeFilter(clicked, pieKind, 'Type');
+                    openDrawerForType(clicked, pieKind, 'Type', base);
+                } else {
+                    toggleTypeFilter(clicked, pieKind, 'Expense');
+                    openDrawerForType(clicked, pieKind, 'Expense',
+                        base.filter(d => d.Type === drilled));
+                }
+            },
+            onHover(e) { e.native.target.style.cursor = 'pointer'; },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label(ctx) {
+                            const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                            const pct   = total > 0 ? ((ctx.parsed / total) * 100).toFixed(1) : '0';
+                            return ` ${ctx.label}: ${formatMoney(ctx.parsed)} (${pct}%)`;
+                        }
+                    }
+                }
             }
-        }, (lbl, hidden) => { legendVisible.savings[lbl] = !hidden; }, true)
+        }
     });
 }
 
@@ -993,15 +1082,6 @@ function resetDrillDown(which) {
     chartFilters.typeLevel = null;
     closeDrawer();
     renderDashboard();
-}
-
-function toggleMonthlyHeatmapKind(kind) {
-    monthlyHeatmapKind = kind;
-    monthlyDrillType   = null;
-    document.querySelectorAll('.monthly-toggle-btn').forEach(b =>
-        b.classList.toggle('active', b.dataset.kind === kind)
-    );
-    renderMonthlyChart();
 }
 
 function drillMonthlyHeatmap(catIdx) {
@@ -1335,11 +1415,22 @@ function renderDrawerTable() {
 
             // ── Account ───────────────────────────────
             const tdAcct = document.createElement('td');
-            const acctBadge = document.createElement('span');
             const acct = (row.Account || 'personal').toLowerCase();
-            acctBadge.className = `tx-acct-badge tx-acct-${acct}`;
-            acctBadge.textContent = acct === 'joint' ? 'Joint' : 'Personal';
-            tdAcct.appendChild(acctBadge);
+            const acctSel = document.createElement('select');
+            acctSel.className = `tx-acct-select tx-acct-${acct}`;
+            const acctOpts = { personal: 'Personal', joint: 'Joint', anna: 'Anna', carlos: 'Carlos' };
+            Object.entries(acctOpts).forEach(([val, label]) => {
+                const opt = document.createElement('option');
+                opt.value = val;
+                opt.textContent = label;
+                if (val === acct) opt.selected = true;
+                acctSel.appendChild(opt);
+            });
+            acctSel.addEventListener('change', () => {
+                row.Account = acctSel.value;
+                acctSel.className = `tx-acct-select tx-acct-${acctSel.value}`;
+            });
+            tdAcct.appendChild(acctSel);
             tr.appendChild(tdAcct);
 
             // ── Analytics toggle ──────────────────────
@@ -1517,11 +1608,16 @@ function renderTransactionsTab() {
         const tr = document.createElement('tr');
         if (r.excluded) tr.classList.add('tx-row-dimmed');
 
+        const acctOpts = ['personal','joint','anna','carlos'];
+        const acctNames = { personal: 'Personal', joint: 'Joint', anna: 'Anna', carlos: 'Carlos' };
+        const acctOptsHtml = acctOpts.map(v =>
+            `<option value="${v}" ${acctVal === v ? 'selected' : ''}>${acctNames[v]}</option>`
+        ).join('');
+
         tr.innerHTML = `
             <td><input class="tx-date-input" value="${escHtml(r.Date)}" data-idx="${i}" placeholder="DD/MM/YY"></td>
             <td><select class="tx-acct-select tx-acct-${acctVal}" data-idx="${i}">
-                <option value="personal" ${acctVal === 'personal' ? 'selected' : ''}>Personal</option>
-                <option value="joint" ${acctVal === 'joint' ? 'selected' : ''}>Joint</option>
+                ${acctOptsHtml}
             </select></td>
             <td><input class="tx-comment-input" value="${escHtml(r.Comments)}" data-idx="${i}" placeholder="Add comment…" title="${escHtml(r.Comments)}"></td>
             <td class="${amtCls} tx-amount"><input class="tx-amount-input ${amtCls}" type="number" step="0.01" value="${r.Amount}" data-idx="${i}"></td>
@@ -1947,3 +2043,27 @@ function renderHighlightsTab() {
         `<div class="hl-two-col">${topCatsHtml}${personHtml}</div>` +
         factsHtml;
 }
+
+
+// =====================================================
+//  DARK MODE
+// =====================================================
+function toggleTheme() {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const next   = isDark ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    document.getElementById('themeToggle').textContent = next === 'dark' ? '☀️' : '🌙';
+    localStorage.setItem('finTheme', next);
+}
+
+// Apply saved theme on load
+(function () {
+    const saved = localStorage.getItem('finTheme');
+    if (saved === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        document.addEventListener('DOMContentLoaded', () => {
+            const btn = document.getElementById('themeToggle');
+            if (btn) btn.textContent = '☀️';
+        });
+    }
+})();
