@@ -879,6 +879,73 @@ table.tx-table tbody td {
     color: #991b1b;
 }
 .tx-excluded:hover { background: #d1fae5; color: #065f46; }
+
+/* ===== TX ACTIONS ===== */
+.tx-actions-cell { white-space: nowrap; }
+.tx-action-btn {
+    padding: 0.22rem 0.6rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid transparent;
+    font-size: 0.72rem; font-weight: 600;
+    cursor: pointer; white-space: nowrap;
+    transition: all 0.18s; margin-right: 0.25rem;
+}
+.tx-save-btn   { background: #dbeafe; color: #1e40af; border-color: #bfdbfe; }
+.tx-save-btn:hover { background: #1e40af; color: white; }
+.tx-delete-btn { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+.tx-delete-btn:hover { background: #991b1b; color: white; }
+[data-theme="dark"] .tx-save-btn   { background: rgba(37,99,235,0.2); color: #93c5fd; border-color: rgba(37,99,235,0.3); }
+[data-theme="dark"] .tx-save-btn:hover { background: #2563eb; color: white; }
+[data-theme="dark"] .tx-delete-btn { background: rgba(153,27,27,0.2); color: #fca5a5; border-color: rgba(239,68,68,0.3); }
+[data-theme="dark"] .tx-delete-btn:hover { background: #991b1b; color: white; }
+
+/* ===== ADD/EDIT TRANSACTION FORM ===== */
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem 1.25rem;
+    margin-bottom: 1.25rem;
+}
+.form-group { display: flex; flex-direction: column; gap: 0.35rem; }
+.form-group label { font-size: 0.8rem; font-weight: 600; color: var(--text-light); }
+.form-group input,
+.form-group select {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem; color: var(--text);
+    background: var(--bg, white);
+    transition: border-color 0.2s;
+}
+.form-group input:focus,
+.form-group select:focus { outline: none; border-color: var(--primary); }
+.form-group-full { grid-column: 1 / -1; }
+.modal-actions {
+    display: flex; justify-content: flex-end; gap: 0.75rem;
+    padding-top: 0.5rem; border-top: 1px solid var(--border);
+}
+.btn-primary {
+    background: var(--primary); color: white;
+    border: none; padding: 0.55rem 1.4rem;
+    border-radius: var(--radius-sm); cursor: pointer;
+    font-size: 0.875rem; font-weight: 600;
+    transition: background 0.2s;
+}
+.btn-primary:hover { background: var(--primary-dark); }
+.btn-secondary {
+    background: var(--light); color: var(--text);
+    border: 1px solid var(--border); padding: 0.55rem 1.2rem;
+    border-radius: var(--radius-sm); cursor: pointer;
+    font-size: 0.875rem; font-weight: 500;
+    transition: all 0.2s;
+}
+.btn-secondary:hover { background: var(--border); }
+[data-theme="dark"] .form-group input,
+[data-theme="dark"] .form-group select { background: #0f172a; color: #e2e8f0; border-color: rgba(255,255,255,0.12); }
+[data-theme="dark"] .btn-secondary { background: #1e293b; color: #e2e8f0; border-color: rgba(255,255,255,0.12); }
+[data-theme="dark"] .btn-secondary:hover { background: #334155; }
+[data-theme="dark"] .modal-actions { border-color: rgba(255,255,255,0.1); }
+
 .toast.success { border-left: 4px solid var(--secondary); }
 .toast.error   { border-left: 4px solid var(--danger); }
 .toast.info    { border-left: 4px solid var(--primary); }

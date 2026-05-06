@@ -113,35 +113,30 @@ function switchTab(tab) {
 
 
 // =====================================================
-//  MODAL
+//  API HELPERS
 // =====================================================
-function openUploadModal()  { document.getElementById('uploadModal').classList.add('open'); }
-function closeUploadModal() { document.getElementById('uploadModal').classList.remove('open'); }
-function handleModalClick(e) {
-    if (e.target === document.getElementById('uploadModal')) closeUploadModal();
+const MONTH_NAMES = [
+    '','January','February','March','April','May','June',
+    'July','August','September','October','November','December',
+];
+
+function rowToApiData(row) {
+    return {
+        id:           row.id || '',
+        Expense:      row.Expense,
+        'Planned/Rea':row.PlannedReal === 'Planned' ? 'Planned' : 'REA',
+        Type:         row.Type,
+        Date:         row.Date,
+        Month:        MONTH_NAMES[row.Month] || String(row.Month),
+        Year:         String(row.Year),
+        Amount:       String(row.Amount),
+        Comments:     row.Comments || '',
+        Account:      row.Account || '',
+        Excluded:     row.excluded ? 'true' : 'false',
+    };
 }
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeUploadModal(); });
 
-
-// =====================================================
-//  CSV UPLOAD
-// =====================================================
-document.getElementById('fileInput').addEventListener('change', function(e) {
-    if (e.target.files[0]) parseCSV(e.target.files[0]);
-});
-
-const uploadArea = document.getElementById('uploadArea');
-uploadArea.addEventListener('dragover',  e => { e.preventDefault(); uploadArea.classList.add('dragover'); });
-uploadArea.addEventListener('dragleave', ()  => uploadArea.classList.remove('dragover'));
-uploadArea.addEventListener('drop', e => {
-    e.preventDefault();
-    uploadArea.classList.remove('dragover');
-    const f = e.dataTransfer.files[0];
-    if (f && f.name.endsWith('.csv')) parseCSV(f);
-    else showToast('❌ Please upload a valid CSV file.', 'error');
-});
-
-function parseCSV(file) {
+function apiDataToRow(d) {
     const MONTH_MAP = {
         january:1,february:2,march:3,april:4,may:5,june:6,
         july:7,august:8,september:9,october:10,november:11,december:12
@@ -151,75 +146,149 @@ function parseCSV(file) {
         if (!isNaN(n) && n >= 1 && n <= 12) return n;
         return MONTH_MAP[(raw || '').toLowerCase().trim()] || 0;
     }
-    function parseAmount(raw) {
-        // Strip thousands separators (commas) and parse; handles "+25,000.00" → 25000
-        return parseFloat((raw || '').replace(/,/g, ''));
+    const amount   = parseFloat((d['Amount'] || '').replace(/,/g, ''));
+    const pr       = d['Planned/Rea'] || '';
+    const typeField = d['Type'] || '';
+    let account     = d['Account'] || '';
+    const typeLower = typeField.toLowerCase();
+    if (typeLower === 'anna')   account = 'anna';
+    else if (typeLower === 'carlos') account = 'carlos';
+    return {
+        id:          d['id'] || '',
+        Expense:     d['Expense'] || '',
+        PlannedReal: pr.toLowerCase().startsWith('plan') ? 'Planned' : 'Real',
+        Type:        typeField,
+        Date:        d['Date'] || '',
+        DateSortKey: parseDateSortKey(d['Date'] || ''),
+        Month:       parseMonth(d['Month']),
+        Year:        parseInt(d['Year']) || 0,
+        Amount:      amount,
+        Comments:    d['Comments'] || '',
+        Account:     account,
+        kind:        amount < 0 ? 'expense' : 'saving',
+        excluded:    d['Excluded'] === 'true' || d['Excluded'] === '1',
+    };
+}
+
+async function loadData() {
+    try {
+        const res = await fetch('/api/transactions');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        rawData = data.filter(d => {
+            const amt = parseFloat((d['Amount'] || '').replace(/,/g, ''));
+            return !isNaN(amt) && amt !== 0;
+        }).map(apiDataToRow);
+        bootstrapApp();
+        showToast(`✅ Loaded ${rawData.length} transactions`, 'success');
+    } catch (e) {
+        showToast('❌ Failed to load data from server: ' + e.message, 'error');
     }
-    Papa.parse(file, {
-        header: true, skipEmptyLines: true,
-        complete(results) {
-            const parsed = [];
-            results.data.forEach(row => {
-                const norm = {};
-                Object.keys(row).forEach(k => norm[k.trim()] = (row[k] || '').trim());
-                const amtRaw = norm['Amount'];
-                if (!amtRaw) return;
-                const amount = parseAmount(amtRaw);
-                if (isNaN(amount) || amount === 0) return;
-                const pr = norm['Planned/Rea'] || '';
-                const expenseField = norm['Expense'] || '';
-                const typeField    = norm['Type']    || '';
+}
 
-                // Determine excluded flag (persists after re-upload)
-                let excluded;
-                const excludedRaw = norm['Excluded'];
-                if (excludedRaw !== undefined && excludedRaw !== '') {
-                    excluded = excludedRaw === 'true' || excludedRaw === '1';
-                } else {
-                    // Default: exclude non-salary income and generic transfers
-                    const isSalary = expenseField.toLowerCase() === 'salary' ||
-                                     expenseField.toLowerCase().includes('carlos salary') ||
-                                     typeField.toLowerCase().includes('income');
-                    const comments = (norm['Comments'] || '').toLowerCase();
-                    const isMortgageTransfer = comments.includes('4698831987') ||
-                                               comments.includes('4698831995');
-                    const isTransfer = !isMortgageTransfer && !isSalary && (
-                                           comments.includes('transfer') ||
-                                           comments.startsWith('transf.'));
-                    excluded = (amount > 0 && !isSalary) || isTransfer;
-                }
-
-                const dateRaw = norm['Date'] || '';
-
-                // Auto-assign account from Type when Type is Anna or Carlos
-                let account = norm['Account'] || '';
-                const typeLower = typeField.toLowerCase();
-                if (typeLower === 'anna')   account = 'anna';
-                else if (typeLower === 'carlos') account = 'carlos';
-
-                parsed.push({
-                    Expense:      expenseField,
-                    PlannedReal:  pr.toLowerCase().startsWith('plan') ? 'Planned' : 'Real',
-                    Type:         typeField,
-                    Date:         dateRaw,
-                    DateSortKey:  parseDateSortKey(dateRaw),
-                    Month:        parseMonth(norm['Month']),
-                    Year:         parseInt(norm['Year'])  || 0,
-                    Amount:       amount,
-                    Comments:     norm['Comments'] || '',
-                    Account:      account,
-                    kind:         amount < 0 ? 'expense' : 'saving',
-                    excluded,
-                });
-            });
-            if (!parsed.length) { showToast('❌ No valid rows found.', 'error'); return; }
-            rawData = parsed;
-            closeUploadModal();
-            bootstrapApp();
-            showToast(`✅ Loaded ${parsed.length} transactions from ${file.name}`, 'success');
-        },
-        error() { showToast('❌ Failed to parse CSV.', 'error'); }
+async function apiSaveRow(row) {
+    const payload = rowToApiData(row);
+    const url     = row.id
+        ? '/api/transactions/' + encodeURIComponent(row.id)
+        : '/api/transactions';
+    const method  = row.id ? 'PUT' : 'POST';
+    const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
     });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return res.json();
+}
+
+async function apiDeleteRow(id) {
+    const res = await fetch('/api/transactions/' + encodeURIComponent(id), { method: 'DELETE' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+}
+
+
+// =====================================================
+//  ADD / EDIT TRANSACTION MODAL
+// =====================================================
+let _txEditId = null;   // null = adding, string = editing
+
+function openTxModal(row) {
+    _txEditId = row ? row.id : null;
+    document.getElementById('txModalTitle').textContent   = row ? 'Edit Transaction' : 'Add Transaction';
+    document.getElementById('txSubmitBtn').textContent    = row ? 'Save Changes' : 'Add Transaction';
+    document.getElementById('txExpense').value            = row ? row.Expense      : '';
+    document.getElementById('txType').value               = row ? row.Type         : '';
+    document.getElementById('txPlannedReal').value        = row ? row.PlannedReal   : 'Real';
+    document.getElementById('txDate').value               = row ? row.Date          : '';
+    document.getElementById('txAmount').value             = row ? row.Amount        : '';
+    document.getElementById('txAccount').value            = row ? (row.Account || 'personal') : 'personal';
+    document.getElementById('txComments').value           = row ? row.Comments      : '';
+    document.getElementById('txExcluded').value           = row ? (row.excluded ? 'true' : 'false') : 'false';
+    document.getElementById('txModal').classList.add('open');
+}
+function closeTxModal() { document.getElementById('txModal').classList.remove('open'); }
+function handleTxModalClick(e) {
+    if (e.target === document.getElementById('txModal')) closeTxModal();
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeTxModal(); });
+
+async function submitTxForm(e) {
+    e.preventDefault();
+    const dateRaw = document.getElementById('txDate').value.trim();
+    const amount  = parseFloat(document.getElementById('txAmount').value);
+    const MONTH_MAP = {
+        1:'January',2:'February',3:'March',4:'April',5:'May',6:'June',
+        7:'July',8:'August',9:'September',10:'October',11:'November',12:'December'
+    };
+    // Derive Month + Year from date
+    const dmy = dateRaw.match(/^(\d{2})\/(\d{2})\/(\d{2,4})$/);
+    let monthNum = 0, yearNum = 0;
+    if (dmy) {
+        monthNum = parseInt(dmy[2]);
+        yearNum  = parseInt(dmy[3]); if (yearNum < 100) yearNum += 2000;
+    }
+    const payload = {
+        id:           _txEditId || '',
+        Expense:      document.getElementById('txExpense').value.trim(),
+        'Planned/Rea':document.getElementById('txPlannedReal').value === 'Planned' ? 'Planned' : 'REA',
+        Type:         document.getElementById('txType').value.trim(),
+        Date:         dateRaw,
+        Month:        MONTH_MAP[monthNum] || String(monthNum),
+        Year:         String(yearNum || ''),
+        Amount:       String(amount),
+        Comments:     document.getElementById('txComments').value.trim(),
+        Account:      document.getElementById('txAccount').value,
+        Excluded:     document.getElementById('txExcluded').value,
+    };
+    try {
+        const url    = _txEditId ? '/api/transactions/' + encodeURIComponent(_txEditId) : '/api/transactions';
+        const method = _txEditId ? 'PUT' : 'POST';
+        const res = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const saved = await res.json();
+        const newRow = apiDataToRow(saved);
+        if (_txEditId) {
+            const idx = rawData.findIndex(r => r.id === _txEditId);
+            if (idx !== -1) rawData[idx] = newRow;
+        } else {
+            rawData.push(newRow);
+        }
+        closeTxModal();
+        applyGlobalFilters();
+        populateYearFilter();
+        populateInsightsYearFilter();
+        renderDashboard();
+        if (activeTab === 'insights') renderInsightsTab();
+        if (activeTab === 'transactions') renderTransactionsTab();
+        renderDrawerTable();
+        showToast(_txEditId ? '✅ Transaction saved' : '✅ Transaction added', 'success');
+    } catch (err) {
+        showToast('❌ Error: ' + err.message, 'error');
+    }
 }
 
 
@@ -1344,7 +1413,7 @@ function renderDrawerTable() {
 
     if (!page.length) {
         const empty = document.createElement('tr');
-        empty.innerHTML = `<td colspan="7" style="text-align:center;padding:1.5rem;color:var(--text-light)">No transactions found.</td>`;
+        empty.innerHTML = `<td colspan="8" style="text-align:center;padding:1.5rem;color:var(--text-light)">No transactions found.</td>`;
         tbody.appendChild(empty);
     } else {
         page.forEach(row => {
@@ -1454,6 +1523,48 @@ function renderDrawerTable() {
             });
             tdExcl.appendChild(btn);
             tr.appendChild(tdExcl);
+
+            // ── Actions ─────────────────────────────────
+            const tdActions = document.createElement('td');
+            tdActions.className = 'tx-actions-cell';
+
+            const btnSave = document.createElement('button');
+            btnSave.className   = 'tx-action-btn tx-save-btn';
+            btnSave.textContent = '💾 Save';
+            btnSave.title       = 'Persist changes to CSV';
+            btnSave.addEventListener('click', async () => {
+                try {
+                    await apiSaveRow(row);
+                    showToast('✅ Saved', 'success');
+                } catch (err) {
+                    showToast('❌ Save failed: ' + err.message, 'error');
+                }
+            });
+
+            const btnDel = document.createElement('button');
+            btnDel.className   = 'tx-action-btn tx-delete-btn';
+            btnDel.textContent = '🗑 Delete';
+            btnDel.title       = 'Delete this transaction';
+            btnDel.addEventListener('click', async () => {
+                if (!confirm('Delete this transaction?')) return;
+                try {
+                    await apiDeleteRow(row.id);
+                    rawData = rawData.filter(r => r !== row);
+                    drawerData = drawerData.filter(r => r !== row);
+                    applyGlobalFilters();
+                    renderDashboard();
+                    if (activeTab === 'insights') renderInsightsTab();
+                    if (activeTab === 'transactions') renderTransactionsTab();
+                    renderDrawerTable();
+                    showToast('✅ Transaction deleted', 'success');
+                } catch (err) {
+                    showToast('❌ Delete failed: ' + err.message, 'error');
+                }
+            });
+
+            tdActions.appendChild(btnSave);
+            tdActions.appendChild(btnDel);
+            tr.appendChild(tdActions);
 
             tbody.appendChild(tr);
         });
@@ -1626,7 +1737,10 @@ function renderTransactionsTab() {
             <td><input class="tx-cat-input" list="typeOptions"
                     value="${escHtml(r.Type)}" data-field="Type" data-idx="${i}"></td>
             <td><button class="${exclCls}" data-idx="${i}">${exclTxt}</button></td>
-            <td><button class="btn-tx-delete" data-idx="${i}" title="Delete transaction">✕</button></td>
+            <td class="tx-actions-cell">
+                <button class="tx-action-btn tx-save-btn" data-idx="${i}" title="Save changes to CSV">\ud83d\udcbe Save</button>
+                <button class="btn-tx-delete tx-action-btn tx-delete-btn" data-idx="${i}" title="Delete transaction">\ud83d\uddd1 Delete</button>
+            </td>
         `;
         tbody.appendChild(tr);
     });
@@ -1687,14 +1801,36 @@ function renderTransactionsTab() {
         });
     });
 
+    // Save row
+    tbody.querySelectorAll('.tx-save-btn').forEach(btn => {
+        btn.addEventListener('click', async e => {
+            const idx = parseInt(e.target.dataset.idx, 10);
+            if (isNaN(idx) || !rawData[idx]) return;
+            try {
+                await apiSaveRow(rawData[idx]);
+                showToast('✅ Saved', 'success');
+            } catch (err) {
+                showToast('❌ Save failed: ' + err.message, 'error');
+            }
+        });
+    });
+
     // Delete row
     tbody.querySelectorAll('.btn-tx-delete').forEach(btn => {
-        btn.addEventListener('click', e => {
+        btn.addEventListener('click', async e => {
             const idx = parseInt(e.target.dataset.idx, 10);
-            if (!isNaN(idx) && rawData[idx]) {
+            if (isNaN(idx) || !rawData[idx]) return;
+            if (!confirm('Delete this transaction?')) return;
+            const row = rawData[idx];
+            try {
+                await apiDeleteRow(row.id);
                 rawData.splice(idx, 1);
+                drawerData = drawerData.filter(r => r !== row);
                 applyGlobalFilters();
                 renderTransactionsTab();
+                showToast('✅ Transaction deleted', 'success');
+            } catch (err) {
+                showToast('❌ Delete failed: ' + err.message, 'error');
             }
         });
     });
@@ -2056,14 +2192,15 @@ function toggleTheme() {
     localStorage.setItem('finTheme', next);
 }
 
-// Apply saved theme on load
+// Apply saved theme on load; always boot data
 (function () {
     const saved = localStorage.getItem('finTheme');
     if (saved === 'dark') {
         document.documentElement.setAttribute('data-theme', 'dark');
-        document.addEventListener('DOMContentLoaded', () => {
-            const btn = document.getElementById('themeToggle');
-            if (btn) btn.textContent = '☀️';
-        });
     }
+    document.addEventListener('DOMContentLoaded', () => {
+        const btn = document.getElementById('themeToggle');
+        if (btn) btn.textContent = saved === 'dark' ? '☀️' : '🌙';
+        loadData();
+    });
 })();

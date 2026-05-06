@@ -6,7 +6,7 @@
     <title>Home Finance Dashboard</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
 </head>
 <body>
 
@@ -32,29 +32,69 @@
                 </button>
             </div>
             <button class="nav-btn-icon" id="themeToggle" onclick="toggleTheme()" title="Toggle dark mode">🌙</button>
-            <button class="nav-link nav-btn" onclick="openUploadModal()">⬆ Upload Data</button>
+            <button class="nav-link nav-btn" onclick="openTxModal(null)">＋ Add Transaction</button>
         </nav>
     </div>
 </header>
 
-<!-- Upload Modal -->
-<div class="modal-overlay" id="uploadModal" onclick="handleModalClick(event)">
+<!-- Add / Edit Transaction Modal -->
+<div class="modal-overlay" id="txModal" onclick="handleTxModalClick(event)">
     <div class="modal">
         <div class="modal-header">
-            <h2>Upload Financial Data</h2>
-            <button class="modal-close" onclick="closeUploadModal()">✕</button>
+            <h2 id="txModalTitle">Add Transaction</h2>
+            <button class="modal-close" onclick="closeTxModal()">✕</button>
         </div>
-        <p class="upload-desc">Upload your CSV file to load your financial data.</p>
-        <div class="upload-area" id="uploadArea">
-            <div class="upload-icon">📁</div>
-            <p>Drag & drop your CSV file here</p>
-            <p class="upload-sub">or</p>
-            <label for="fileInput" class="btn-upload">Browse Files</label>
-            <input type="file" id="fileInput" accept=".csv" hidden>
-            <p class="upload-format">
-                Expected: Expense, Planned/Rea, Type, Date, Month, Year, Amount, Comments, Account, Excluded
-            </p>
-        </div>
+        <form id="txForm" onsubmit="submitTxForm(event)">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Sub-category (Expense)</label>
+                    <input id="txExpense" type="text" list="expenseOptions" required placeholder="e.g. Groceries">
+                </div>
+                <div class="form-group">
+                    <label>Category (Type)</label>
+                    <input id="txType" type="text" list="typeOptions" required placeholder="e.g. 🏠 House">
+                </div>
+                <div class="form-group">
+                    <label>Planned / Real</label>
+                    <select id="txPlannedReal">
+                        <option value="Real">Real</option>
+                        <option value="Planned">Planned</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Date (DD/MM/YY)</label>
+                    <input id="txDate" type="text" required placeholder="30/04/26" pattern="\d{2}/\d{2}/\d{2,4}">
+                </div>
+                <div class="form-group">
+                    <label>Amount (negative = expense)</label>
+                    <input id="txAmount" type="number" step="0.01" required placeholder="-1500">
+                </div>
+                <div class="form-group">
+                    <label>Account</label>
+                    <select id="txAccount">
+                        <option value="personal">Personal</option>
+                        <option value="joint">Joint</option>
+                        <option value="anna">Anna</option>
+                        <option value="carlos">Carlos</option>
+                    </select>
+                </div>
+                <div class="form-group form-group-full">
+                    <label>Comments</label>
+                    <input id="txComments" type="text" placeholder="Optional note…">
+                </div>
+                <div class="form-group">
+                    <label>Include in Analytics</label>
+                    <select id="txExcluded">
+                        <option value="false">Yes — include</option>
+                        <option value="true">No — exclude</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" onclick="closeTxModal()">Cancel</button>
+                <button type="submit" class="btn-primary" id="txSubmitBtn">Add Transaction</button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -91,6 +131,7 @@
                     <th>Description</th>
                     <th>Account</th>
                     <th>Analytics</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody id="drawerTableBody"></tbody>
@@ -107,8 +148,8 @@
     <div id="emptyState" class="empty-state">
         <div class="empty-icon">📊</div>
         <h2>No data loaded yet</h2>
-        <p>Upload a CSV file to get started</p>
-        <button class="btn-upload-cta" onclick="openUploadModal()">⬆ Upload Data</button>
+        <p>Add your first transaction or wait while data loads…</p>
+        <button class="btn-upload-cta" onclick="openTxModal(null)">＋ Add Transaction</button>
     </div>
 
     <!-- ═══════════════════════════════════════════
@@ -324,7 +365,6 @@
                 <option value="excluded">Excluded from analytics</option>
             </select>
             <span id="txRowCount" class="tx-row-count"></span>
-            <button onclick="addTransaction()" class="btn-tx-add">＋ Add Transaction</button>
             <button onclick="downloadCSV()" class="btn-tx-download">⬇ Download CSV</button>
         </div>
 
@@ -340,7 +380,7 @@
                         <th class="tx-sortable" onclick="txSortBy('Expense')">Sub-category <span class="tx-sort-arrow" data-col="Expense">↕</span></th>
                         <th class="tx-sortable" onclick="txSortBy('Type')">Category <span class="tx-sort-arrow" data-col="Type">↕</span></th>
                         <th title="Excluded rows are hidden from all charts and KPIs">Analytics</th>
-                        <th></th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="txTableBody"></tbody>

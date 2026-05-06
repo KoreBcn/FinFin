@@ -1,7 +1,7 @@
 import os
 import csv
 import json
-import shutil
+import sys
 import logging
 import pip_system_certs.wrapt_requests
 from uuid import uuid4
@@ -24,14 +24,10 @@ DATE_TO = datetime.now(tz=timezone.utc)
 _TODAY = datetime.now()
 _EXECUTION_DATE = _TODAY.strftime('%Y%m%d')
 
-# Categorized files cover only current month and the previous month
-_FIRST_OF_THIS_MONTH = _TODAY.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-_FIRST_OF_LAST_MONTH = (_FIRST_OF_THIS_MONTH - timedelta(days=1)).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-CATEGORIZED_DATE_FROM = _FIRST_OF_LAST_MONTH
-
-DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
-RAW_OUTPUT_FILE = os.path.join(DATA_DIR, f"{_EXECUTION_DATE}_raw.csv")
-SESSION_FILE = "session.json"
+DATA_DIR        = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
+RAW_DIR         = os.path.join(DATA_DIR, 'raw')
+CATEGORIZED_DIR = os.path.join(DATA_DIR, 'categorized')
+SESSION_FILE    = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'session.json')
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -343,6 +339,140 @@ def clean_description(remittance_info: str, debtor_name: str,
     return "Unknown"
 
 
+# === CATEGORIZED CSV SCHEMA ===
+CATEGORIZED_COLUMNS = [
+    'id',           # Unique row identifier (UUID)
+    'Expense',      # Sub-category
+    'Planned/Rea',  # Always "REA"
+    'Type',         # Category
+    'Date',         # Booking date DD/MM/YY
+    'Month',        # Month name e.g. January
+    'Year',         # Year e.g. 2026
+    'Amount',       # Formatted amount with +/-
+    'Comments',     # Clean description
+    'Account',      # personal / joint / carlos
+    'Excluded',     # Always false by default
+]
+
+
+def categorize_raw_folder():
+    """
+    Read every CSV in api/data/raw/, categorize each row, and write one
+    api/data/categorized/YYYYMM_categorized.csv per month.
+    Only rows from the last 3 calendar months (including the current month) are kept.
+    Processes files produced by the API call AND any manually dropped files.
+    """
+    os.makedirs(RAW_DIR, exist_ok=True)
+    os.makedirs(CATEGORIZED_DIR, exist_ok=True)
+
+    # Cutoff: first day of the month that is 3 months ago
+    _now = datetime.now()
+    _first_this_month = _now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    # Step back 2 months to include current + previous 2 (= 3 total)
+    _m = _first_this_month.month - 2
+    _y = _first_this_month.year
+    if _m <= 0:
+        _m += 12
+        _y -= 1
+    CUTOFF_DATE = _first_this_month.replace(year=_y, month=_m)
+
+    raw_files = sorted(
+        f for f in os.listdir(RAW_DIR) if f.lower().endswith('.csv')
+    )
+    if not raw_files:
+        logger.info("No raw CSV files found in api/data/raw/ — nothing to categorize.")
+        return
+
+    logger.info(f"Categorizing transactions from {CUTOFF_DATE.strftime('%d/%m/%Y')} onwards.")
+
+    # cat_rows_by_month: {"YYYYMM": [row_dict, ...]}
+    cat_rows_by_month = {}
+    skipped = 0
+
+    for filename in raw_files:
+        filepath = os.path.join(RAW_DIR, filename)
+        logger.info(f"Categorizing raw file: {filename}")
+        with open(filepath, newline='', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                debtor_name     = row.get('debtor_name', '')
+                creditor_name   = row.get('creditor_name', '')
+                remittance_info = row.get('remittance_information', '')
+                credit_debit    = row.get('credit_debit_indicator', '')
+                account_name    = row.get('account_name', '')
+                booking_date    = row.get('booking_date', '')
+                amount_raw      = row.get('amount', '')
+
+                # Parse date
+                parsed_date = None
+                try:
+                    parsed_date = datetime.strptime(str(booking_date), '%Y-%m-%d')
+                    formatted_date = parsed_date.strftime('%d/%m/%y')
+                    month          = parsed_date.strftime('%B')
+                    year           = parsed_date.strftime('%Y')
+                except (ValueError, TypeError):
+                    formatted_date = str(booking_date)
+                    month = ''
+                    year  = ''
+
+                # Discard rows outside the last 3 months
+                if parsed_date is None or parsed_date < CUTOFF_DATE:
+                    skipped += 1
+                    continue
+
+                expense, tx_type = categorize_transaction(
+                    debtor_name, creditor_name, remittance_info, credit_debit
+                )
+
+                if 'anna' in account_name.lower():
+                    account_label = 'anna'
+                elif 'carlos' in (debtor_name or '').lower() or \
+                     'carlos' in (creditor_name or '').lower():
+                    account_label = 'carlos'
+                else:
+                    account_label = 'personal'
+
+                # Rename Salary to Carlos Salary for personal account
+                if expense == 'Salary' and account_label == 'personal':
+                    expense = 'Carlos Salary'
+
+                # All debits from personal account → Type = 👨 Carlos
+                if account_label == 'personal' and credit_debit == 'DBIT':
+                    tx_type = '👨 Carlos'
+
+                month_key = parsed_date.strftime('%Y%m') if parsed_date else 'unknown'
+                cat_row = {
+                    'id':           str(uuid4()),
+                    'Expense':      expense,
+                    'Planned/Rea':  'REA',
+                    'Type':         tx_type,
+                    'Date':         formatted_date,
+                    'Month':        month,
+                    'Year':         year,
+                    'Amount':       format_amount(amount_raw, credit_debit),
+                    'Comments':     clean_description(
+                                        remittance_info, debtor_name, creditor_name
+                                    ),
+                    'Account':      account_label,
+                    'Excluded':     'false',
+                }
+                cat_rows_by_month.setdefault(month_key, []).append(cat_row)
+
+    total_rows = 0
+    for month_key, rows in sorted(cat_rows_by_month.items()):
+        cat_path = os.path.join(CATEGORIZED_DIR, f"{month_key}_categorized.csv")
+        with open(cat_path, mode='w', newline='', encoding='utf-8') as cat_file:
+            writer = csv.DictWriter(cat_file, fieldnames=CATEGORIZED_COLUMNS)
+            writer.writeheader()
+            writer.writerows(rows)
+        logger.info(f"  {month_key}: {len(rows)} rows → {cat_path}")
+        total_rows += len(rows)
+
+    logger.info(f"Categorization complete: {total_rows} rows across "
+                f"{len(cat_rows_by_month)} month file(s) in {CATEGORIZED_DIR}/ "
+                f"({skipped} rows discarded as older than 3 months)")
+
+
 # === SESSION HELPERS ===
 def save_session(session_id: str, accounts: list):
     with open(SESSION_FILE, 'w') as f:
@@ -457,7 +587,7 @@ def fetch_all_transactions():
         logger.info(f"Using existing session: {session_id}")
         logger.info(f"Found {len(account_uids)} saved account(s)")
 
-    # 7. Define CSV columns
+    # 7. Define raw CSV columns
     raw_columns = [
         'account_name', 'account_uid', 'booking_date', 'value_date',
         'amount', 'currency', 'credit_debit_indicator', 'status',
@@ -465,34 +595,15 @@ def fetch_all_transactions():
         'remittance_information', 'balance_after_transaction',
     ]
 
-    categorized_columns = [
-        'Expense',          # Sub-category
-        'Planned/Rea',      # Always "REA"
-        'Type',             # Category
-        'Date',             # Booking date
-        'Month',            # Month name e.g. January
-        'Year',             # Year e.g. 2026
-        'Amount',           # Formatted amount with +/-
-        'Comments',         # Clean description
-        'Account',          # personal or joint
-        'Excluded',         # Always false by default
-    ]
-
     try:
-        # Ensure api/data/ output directory exists
-        os.makedirs(DATA_DIR, exist_ok=True)
+        # Ensure output directories exist
+        os.makedirs(RAW_DIR, exist_ok=True)
+        os.makedirs(CATEGORIZED_DIR, exist_ok=True)
 
-        # cat_rows_by_month: {"YYYYMM": [row_dict, ...]}
-        cat_rows_by_month = {}
+        raw_files_written = []
 
-        with open(RAW_OUTPUT_FILE, mode='w', newline='',
-                  encoding='utf-8') as raw_file:
-
-            raw_writer = csv.DictWriter(raw_file, fieldnames=raw_columns)
-            raw_writer.writeheader()
-
-            for account_uid in account_uids:
-                # Get account details
+        for account_uid in account_uids:
+            # Get account details
                 try:
                     account_details = eb_service.get_account_details(
                         account_uid=account_uid
@@ -507,6 +618,19 @@ def fetch_all_transactions():
                     )
                     account_name = account_uid
 
+                # Determine per-account raw filename
+                # Joint account contains both names — check this first
+                _name_lower = account_name.lower()
+                if 'carlos' in _name_lower and 'anna' in _name_lower:
+                    account_slug = 'joint'
+                elif 'carlos' in _name_lower:
+                    account_slug = 'carlos'
+                else:
+                    account_slug = 'joint'
+                raw_output_file = os.path.join(
+                    RAW_DIR, f"{_EXECUTION_DATE}_{account_slug}_raw.csv"
+                )
+
                 # Fetch transactions
                 try:
                     transactions = eb_service.get_account_transactions(
@@ -516,96 +640,65 @@ def fetch_all_transactions():
                     )
                     logger.info(f"  → {len(transactions)} transaction(s) found")
 
-                    for tx in transactions:
-                        # Extract common fields
-                        debtor = getattr(tx, 'debtor', None)
-                        debtor_name = getattr(debtor, 'name', '') if debtor else ''
+                    with open(raw_output_file, mode='w', newline='',
+                              encoding='utf-8') as raw_file:
+                        raw_writer = csv.DictWriter(raw_file, fieldnames=raw_columns)
+                        raw_writer.writeheader()
 
-                        creditor = getattr(tx, 'creditor', None)
-                        creditor_name = getattr(creditor, 'name', '') if creditor else ''
+                        for tx in transactions:
+                            # Extract common fields
+                            debtor = getattr(tx, 'debtor', None)
+                            debtor_name = getattr(debtor, 'name', '') if debtor else ''
 
-                        balance = getattr(tx, 'balance_after_transaction', None)
-                        balance_amount = getattr(balance, 'amount', '') if balance else ''
+                            creditor = getattr(tx, 'creditor', None)
+                            creditor_name = getattr(creditor, 'name', '') if creditor else ''
 
-                        amount = getattr(
-                            getattr(tx, 'transaction_amount', None), 'amount', ''
-                        )
-                        currency = getattr(
-                            getattr(tx, 'transaction_amount', None), 'currency', ''
-                        )
-                        credit_debit = getattr(tx, 'credit_debit_indicator', '')
-                        remittance_info = extract_remittance_info(tx)
-                        booking_date = getattr(tx, 'booking_date', '')
+                            balance = getattr(tx, 'balance_after_transaction', None)
+                            balance_amount = getattr(balance, 'amount', '') if balance else ''
 
-                        # Parse date for Month and Year columns
-                        parsed_date = None
-                        try:
-                            parsed_date = datetime.strptime(
-                                str(booking_date), '%Y-%m-%d'
+                            amount = getattr(
+                                getattr(tx, 'transaction_amount', None), 'amount', ''
                             )
-                            formatted_date = parsed_date.strftime('%d/%m/%y')  # e.g. "06/02/26"
-                            month = parsed_date.strftime('%B')  # e.g. "February"
-                            year = parsed_date.strftime('%Y')   # e.g. "2026"
-                        except (ValueError, TypeError):
-                            formatted_date = str(booking_date)
-                            month = ''
-                            year = ''
+                            currency = getattr(
+                                getattr(tx, 'transaction_amount', None), 'currency', ''
+                            )
+                            credit_debit = getattr(tx, 'credit_debit_indicator', '')
+                            remittance_info = extract_remittance_info(tx)
+                            booking_date = getattr(tx, 'booking_date', '')
 
-                        # Write raw data
-                        raw_writer.writerow({
-                            'account_name': account_name,
-                            'account_uid': account_uid,
-                            'booking_date': booking_date,
-                            'value_date': getattr(tx, 'value_date', ''),
-                            'amount': amount,
-                            'currency': currency,
-                            'credit_debit_indicator': credit_debit,
-                            'status': getattr(tx, 'status', ''),
-                            'entry_reference': getattr(tx, 'entry_reference', ''),
-                            'debtor_name': debtor_name,
-                            'creditor_name': creditor_name,
-                            'remittance_information': remittance_info,
-                            'balance_after_transaction': balance_amount,
-                        })
+                            # Parse date for Month and Year columns
+                            parsed_date = None
+                            try:
+                                parsed_date = datetime.strptime(
+                                    str(booking_date), '%Y-%m-%d'
+                                )
+                                formatted_date = parsed_date.strftime('%d/%m/%y')  # e.g. "06/02/26"
+                                month = parsed_date.strftime('%B')  # e.g. "February"
+                                year = parsed_date.strftime('%Y')   # e.g. "2026"
+                            except (ValueError, TypeError):
+                                formatted_date = str(booking_date)
+                                month = ''
+                                year = ''
 
-                        # Categorize transaction
-                        expense, tx_type = categorize_transaction(
-                            debtor_name, creditor_name,
-                            remittance_info, credit_debit
-                        )
+                            # Write raw data
+                            raw_writer.writerow({
+                                'account_name': account_name,
+                                'account_uid': account_uid,
+                                'booking_date': booking_date,
+                                'value_date': getattr(tx, 'value_date', ''),
+                                'amount': amount,
+                                'currency': currency,
+                                'credit_debit_indicator': credit_debit,
+                                'status': getattr(tx, 'status', ''),
+                                'entry_reference': getattr(tx, 'entry_reference', ''),
+                                'debtor_name': debtor_name,
+                                'creditor_name': creditor_name,
+                                'remittance_information': remittance_info,
+                                'balance_after_transaction': balance_amount,
+                            })
 
-                        # Write categorized data (current + last month only)
-                        account_label = 'joint' if 'anna' in account_name.lower() else 'personal'
-                        in_cat_range = (
-                            parsed_date is not None and
-                            parsed_date >= CATEGORIZED_DATE_FROM
-                        )
-
-                        # Rename Salary to Carlos Salary for personal account
-                        if expense == 'Salary' and account_label == 'personal':
-                            expense = 'Carlos Salary'
-
-                        # All expenses from personal account → Type = 👨 Carlos
-                        if account_label == 'personal' and credit_debit == 'DBIT':
-                            tx_type = '👨 Carlos'
-
-                        if in_cat_range:
-                            month_key = parsed_date.strftime('%Y%m')
-                            cat_row = {
-                                'Expense': expense,
-                                'Planned/Rea': 'REA',
-                                'Type': tx_type,
-                                'Date': formatted_date,
-                                'Month': month,
-                                'Year': year,
-                                'Amount': format_amount(amount, credit_debit),
-                                'Comments': clean_description(
-                                    remittance_info, debtor_name, creditor_name
-                                ),
-                                'Account': account_label,
-                                'Excluded': 'false',
-                            }
-                            cat_rows_by_month.setdefault(month_key, []).append(cat_row)
+                    raw_files_written.append(raw_output_file)
+                    logger.info(f"  Raw saved to: {raw_output_file}")
 
                 except Exception as e:
                     logger.error(
@@ -615,30 +708,19 @@ def fetch_all_transactions():
                         logger.warning("Session expired - deleting saved session")
                         delete_session()
 
-        # Write one categorized file per month
-        for month_key, rows in sorted(cat_rows_by_month.items()):
-            cat_path = os.path.join(DATA_DIR, f"{month_key}_categorized.csv")
-            with open(cat_path, mode='w', newline='', encoding='utf-8') as cat_file:
-                cat_writer = csv.DictWriter(cat_file, fieldnames=categorized_columns)
-                cat_writer.writeheader()
-                cat_writer.writerows(rows)
-            logger.info(f"  Categorized {month_key}: {len(rows)} rows → {cat_path}")
+        logger.info(f"Raw files written: {raw_files_written}")
 
-        logger.info(f"\nSuccess!")
-        logger.info(f"Raw data saved to:    {RAW_OUTPUT_FILE}")
-        logger.info(f"Categorized files in: {DATA_DIR}/")
-        logger.info(f"  (transactions from {CATEGORIZED_DATE_FROM.strftime('%d/%m/%y')} onwards, "
-                    f"{sum(len(v) for v in cat_rows_by_month.values())} rows across "
-                    f"{len(cat_rows_by_month)} month file(s))")
-
-        # Also drop raw CSV into data/ folder
-        raw_data_copy = os.path.join(DATA_DIR, RAW_OUTPUT_FILE)
-        shutil.copy2(RAW_OUTPUT_FILE, raw_data_copy)
-        logger.info(f"Raw data also copied to: {raw_data_copy}")
+        # Categorize all raw files (API-fetched + manually dropped)
+        categorize_raw_folder()
 
     except IOError as e:
         logger.error(f"Error writing to CSV: {e}")
 
 
 if __name__ == "__main__":
-    fetch_all_transactions()
+    if len(sys.argv) > 1 and sys.argv[1] == 'categorize':
+        # Run categorization only (for manually dropped raw files)
+        categorize_raw_folder()
+    else:
+        # Full flow: fetch from bank API then categorize
+        fetch_all_transactions()
