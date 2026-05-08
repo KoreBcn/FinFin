@@ -8,7 +8,7 @@ const EUR_RATE = 7.46;
 let rawData      = [];
 let filteredData = [];
 
-let globalFilters   = { plannedReal: 'Real', year: 'all', currency: 'DKK' };
+let globalFilters   = { year: 'all', currency: 'DKK' };
 let insightsFilters = { year: 'all', currency: 'DKK' };
 
 // Dashboard cross-chart filters
@@ -165,7 +165,7 @@ function apiDataToRow(d) {
         Amount:      amount,
         Comments:    d['Comments'] || '',
         Account:     account,
-        kind:        amount < 0 ? 'expense' : 'saving',
+        kind:        (amount < 0 || !typeField.startsWith('💰')) ? 'expense' : 'saving',
         excluded:    d['Excluded'] === 'true' || d['Excluded'] === '1',
     };
 }
@@ -218,7 +218,6 @@ function openTxModal(row) {
     document.getElementById('txSubmitBtn').textContent    = row ? 'Save Changes' : 'Add Transaction';
     document.getElementById('txExpense').value            = row ? row.Expense      : '';
     document.getElementById('txType').value               = row ? row.Type         : '';
-    document.getElementById('txPlannedReal').value        = row ? row.PlannedReal   : 'Real';
     document.getElementById('txDate').value               = row ? row.Date          : '';
     document.getElementById('txAmount').value             = row ? row.Amount        : '';
     document.getElementById('txAccount').value            = row ? (row.Account || 'personal') : 'personal';
@@ -250,7 +249,7 @@ async function submitTxForm(e) {
     const payload = {
         id:           _txEditId || '',
         Expense:      document.getElementById('txExpense').value.trim(),
-        'Planned/Rea':document.getElementById('txPlannedReal').value === 'Planned' ? 'Planned' : 'REA',
+        'Planned/Rea': 'REA',
         Type:         document.getElementById('txType').value.trim(),
         Date:         dateRaw,
         Month:        MONTH_MAP[monthNum] || String(monthNum),
@@ -304,12 +303,9 @@ function bootstrapApp() {
     document.getElementById('tabTransactions').style.display = 'none';
     document.getElementById('tabHighlights').style.display   = 'none';
     document.getElementById('tabSwitcher').style.display     = 'flex';
-    // Default to Real + current year
+    // Default to current year
     const currentYear = new Date().getFullYear();
-    globalFilters.plannedReal = 'Real';
     globalFilters.year = String(currentYear);
-    document.querySelectorAll('#plannedRealToggle .toggle-btn').forEach(b => b.classList.remove('active'));
-    document.querySelector('#plannedRealToggle .toggle-btn[data-value="Real"]').classList.add('active');
     const yearSel = document.getElementById('yearFilter');
     if (yearSel) yearSel.value = String(currentYear);
     applyGlobalFilters();
@@ -334,14 +330,6 @@ function populateInsightsYearFilter() {
 // =====================================================
 //  DASHBOARD GLOBAL FILTERS
 // =====================================================
-document.getElementById('plannedRealToggle').addEventListener('click', e => {
-    if (!e.target.classList.contains('toggle-btn')) return;
-    document.querySelectorAll('#plannedRealToggle .toggle-btn').forEach(b => b.classList.remove('active'));
-    e.target.classList.add('active');
-    globalFilters.plannedReal = e.target.dataset.value;
-    applyGlobalFilters();
-});
-
 document.getElementById('yearFilter').addEventListener('change', e => {
     globalFilters.year = e.target.value;
     applyGlobalFilters();
@@ -358,9 +346,8 @@ document.getElementById('currencyToggle').addEventListener('click', e => {
 function applyGlobalFilters() {
     filteredData = rawData.filter(row => {
         if (row.excluded) return false;
-        const okPR   = globalFilters.plannedReal === 'all' || row.PlannedReal === globalFilters.plannedReal;
         const okYear = globalFilters.year === 'all' || row.Year === parseInt(globalFilters.year);
-        return okPR && okYear;
+        return okYear;
     });
     chartFilters = { monthKey: null, typeKey: null, typeLevel: null, kind: null };
     drillDown    = { expenses: null, savings: null };
@@ -368,11 +355,9 @@ function applyGlobalFilters() {
 }
 
 function resetFilters() {
-    globalFilters = { plannedReal: 'Real', year: 'all', currency: globalFilters.currency };
+    globalFilters = { year: 'all', currency: globalFilters.currency };
     chartFilters  = { monthKey: null, typeKey: null, typeLevel: null, kind: null };
     drillDown     = { expenses: null, savings: null };
-    document.querySelectorAll('#plannedRealToggle .toggle-btn').forEach(b => b.classList.remove('active'));
-    document.querySelector('#plannedRealToggle .toggle-btn[data-value="Real"]').classList.add('active');
     document.getElementById('yearFilter').value = 'all';
     applyGlobalFilters();
 }
@@ -629,7 +614,7 @@ function renderSavingsProjection() {
     const net = {};
     years.forEach(y => { net[y] = {}; months.forEach(m => { net[y][m] = 0; }); });
     base.forEach(d => {
-        const contrib = d.kind === 'saving' ? d.Amount : -Math.abs(d.Amount);
+        const contrib = d.Amount;
         net[d.Year][d.Month] = (net[d.Year][d.Month] || 0) + contrib;
     });
 
@@ -840,7 +825,7 @@ function buildYoyTotals(base, labels, years, isDrilled, drillType, kind) {
             ? (d.Type === drillType ? d.Expense : null)
             : d.Type;
         if (lbl && totals[lbl] !== undefined) {
-            const val = kind === 'expense' ? Math.abs(d.Amount) : d.Amount;
+            const val = kind === 'expense' ? -d.Amount : d.Amount;
             totals[lbl][d.Year] = (totals[lbl][d.Year] || 0) + val;
         }
     });
@@ -882,7 +867,7 @@ function updateStats() {
     const data = filteredData;
 
     const totalExp = data.filter(d => d.kind === 'expense')
-        .reduce((s, d) => s + Math.abs(d.Amount), 0);
+        .reduce((s, d) => s - d.Amount, 0);
     const totalInc = data.filter(d => d.kind === 'saving')
         .reduce((s, d) => s + d.Amount, 0);
     const totalSav = totalInc - totalExp;
@@ -1030,7 +1015,7 @@ function renderPieChart() {
     const map = {};
     groupRows.forEach(d => {
         const k = d[groupField];
-        map[k] = (map[k] || 0) + Math.abs(d.Amount);
+        map[k] = (map[k] || 0) + (d.kind === 'expense' ? -d.Amount : d.Amount);
     });
     const entries = Object.entries(map).sort((a, b) => b[1] - a[1]);
     const labels  = entries.map(e => e[0]);
@@ -1200,7 +1185,7 @@ function renderMonthlyChart() {
     catSet.forEach(c => { map[c] = {}; });
     drillBase.forEach(d => {
         const key = d[groupField];
-        map[key][d.Month] = (map[key][d.Month] || 0) + Math.abs(d.Amount);
+        map[key][d.Month] = (map[key][d.Month] || 0) + (d.kind === 'expense' ? -d.Amount : d.Amount);
     });
 
     // Sort by grand total descending
@@ -1354,7 +1339,6 @@ function openDrawerWith(rows, title, subtitle) {
     document.getElementById('drawerTitle').textContent    = title;
     document.getElementById('drawerSubtitle').textContent = subtitle;
     document.getElementById('drawerSearch').value         = '';
-    document.getElementById('drawerPlannedReal').value    = 'all';
     renderDrawerTable();
     document.getElementById('drawerOverlay').classList.add('open');
     document.getElementById('transactionDrawer').classList.add('open');
@@ -1377,16 +1361,14 @@ function closeDrawer() {
 
 function renderDrawerTable() {
     const search = document.getElementById('drawerSearch').value.toLowerCase();
-    const pr     = document.getElementById('drawerPlannedReal').value;
 
     drawerFiltered = drawerData.filter(row => {
-        const okPR = pr === 'all' || row.PlannedReal === pr;
         const okSr = !search ||
             row.Type.toLowerCase().includes(search)    ||
             row.Expense.toLowerCase().includes(search) ||
             row.Date.includes(search)                  ||
             row.Comments.toLowerCase().includes(search);
-        return okPR && okSr;
+        return okSr;
     });
 
     drawerFiltered.sort((a, b) => {
@@ -1428,8 +1410,8 @@ function renderDrawerTable() {
 
             // ── Amount ────────────────────────────────
             const tdAmt = document.createElement('td');
-            tdAmt.className = `${row.kind === 'expense' ? 'amount-expense' : 'amount-saving'} tx-amount`;
-            tdAmt.textContent = (row.kind === 'expense' ? '−' : '+') +
+            tdAmt.className = `${row.Amount >= 0 ? 'amount-saving' : 'amount-expense'} tx-amount`;
+            tdAmt.textContent = (row.Amount >= 0 ? '+' : '−') +
                 new Intl.NumberFormat('da-DK', { maximumFractionDigits: 2 }).format(Math.abs(row.Amount));
             tr.appendChild(tdAmt);
 
@@ -1459,7 +1441,7 @@ function renderDrawerTable() {
             inpType.placeholder = 'Category…';
             inpType.addEventListener('change', () => {
                 row.Type = inpType.value.trim();
-                row.kind = row.Amount < 0 ? 'expense' : 'saving';
+                row.kind = (row.Amount < 0 || !row.Type.startsWith('💰')) ? 'expense' : 'saving';
                 updateTxDataLists();
                 applyGlobalFilters();
                 renderDashboard();
@@ -1570,7 +1552,7 @@ function renderDrawerTable() {
         });
     }
 
-    const totExp = drawerFiltered.filter(d => d.kind === 'expense').reduce((s, d) => s + Math.abs(d.Amount), 0);
+    const totExp = drawerFiltered.filter(d => d.kind === 'expense').reduce((s, d) => s - d.Amount, 0);
     const totSav = drawerFiltered.filter(d => d.kind === 'saving').reduce((s, d) => s + d.Amount, 0);
 
     document.getElementById('drawerSummary').innerHTML = `
@@ -1709,7 +1691,7 @@ function renderTransactionsTab() {
 
     tbody.innerHTML = '';
     shown.forEach(({ r, i }) => {
-        const amtCls = r.kind === 'expense' ? 'amount-expense' : 'amount-saving';
+        const amtCls = r.Amount >= 0 ? 'amount-saving' : 'amount-expense';
         const amtFmt = (r.kind === 'expense' ? '−' : '+') +
             new Intl.NumberFormat('da-DK', { maximumFractionDigits: 2 }).format(Math.abs(r.Amount));
         const acctVal  = (r.Account || 'personal').toLowerCase();
@@ -1976,7 +1958,7 @@ function renderHighlightsTab() {
     }
 
     // === Core metrics ===
-    const totalExpenses = realExp.reduce((s, d) => s + Math.abs(d.Amount), 0);
+    const totalExpenses = realExp.reduce((s, d) => s - d.Amount, 0);
     const totalIncome   = realInc.reduce((s, d) => s + d.Amount, 0);
     const netSavings    = totalIncome - totalExpenses;
     const savingsRate   = totalIncome > 0 ? (netSavings / totalIncome * 100) : 0;
@@ -1998,35 +1980,35 @@ function renderHighlightsTab() {
 
     // Top expense categories
     const byType = {};
-    realExp.forEach(d => { byType[d.Type] = (byType[d.Type] || 0) + Math.abs(d.Amount); });
+    realExp.forEach(d => { byType[d.Type] = (byType[d.Type] || 0) + (-d.Amount); });
     const topCats = Object.entries(byType).sort((a, b) => b[1] - a[1]).slice(0, 5);
     const maxCat  = topCats[0]?.[1] || 1;
 
     // Biggest single expense
-    const biggestTx = [...realExp].sort((a, b) => Math.abs(b.Amount) - Math.abs(a.Amount))[0];
+    const biggestTx = [...realExp].sort((a, b) => a.Amount - b.Amount)[0];
 
     // Best / worst months
     const monthMap = {};
     realExp.forEach(d => {
         const key = `${d.Year}-${String(d.Month).padStart(2,'0')}`;
-        monthMap[key] = (monthMap[key] || 0) + Math.abs(d.Amount);
+        monthMap[key] = (monthMap[key] || 0) + (-d.Amount);
     });
     const monthEntries = Object.entries(monthMap);
     const bestMonth    = monthEntries.length ? [...monthEntries].sort((a, b) => a[1] - b[1])[0] : null;
     const worstMonth   = monthEntries.length ? [...monthEntries].sort((a, b) => b[1] - a[1])[0] : null;
 
     // Person spending
-    const carlosAmt   = realExp.filter(d => d.Type.includes('Carlos')).reduce((s, d) => s + Math.abs(d.Amount), 0);
-    const annaAmt     = realExp.filter(d => d.Type.includes('Anna')).reduce((s, d) => s + Math.abs(d.Amount), 0);
+    const carlosAmt   = realExp.filter(d => d.Type.includes('Carlos')).reduce((s, d) => s - d.Amount, 0);
+    const annaAmt     = realExp.filter(d => d.Type.includes('Anna')).reduce((s, d) => s - d.Amount, 0);
     const personTotal = carlosAmt + annaAmt || 1;
 
     // Food & dining
     const foodAmt = realExp.filter(d => d.Type === '🛒 Groceries' || d.Expense === 'Bars & Restaurants')
-        .reduce((s, d) => s + Math.abs(d.Amount), 0);
+        .reduce((s, d) => s - d.Amount, 0);
     const foodPct = totalExpenses > 0 ? (foodAmt / totalExpenses * 100) : 0;
 
     // Subscriptions
-    const subAmt      = realExp.filter(d => d.Expense === 'Subscriptions').reduce((s, d) => s + Math.abs(d.Amount), 0);
+    const subAmt      = realExp.filter(d => d.Expense === 'Subscriptions').reduce((s, d) => s - d.Amount, 0);
     const subPerMonth = subAmt / monthCount;
 
     // Helpers

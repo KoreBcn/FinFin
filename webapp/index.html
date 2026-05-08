@@ -55,13 +55,6 @@
                     <input id="txType" type="text" list="typeOptions" required placeholder="e.g. 🏠 House">
                 </div>
                 <div class="form-group">
-                    <label>Planned / Real</label>
-                    <select id="txPlannedReal">
-                        <option value="Real">Real</option>
-                        <option value="Planned">Planned</option>
-                    </select>
-                </div>
-                <div class="form-group">
                     <label>Date (DD/MM/YY)</label>
                     <input id="txDate" type="text" required placeholder="30/04/26" pattern="\d{2}/\d{2}/\d{2,4}">
                 </div>
@@ -114,11 +107,6 @@
     <div class="drawer-filters">
         <input type="text" id="drawerSearch"
             placeholder="🔍 Search..." oninput="renderDrawerTable()">
-        <select id="drawerPlannedReal" onchange="renderDrawerTable()">
-            <option value="all">All</option>
-            <option value="Planned">Planned</option>
-            <option value="Real">Real</option>
-        </select>
     </div>
     <div class="drawer-table-wrapper">
         <table>
@@ -160,14 +148,6 @@
         <!-- Global Filters -->
         <section class="filters-bar">
             <div class="filter-group">
-                <label>Planned / Real</label>
-                <div class="toggle-group" id="plannedRealToggle">
-                    <button class="toggle-btn active" data-value="all">All</button>
-                    <button class="toggle-btn" data-value="Planned">Planned</button>
-                    <button class="toggle-btn" data-value="Real">Real</button>
-                </div>
-            </div>
-            <div class="filter-group">
                 <label>Year</label>
                 <select id="yearFilter"></select>
             </div>
@@ -182,7 +162,6 @@
                 <button class="btn-reset" onclick="resetFilters()">↺ Reset</button>
             </div>
             <div class="filter-group" style="margin-left:auto">
-                <label>View</label>
                 <div class="toggle-group">
                     <button class="toggle-btn charts-kind-btn active" data-kind="expense"
                         onclick="toggleChartsKind('expense')">💸 Expenses</button>

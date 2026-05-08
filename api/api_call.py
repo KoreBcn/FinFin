@@ -339,6 +339,63 @@ def clean_description(remittance_info: str, debtor_name: str,
     return "Unknown"
 
 
+# === ANNA RAW FORMAT HELPERS ===
+
+def detect_file_format(filepath: str) -> str:
+    """Return 'anna' for Danish bank semicolon format, 'standard' otherwise."""
+    with open(filepath, newline='', encoding='utf-8') as f:
+        first_line = f.readline()
+    if 'Dato' in first_line and ';' in first_line:
+        return 'anna'
+    return 'standard'
+
+
+def parse_anna_amount(belob_str: str) -> tuple[float, str]:
+    """Parse Danish-format amount (e.g. '-1.551,00') → (abs_amount, credit_debit)."""
+    # Danish: '.' = thousands separator, ',' = decimal separator
+    normalized = belob_str.strip().strip('"').replace('.', '').replace(',', '.')
+    try:
+        amount = float(normalized)
+    except ValueError:
+        amount = 0.0
+    credit_debit = 'CRDT' if amount >= 0 else 'DBIT'
+    return abs(amount), credit_debit
+
+
+def extract_account_from_filename(filename: str) -> str:
+    """Derive account label from filename pattern YYYYMMDD_accountname_raw.csv."""
+    parts = filename.lower().split('_')
+    # Expected: ['YYYYMMDD', 'accountname', 'raw.csv']
+    if len(parts) >= 2:
+        account = parts[1]
+        if account in ('anna', 'carlos', 'joint'):
+            return account
+    return 'unknown'
+
+
+def normalize_anna_row(row: dict) -> dict:
+    """Convert a Danish-bank CSV row to the standard schema dict."""
+    tekst = row.get('Tekst', '').strip()
+    dato = row.get('Dato', '').strip()
+    abs_amount, credit_debit = parse_anna_amount(row.get('Beløb', '0'))
+
+    # Convert DD.MM.YYYY → YYYY-MM-DD
+    try:
+        dt = datetime.strptime(dato, '%d.%m.%Y')
+        booking_date = dt.strftime('%Y-%m-%d')
+    except ValueError:
+        booking_date = dato
+
+    return {
+        'booking_date':           booking_date,
+        'amount':                 str(abs_amount),
+        'credit_debit_indicator': credit_debit,
+        'debtor_name':            '',
+        'creditor_name':          tekst,
+        'remittance_information': tekst,
+    }
+
+
 # === CATEGORIZED CSV SCHEMA ===
 CATEGORIZED_COLUMNS = [
     'id',           # Unique row identifier (UUID)
@@ -355,11 +412,13 @@ CATEGORIZED_COLUMNS = [
 ]
 
 
-def categorize_raw_folder():
+def categorize_raw_folder(filter_months: bool = True):
     """
     Read every CSV in api/data/raw/, categorize each row, and write one
     api/data/categorized/YYYYMM_categorized.csv per month.
-    Only rows from the last 3 calendar months (including the current month) are kept.
+    When filter_months is True (default), only rows from the last 3 calendar
+    months (including the current month) are kept. Set filter_months=False to
+    process all rows regardless of date.
     Processes files produced by the API call AND any manually dropped files.
     """
     os.makedirs(RAW_DIR, exist_ok=True)
@@ -383,7 +442,10 @@ def categorize_raw_folder():
         logger.info("No raw CSV files found in api/data/raw/ — nothing to categorize.")
         return
 
-    logger.info(f"Categorizing transactions from {CUTOFF_DATE.strftime('%d/%m/%Y')} onwards.")
+    if filter_months:
+        logger.info(f"Categorizing transactions from {CUTOFF_DATE.strftime('%d/%m/%Y')} onwards.")
+    else:
+        logger.info("Categorizing all transactions (no date filter).")
 
     # cat_rows_by_month: {"YYYYMM": [row_dict, ...]}
     cat_rows_by_month = {}
@@ -392,71 +454,79 @@ def categorize_raw_folder():
     for filename in raw_files:
         filepath = os.path.join(RAW_DIR, filename)
         logger.info(f"Categorizing raw file: {filename}")
+        file_format = detect_file_format(filepath)
+        file_account = extract_account_from_filename(filename)
         with open(filepath, newline='', encoding='utf-8') as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                debtor_name     = row.get('debtor_name', '')
-                creditor_name   = row.get('creditor_name', '')
-                remittance_info = row.get('remittance_information', '')
-                credit_debit    = row.get('credit_debit_indicator', '')
-                account_name    = row.get('account_name', '')
-                booking_date    = row.get('booking_date', '')
-                amount_raw      = row.get('amount', '')
+            if file_format == 'anna':
+                reader = csv.DictReader(f, delimiter=';')
+                normalized_rows = [normalize_anna_row(row) for row in reader]
+            else:
+                reader = csv.DictReader(f)
+                normalized_rows = list(reader)
 
-                # Parse date
-                parsed_date = None
-                try:
-                    parsed_date = datetime.strptime(str(booking_date), '%Y-%m-%d')
-                    formatted_date = parsed_date.strftime('%d/%m/%y')
-                    month          = parsed_date.strftime('%B')
-                    year           = parsed_date.strftime('%Y')
-                except (ValueError, TypeError):
-                    formatted_date = str(booking_date)
-                    month = ''
-                    year  = ''
+        for row in normalized_rows:
+            debtor_name     = row.get('debtor_name', '')
+            creditor_name   = row.get('creditor_name', '')
+            remittance_info = row.get('remittance_information', '')
+            credit_debit    = row.get('credit_debit_indicator', '')
+            booking_date    = row.get('booking_date', '')
+            amount_raw      = row.get('amount', '')
 
-                # Discard rows outside the last 3 months
-                if parsed_date is None or parsed_date < CUTOFF_DATE:
-                    skipped += 1
-                    continue
+            # Parse date
+            parsed_date = None
+            try:
+                parsed_date = datetime.strptime(str(booking_date), '%Y-%m-%d')
+                formatted_date = parsed_date.strftime('%d/%m/%y')
+                month          = parsed_date.strftime('%B')
+                year           = parsed_date.strftime('%Y')
+            except (ValueError, TypeError):
+                formatted_date = str(booking_date)
+                month = ''
+                year  = ''
 
-                expense, tx_type = categorize_transaction(
-                    debtor_name, creditor_name, remittance_info, credit_debit
-                )
+            # Discard rows outside the last 3 months (when filter enabled)
+            if filter_months and (parsed_date is None or parsed_date < CUTOFF_DATE):
+                skipped += 1
+                continue
 
-                if 'anna' in account_name.lower():
-                    account_label = 'anna'
-                elif 'carlos' in (debtor_name or '').lower() or \
-                     'carlos' in (creditor_name or '').lower():
-                    account_label = 'carlos'
-                else:
-                    account_label = 'personal'
+            expense, tx_type = categorize_transaction(
+                debtor_name, creditor_name, remittance_info, credit_debit
+            )
 
-                # Rename Salary to Carlos Salary for personal account
-                if expense == 'Salary' and account_label == 'personal':
-                    expense = 'Carlos Salary'
+            account_label = file_account
 
-                # All debits from personal account → Type = 👨 Carlos
-                if account_label == 'personal' and credit_debit == 'DBIT':
+            # Account-based type override: anna → 👩 Anna, carlos → 👨 Carlos
+            # Exception: income-category transactions keep their original type
+            if tx_type != '💰 Income':
+                if account_label == 'anna':
+                    tx_type = '👩 Anna'
+                elif account_label == 'carlos':
                     tx_type = '👨 Carlos'
 
-                month_key = parsed_date.strftime('%Y%m') if parsed_date else 'unknown'
-                cat_row = {
-                    'id':           str(uuid4()),
-                    'Expense':      expense,
-                    'Planned/Rea':  'REA',
-                    'Type':         tx_type,
-                    'Date':         formatted_date,
-                    'Month':        month,
-                    'Year':         year,
-                    'Amount':       format_amount(amount_raw, credit_debit),
-                    'Comments':     clean_description(
-                                        remittance_info, debtor_name, creditor_name
-                                    ),
-                    'Account':      account_label,
-                    'Excluded':     'false',
-                }
-                cat_rows_by_month.setdefault(month_key, []).append(cat_row)
+            # Rename generic 'Salary' expense label per account
+            if expense == 'Salary':
+                if account_label == 'anna':
+                    expense = 'Anna Salary'
+                elif account_label == 'carlos':
+                    expense = 'Carlos Salary'
+
+            month_key = parsed_date.strftime('%Y%m') if parsed_date else 'unknown'
+            cat_row = {
+                'id':           str(uuid4()),
+                'Expense':      expense,
+                'Planned/Rea':  'REA',
+                'Type':         tx_type,
+                'Date':         formatted_date,
+                'Month':        month,
+                'Year':         year,
+                'Amount':       format_amount(amount_raw, credit_debit),
+                'Comments':     clean_description(
+                                    remittance_info, debtor_name, creditor_name
+                                ),
+                'Account':      account_label,
+                'Excluded':     'false',
+            }
+            cat_rows_by_month.setdefault(month_key, []).append(cat_row)
 
     total_rows = 0
     for month_key, rows in sorted(cat_rows_by_month.items()):
@@ -468,9 +538,10 @@ def categorize_raw_folder():
         logger.info(f"  {month_key}: {len(rows)} rows → {cat_path}")
         total_rows += len(rows)
 
+    filter_note = f"{skipped} rows discarded as older than 3 months" if filter_months else "no date filter applied"
     logger.info(f"Categorization complete: {total_rows} rows across "
                 f"{len(cat_rows_by_month)} month file(s) in {CATEGORIZED_DIR}/ "
-                f"({skipped} rows discarded as older than 3 months)")
+                f"({filter_note})")
 
 
 # === SESSION HELPERS ===
@@ -720,7 +791,9 @@ def fetch_all_transactions():
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == 'categorize':
         # Run categorization only (for manually dropped raw files)
-        categorize_raw_folder()
+        # Pass --all to disable the 3-month date filter
+        no_filter = '--all' in sys.argv
+        categorize_raw_folder(filter_months=not no_filter)
     else:
         # Full flow: fetch from bank API then categorize
         fetch_all_transactions()
