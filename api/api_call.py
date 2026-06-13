@@ -294,7 +294,7 @@ def categorize_transaction(debtor_name: str, creditor_name: str,
             return expense, tx_type
 
     # Default if no keyword matched — flag for manual review
-    return "Uncategorized", "⚠️ Review"
+    return "⚠️ Review", "⚠️ Review"
 
 
 def format_amount(amount: float, credit_debit: str) -> str:
@@ -377,7 +377,7 @@ def normalize_anna_row(row: dict) -> dict:
     """Convert a Danish-bank CSV row to the standard schema dict."""
     tekst = row.get('Tekst', '').strip()
     dato = row.get('Dato', '').strip()
-    abs_amount, credit_debit = parse_anna_amount(row.get('Beløb', '0'))
+    abs_amount, credit_debit = parse_anna_amount(row.get('Belob', row.get('Beløb', '0')))
 
     # Convert DD.MM.YYYY → YYYY-MM-DD
     try:
@@ -412,13 +412,15 @@ CATEGORIZED_COLUMNS = [
 ]
 
 
-def categorize_raw_folder(filter_months: bool = True):
+def categorize_raw_folder(filter_months: bool = True, only_file: str | None = None):
     """
     Read every CSV in api/data/raw/, categorize each row, and write one
     api/data/categorized/YYYYMM_categorized.csv per month.
     When filter_months is True (default), only rows from the last 3 calendar
     months (including the current month) are kept. Set filter_months=False to
     process all rows regardless of date.
+    When only_file is set (e.g. '20260601_anna_raw.csv'), only that file is
+    processed; all other files in raw/ are skipped.
     Processes files produced by the API call AND any manually dropped files.
     """
     os.makedirs(RAW_DIR, exist_ok=True)
@@ -438,6 +440,11 @@ def categorize_raw_folder(filter_months: bool = True):
     raw_files = sorted(
         f for f in os.listdir(RAW_DIR) if f.lower().endswith('.csv')
     )
+    if only_file:
+        raw_files = [f for f in raw_files if f == only_file]
+        if not raw_files:
+            logger.error(f"File '{only_file}' not found in {RAW_DIR}/")
+            return
     if not raw_files:
         logger.info("No raw CSV files found in api/data/raw/ — nothing to categorize.")
         return
@@ -496,8 +503,8 @@ def categorize_raw_folder(filter_months: bool = True):
             account_label = file_account
 
             # Account-based type override: anna → 👩 Anna, carlos → 👨 Carlos
-            # Exception: income-category transactions keep their original type
-            if tx_type != '💰 Income':
+            # Exception: income and review-flagged transactions keep their original type
+            if tx_type not in ('💰 Income', '⚠️ Review'):
                 if account_label == 'anna':
                     tx_type = '👩 Anna'
                 elif account_label == 'carlos':
@@ -792,8 +799,14 @@ if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == 'categorize':
         # Run categorization only (for manually dropped raw files)
         # Pass --all to disable the 3-month date filter
+        # Pass --file <filename> to process a single file
         no_filter = '--all' in sys.argv
-        categorize_raw_folder(filter_months=not no_filter)
+        only_file = None
+        if '--file' in sys.argv:
+            idx = sys.argv.index('--file')
+            if idx + 1 < len(sys.argv):
+                only_file = sys.argv[idx + 1]
+        categorize_raw_folder(filter_months=not no_filter, only_file=only_file)
     else:
         # Full flow: fetch from bank API then categorize
         fetch_all_transactions()

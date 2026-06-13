@@ -1967,14 +1967,8 @@ function renderHighlightsTab() {
     const monthCount    = activeMonths.size || 1;
     const avgMonthly    = totalExpenses / monthCount;
 
-    const plannedTotal  = rawData.filter(d => {
-        if (d.excluded || d.PlannedReal !== 'Planned' || d.kind !== 'expense') return false;
-        return highlightsYear === 'all' || d.Year === parseInt(highlightsYear);
-    }).reduce((s, d) => s + Math.abs(d.Amount), 0);
-    const budgetPct     = plannedTotal > 0 ? (totalExpenses / plannedTotal * 100) : null;
-
     const uncatCount    = rawData.filter(d => {
-        if (d.excluded || d.Type !== '⚠️ Review') return false;
+        if (d.excluded || d.Expense !== '⚠️ Review') return false;
         return highlightsYear === 'all' || d.Year === parseInt(highlightsYear);
     }).length;
 
@@ -2023,15 +2017,6 @@ function renderHighlightsTab() {
     const srColor = savingsRate >= 20 ? '#10b981' : savingsRate >= 10 ? '#f59e0b' : '#ef4444';
     const srLabel = savingsRate >= 20 ? '🟢 Excellent' : savingsRate >= 10 ? '🟡 Moderate' : '🔴 Needs attention';
 
-    // Budget badge
-    let budgetBadge = '';
-    if (budgetPct !== null) {
-        const over = budgetPct > 100;
-        budgetBadge = `<span class="kpi-badge ${over ? 'badge-over' : 'badge-under'}">
-            ${over ? `▲ ${(budgetPct - 100).toFixed(1)}% Over` : `▼ ${(100 - budgetPct).toFixed(1)}% Under`}
-        </span>`;
-    }
-
     // === Build HTML ===
 
     // Filter bar
@@ -2070,17 +2055,11 @@ function renderHighlightsTab() {
             <div class="hl-kpi-value">${fmt(avgMonthly)}</div>
             <div class="hl-kpi-sub">Over ${monthCount} month${monthCount !== 1 ? 's' : ''}</div>
         </div>
-        <div class="hl-kpi-card">
-            <div class="hl-kpi-icon">🎯</div>
-            <div class="hl-kpi-label">Budget Adherence</div>
-            <div class="hl-kpi-value">${budgetPct !== null ? budgetPct.toFixed(1) + '%' : '—'}</div>
-            <div class="hl-kpi-sub">${budgetBadge || (budgetPct === null ? 'No budget set' : '')}</div>
-        </div>
         <div class="hl-kpi-card ${uncatCount > 0 ? 'hl-kpi-warning' : ''}">
             <div class="hl-kpi-icon">${uncatCount > 0 ? '⚠️' : '✅'}</div>
-            <div class="hl-kpi-label">Needs Review</div>
+            <div class="hl-kpi-label">⚠️ Review</div>
             <div class="hl-kpi-value" style="color:${uncatCount > 0 ? '#f59e0b' : '#10b981'}">${uncatCount}</div>
-            <div class="hl-kpi-sub">${uncatCount > 0 ? 'Uncategorized items' : 'All categorized!'}</div>
+            <div class="hl-kpi-sub">${uncatCount > 0 ? '⚠️ Review items' : 'All categorized!'}</div>
         </div>
     </section>`;
 
