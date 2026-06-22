@@ -1,12 +1,14 @@
-name: Hello World
+name: Print Name from Environment Variable (dev)
 
 on:
   push:
     branches: ["**"]
 
 jobs:
-  hello:
+  print-name:
     runs-on: ubuntu-latest
+    environment: dev
+
     steps:
-      - name: Print hello
-        run: echo "Commit done!"
+      - name: Print
+        run: echo "My name is: ${{ vars.MY_NAME }}"
