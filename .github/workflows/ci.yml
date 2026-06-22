@@ -2,13 +2,12 @@ name: Print Name from Environment Variable (dev)
 
 on:
   push:
-    branches: ["**"]
-
+    branches: 
+      - "**"
 jobs:
-  print-name:
+  hello:
     runs-on: ubuntu-latest
     environment: dev
-
     steps:
       - name: Print
         run: echo "My name is: ${{ vars.MY_NAME }}"
