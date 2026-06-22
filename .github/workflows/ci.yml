@@ -2,8 +2,9 @@ name: Print Name from Environment Variable (dev)
 
 on:
   push:
-    branches: 
+    branches:
       - "**"
+
 jobs:
   hello:
     runs-on: ubuntu-latest
