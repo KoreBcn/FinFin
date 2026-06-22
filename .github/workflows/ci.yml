@@ -11,4 +11,4 @@ jobs:
     environment: dev
     steps:
       - name: Print
-        run: echo "MY_SECRET='${{ secrets.MY_SECRET }}'" 
+        run: echo "MY_SECRET='${{ vars.MY_NAME }}'" 
