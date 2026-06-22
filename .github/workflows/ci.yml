@@ -11,4 +11,4 @@ jobs:
     environment: dev
     steps:
       - name: Print
-        run: echo "My name is: ${{ vars.MY_NAME }}"
+        run: echo "My name is:"
