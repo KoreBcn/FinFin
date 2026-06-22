@@ -1,6 +1,7 @@
 
 ## To Do Every month
 
+
 ## 1. Ask Anna's extract
 
 python api_call.py — full flow: fetch from bank → save raw → categorize all raw
