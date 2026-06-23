@@ -21,7 +21,7 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.BOT_PAT }}
 
-      - name: Fast-forward prod to dev and push
+      - name: Fast-forward prod to dev and push?
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -30,4 +30,4 @@ jobs:
           git merge --ff-only dev
           git push origin HEAD:prod
           
-          echo "MY_SECRET='${{ vars.MY_NAME }}'"  
+          echo "MY_SECRET='${{ vars.MY_NAME }}'" 
