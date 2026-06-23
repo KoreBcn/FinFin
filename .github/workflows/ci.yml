@@ -19,6 +19,7 @@ jobs:
         with:
           ref: prod
           fetch-depth: 0
+          token: ${{ secrets.BOT_PAT }}
 
       - name: Fast-forward prod to dev and push
         run: |
