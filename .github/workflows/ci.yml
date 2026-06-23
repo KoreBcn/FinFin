@@ -5,18 +5,22 @@ on:
     branches:
       - dev
 
-env:
-  - deploymentEnvironment: ${{ github.ref_name == 'prod' && 'prod' || 'dev' }}
-  
 permissions:
   contents: write
-
 
 jobs:
   sync:
     runs-on: ubuntu-latest
-    environment: ${{ env.deploymentEnvironment }}
+    environment: ${{ github.ref_name == 'prod' && 'prod' || 'dev' }}
     steps:
+      - name: Set DEPLOY_ENV for use in all steps
+        run: |
+          if [ "${{ github.ref_name }}" == "prod" ]; then
+            echo "DEPLOY_ENV=prod" >> $GITHUB_ENV
+          else
+            echo "DEPLOY_ENV=dev" >> $GITHUB_ENV
+          fi
+
       - name: Checkout prod
         uses: actions/checkout@v4
         with:
@@ -24,13 +28,12 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.BOT_PAT }}
 
-      - name: Fast-forward prod to dev and push?
+      - name: Fast-forward prod to dev and push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-
           git fetch origin dev:dev
           git merge --ff-only dev
           git push origin HEAD:prod
-          
-          echo "'${{ vars.MY_NAME }}' is publishing in ${{ env.deploymentEnvironment }}" 
+
+          echo "'${{ vars.MY_NAME }}' is publishing in ${DEPLOY_ENV}"
