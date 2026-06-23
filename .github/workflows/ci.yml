@@ -5,37 +5,32 @@ on:
     branches:
       - dev
 
-variables:
-  - name: deploymentEnvironment
-    ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/prod') }}:
-      value: 'prod'
-    ${{ else }}:
-      value: 'dev'
+env:
+  - deploymentEnvironment: ${{ github.ref_name == 'prod' && 'prod' || 'dev' }}
   
 permissions:
   contents: write
 
-pool:
-  vmImage: ubuntu-latest
 
 jobs:
-  environment: ${{ variables.deploymentEnvironment }}
+  sync:
+    runs-on: ubuntu-latest
+    environment: ${{ env.deploymentEnvironment }}
+    steps:
+      - name: Checkout prod
+        uses: actions/checkout@v4
+        with:
+          ref: prod
+          fetch-depth: 0
+          token: ${{ secrets.BOT_PAT }}
 
-  steps:
-    - name: Checkout prod
-      uses: actions/checkout@v4
-      with:
-        ref: prod
-        fetch-depth: 0
-        token: ${{ secrets.BOT_PAT }}
+      - name: Fast-forward prod to dev and push?
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
 
-    - name: Fast-forward prod to dev and push?
-      run: |
-        git config user.name "github-actions[bot]"
-        git config user.email "github-actions[bot]@users.noreply.github.com"
-
-        git fetch origin dev:dev
-        git merge --ff-only dev
-        git push origin HEAD:prod
-        
-        echo "'${{ vars.MY_NAME }}' is publishing in ${{ variables.deploymentEnvironment }}" 
+          git fetch origin dev:dev
+          git merge --ff-only dev
+          git push origin HEAD:prod
+          
+          echo "'${{ vars.MY_NAME }}' is publishing in ${{ env.deploymentEnvironment }}" 
