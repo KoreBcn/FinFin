@@ -11,7 +11,7 @@ permissions:
 jobs:
   sync:
     runs-on: ubuntu-latest
-    environment: ${{ github.ref_name == 'prod' && 'prod' || 'dev' }}
+    environment: prod
     steps:
       - name: Set DEPLOY_ENV for use in all steps
         run: |
