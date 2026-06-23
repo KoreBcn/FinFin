@@ -1,14 +1,32 @@
-name: Print Name from Environment Variable (dev)
+name: Sync dev -> prod on push
 
 on:
   push:
     branches:
-      - "**"
+      - dev
+
+permissions:
+  contents: write
 
 jobs:
-  hello:
+  sync:
     runs-on: ubuntu-latest
     environment: dev
+
     steps:
-      - name: Print
-        run: echo "MY_SECRET='${{ vars.MY_NAME }}'" 
+      - name: Checkout prod
+        uses: actions/checkout@v4
+        with:
+          ref: prod
+          fetch-depth: 0
+
+      - name: Fast-forward prod to dev and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git fetch origin dev:dev
+          git merge --ff-only dev
+          git push origin HEAD:prod
+          
+          echo "MY_SECRET='${{ vars.MY_NAME }}'"  
