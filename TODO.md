@@ -1,0 +1,4 @@
+- Fix heat map
+- Add category totals on the right of the heatmapp or upon selection on the piechart
+- Add a trend chart to visualize expenses per category year by year 
+- Make heatmap bigger reduce gaps between KPI and filters
