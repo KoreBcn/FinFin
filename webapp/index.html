@@ -91,6 +91,32 @@
     </div>
 </div>
 
+<!-- Expenses Trend Modal -->
+<div class="modal-overlay" id="trendModal" onclick="handleTrendModalClick(event)">
+    <div class="modal modal-wide">
+        <div class="modal-header">
+            <h2>📈 Monthly Expenses Trend</h2>
+            <button class="modal-close" onclick="closeExpensesTrendModal()">✕</button>
+        </div>
+        <div style="position:relative;height:360px;padding:0.5rem 0">
+            <canvas id="expTrendChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Income Trend Modal -->
+<div class="modal-overlay" id="incTrendModal" onclick="handleIncTrendModalClick(event)">
+    <div class="modal modal-wide">
+        <div class="modal-header">
+            <h2>📊 Monthly Income Trend</h2>
+            <button class="modal-close" onclick="closeIncomeTrendModal()">✕</button>
+        </div>
+        <div style="position:relative;height:360px;padding:0.5rem 0">
+            <canvas id="incTrendChart"></canvas>
+        </div>
+    </div>
+</div>
+
 <!-- Transaction Drawer -->
 <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
 <div class="drawer" id="transactionDrawer">
@@ -149,7 +175,17 @@
         <section class="filters-bar">
             <div class="filter-group">
                 <label>Year</label>
-                <select id="yearFilter"></select>
+                <div class="ms-wrap" id="yearMsWrap">
+                    <button class="ms-trigger" id="yearMsTrigger" type="button" onclick="toggleMs('yearMs')">All Years ▾</button>
+                    <div class="ms-panel" id="yearMsPanel"></div>
+                </div>
+            </div>
+            <div class="filter-group">
+                <label>Category</label>
+                <div class="ms-wrap" id="catMsWrap">
+                    <button class="ms-trigger" id="catMsTrigger" type="button" onclick="toggleMs('catMs')">All Categories ▾</button>
+                    <div class="ms-panel" id="catMsPanel"></div>
+                </div>
             </div>
             <div class="filter-group">
                 <label>Currency</label>
@@ -177,6 +213,7 @@
                 <div class="kpi-top">
                     <span class="kpi-icon">📉</span>
                     <span class="kpi-label">Expenses</span>
+                    <button class="kpi-trend-btn" onclick="openExpensesTrendModal()" title="View monthly trend">📈</button>
                 </div>
                 <div class="kpi-real" id="kpiExpTotal">—</div>
                 <div class="kpi-planned-row">
@@ -188,6 +225,7 @@
                 <div class="kpi-top">
                     <span class="kpi-icon">📈</span>
                     <span class="kpi-label">Income</span>
+                    <button class="kpi-trend-btn" onclick="openIncomeTrendModal()" title="View monthly income trend">📊</button>
                 </div>
                 <div class="kpi-real" id="kpiIncTotal">—</div>
                 <div class="kpi-planned-row">
@@ -213,9 +251,6 @@
             <div class="charts-panel">
                 <div class="charts-grid-pie-heatmap">
                     <div class="chart-container" id="monthlyChartBox">
-                        <div class="chart-header">
-                            <h3>📅 Monthly Overview</h3>
-                        </div>
                         <div class="breadcrumb" id="monthlyHeatmapBreadcrumb" style="display:none;margin-bottom:0.5rem">
                             <span class="breadcrumb-link" onclick="resetMonthlyDrill()">All Categories</span>
                             <span> › </span>
@@ -228,7 +263,6 @@
                         <div class="chart-header">
                             <div>
                                 <h3 id="pieChartTitle">💸 Expenses by Type</h3>
-                                <span class="chart-hint">Click a slice to drill down &amp; open transactions</span>
                             </div>
                         </div>
                         <div class="breadcrumb" id="breadcrumbPie" style="display:none;margin-bottom:0.5rem">

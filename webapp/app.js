@@ -8,7 +8,7 @@ const EUR_RATE = 7.46;
 let rawData      = [];
 let filteredData = [];
 
-let globalFilters   = { year: 'all', currency: 'DKK' };
+let globalFilters   = { years: [], currency: 'DKK', categories: [] }; // empty array = "all"
 let insightsFilters = { year: 'all', currency: 'DKK' };
 
 // Dashboard cross-chart filters
@@ -229,7 +229,19 @@ function closeTxModal() { document.getElementById('txModal').classList.remove('o
 function handleTxModalClick(e) {
     if (e.target === document.getElementById('txModal')) closeTxModal();
 }
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeTxModal(); });
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+        closeTxModal();
+        closeExpensesTrendModal();
+        closeIncomeTrendModal();
+        // Close any open multi-select panels
+        document.querySelectorAll('.ms-panel').forEach(p => p.style.display = 'none');
+    }
+});
+
+function handleTrendModalClick(e) {
+    if (e.target === document.getElementById('trendModal')) closeExpensesTrendModal();
+}
 
 async function submitTxForm(e) {
     e.preventDefault();
@@ -280,6 +292,7 @@ async function submitTxForm(e) {
         applyGlobalFilters();
         populateYearFilter();
         populateInsightsYearFilter();
+        populateCategoryFilter();
         renderDashboard();
         if (activeTab === 'insights') renderInsightsTab();
         if (activeTab === 'transactions') renderTransactionsTab();
@@ -295,28 +308,31 @@ async function submitTxForm(e) {
 //  BOOTSTRAP
 // =====================================================
 function bootstrapApp() {
+    // Default to current year
+    const currentYear = new Date().getFullYear();
+    const availableYears = [...new Set(rawData.map(d => d.Year))];
+    globalFilters.years = availableYears.includes(currentYear) ? [currentYear] : [];
+
     populateYearFilter();
     populateInsightsYearFilter();
+    populateCategoryFilter();
     document.getElementById('emptyState').style.display      = 'none';
     document.getElementById('tabDashboard').style.display    = 'flex';
     document.getElementById('tabInsights').style.display     = 'none';
     document.getElementById('tabTransactions').style.display = 'none';
     document.getElementById('tabHighlights').style.display   = 'none';
     document.getElementById('tabSwitcher').style.display     = 'flex';
-    // Default to current year
-    const currentYear = new Date().getFullYear();
-    globalFilters.year = String(currentYear);
-    const yearSel = document.getElementById('yearFilter');
-    if (yearSel) yearSel.value = String(currentYear);
     applyGlobalFilters();
 }
 
 function populateYearFilter() {
     const years = [...new Set(rawData.map(d => d.Year))].sort();
-    const currentYear = new Date().getFullYear();
-    document.getElementById('yearFilter').innerHTML =
-        '<option value="all">All Years</option>' +
-        years.map(y => `<option value="${y}" ${y === currentYear ? 'selected' : ''}>${y}</option>`).join('');
+    const panel = document.getElementById('yearMsPanel');
+    if (!panel) return;
+    panel.innerHTML = years.map(y => `<label class="ms-item">
+        <input type="checkbox" value="${y}" ${globalFilters.years.includes(y) ? 'checked' : ''} onchange="onYearCheckbox(this)">
+        <span>${y}</span></label>`).join('');
+    updateMsTriggerLabel('yearMs', globalFilters.years.map(String), 'All Years');
 }
 
 function populateInsightsYearFilter() {
@@ -326,15 +342,59 @@ function populateInsightsYearFilter() {
         years.map(y => `<option value="${y}">${y}</option>`).join('');
 }
 
+function populateCategoryFilter() {
+    const cats = [...new Set(rawData.map(d => d.Type).filter(Boolean))].sort();
+    const panel = document.getElementById('catMsPanel');
+    if (!panel) return;
+    panel.innerHTML = cats.map(c => `<label class="ms-item">
+        <input type="checkbox" value="${c.replace(/"/g,'&quot;')}" ${globalFilters.categories.includes(c) ? 'checked' : ''} onchange="onCatCheckbox(this)">
+        <span>${c}</span></label>`).join('');
+    updateMsTriggerLabel('catMs', globalFilters.categories, 'All Categories');
+}
+
+// ── Multi-select helpers ──────────────────────────
+function updateMsTriggerLabel(id, selectedVals, allLabel) {
+    const trigger = document.getElementById(id + 'Trigger');
+    if (!trigger) return;
+    if (!selectedVals.length)         trigger.textContent = allLabel + ' ▾';
+    else if (selectedVals.length === 1) trigger.textContent = selectedVals[0] + ' ▾';
+    else                              trigger.textContent = selectedVals.length + ' selected ▾';
+}
+
+function toggleMs(id) {
+    document.querySelectorAll('.ms-panel').forEach(p => {
+        if (p.id !== id + 'Panel') p.style.display = 'none';
+    });
+    const panel = document.getElementById(id + 'Panel');
+    if (panel) panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+}
+
+document.addEventListener('click', e => {
+    if (!e.target.closest('.ms-wrap')) {
+        document.querySelectorAll('.ms-panel').forEach(p => p.style.display = 'none');
+    }
+});
+
+function onYearCheckbox(cb) {
+    const yr = parseInt(cb.value);
+    if (cb.checked) { if (!globalFilters.years.includes(yr)) globalFilters.years.push(yr); }
+    else            { globalFilters.years = globalFilters.years.filter(y => y !== yr); }
+    updateMsTriggerLabel('yearMs', globalFilters.years.map(String), 'All Years');
+    applyGlobalFilters();
+}
+
+function onCatCheckbox(cb) {
+    const cat = cb.value;
+    if (cb.checked) { if (!globalFilters.categories.includes(cat)) globalFilters.categories.push(cat); }
+    else            { globalFilters.categories = globalFilters.categories.filter(c => c !== cat); }
+    updateMsTriggerLabel('catMs', globalFilters.categories, 'All Categories');
+    applyGlobalFilters();
+}
+
 
 // =====================================================
 //  DASHBOARD GLOBAL FILTERS
 // =====================================================
-document.getElementById('yearFilter').addEventListener('change', e => {
-    globalFilters.year = e.target.value;
-    applyGlobalFilters();
-});
-
 document.getElementById('currencyToggle').addEventListener('click', e => {
     if (!e.target.classList.contains('toggle-btn')) return;
     document.querySelectorAll('#currencyToggle .toggle-btn').forEach(b => b.classList.remove('active'));
@@ -346,19 +406,25 @@ document.getElementById('currencyToggle').addEventListener('click', e => {
 function applyGlobalFilters() {
     filteredData = rawData.filter(row => {
         if (row.excluded) return false;
-        const okYear = globalFilters.year === 'all' || row.Year === parseInt(globalFilters.year);
-        return okYear;
+        const okYear     = !globalFilters.years.length      || globalFilters.years.includes(row.Year);
+        const okCategory = !globalFilters.categories.length || globalFilters.categories.includes(row.Type);
+        return okYear && okCategory;
     });
-    chartFilters = { monthKey: null, typeKey: null, typeLevel: null, kind: null };
-    drillDown    = { expenses: null, savings: null };
+    chartFilters  = { monthKey: null, typeKey: null, typeLevel: null, kind: null };
+    drillDown     = { expenses: null, savings: null };
+    monthlyDrillType = null;
     renderDashboard();
 }
 
 function resetFilters() {
-    globalFilters = { year: 'all', currency: globalFilters.currency };
+    globalFilters.years      = [];
+    globalFilters.categories = [];
     chartFilters  = { monthKey: null, typeKey: null, typeLevel: null, kind: null };
     drillDown     = { expenses: null, savings: null };
-    document.getElementById('yearFilter').value = 'all';
+    document.querySelectorAll('#yearMsPanel input[type="checkbox"]').forEach(cb => cb.checked = false);
+    document.querySelectorAll('#catMsPanel  input[type="checkbox"]').forEach(cb => cb.checked = false);
+    updateMsTriggerLabel('yearMs', [], 'All Years');
+    updateMsTriggerLabel('catMs',  [], 'All Categories');
     applyGlobalFilters();
 }
 
@@ -366,6 +432,9 @@ function renderDashboard() {
     updateStats();
     renderPieChart();
     renderMonthlyChart();
+    // Keep open trend modals in sync with current filters
+    if (document.getElementById('trendModal')?.classList.contains('open'))    renderExpensesTrendChart();
+    if (document.getElementById('incTrendModal')?.classList.contains('open')) renderIncomeTrendChart();
 }
 
 
@@ -864,7 +933,10 @@ function formatMoney(v) {
 //  KPI
 // =====================================================
 function updateStats() {
-    const data = filteredData;
+    // Respect active chart filters (type / category selection) so KPIs reflect selection
+    const data = (chartFilters.typeKey || chartFilters.monthKey)
+        ? getChartData(false, false)
+        : filteredData;
 
     const totalExp = data.filter(d => d.kind === 'expense')
         .reduce((s, d) => s - d.Amount, 0);
@@ -888,6 +960,156 @@ function sumRows(data, kind, pr, useAbs) {
     return data.filter(d => d.kind === kind && d.PlannedReal === pr)
         .reduce((s,d) => s + (useAbs ? Math.abs(d.Amount) : d.Amount), 0);
 }
+
+// =====================================================
+//  EXPENSES TREND MODAL
+// =====================================================
+function openExpensesTrendModal() {
+    document.getElementById('trendModal').classList.add('open');
+    renderExpensesTrendChart();
+}
+
+function closeExpensesTrendModal() {
+    document.getElementById('trendModal').classList.remove('open');
+    if (charts.expTrend) { charts.expTrend.destroy(); charts.expTrend = null; }
+}
+
+function renderExpensesTrendChart() {
+    const canvas = document.getElementById('expTrendChart');
+    if (!canvas) return;
+    if (charts.expTrend) { charts.expTrend.destroy(); charts.expTrend = null; }
+
+    // Respect active chart cross-filters (pie / heatmap selection)
+    const base = getChartData(false, false).filter(d => d.kind === 'expense' && d.PlannedReal === 'Real');
+    if (!base.length) { if (charts.expTrend) { charts.expTrend.destroy(); charts.expTrend = null; } return; }
+
+    const MNAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+    // Build a continuous sorted list of year-month keys that have data
+    const ymKeys = [...new Set(base.map(d => `${d.Year}-${String(d.Month).padStart(2,'0')}`))].sort();
+    const labels = ymKeys.map(ym => {
+        const [y, m] = ym.split('-');
+        return `${MNAMES[parseInt(m) - 1]} '${y.slice(2)}`;
+    });
+    const values = ymKeys.map(ym => {
+        const [y, m] = ym.split('-');
+        const yr = parseInt(y), mo = parseInt(m);
+        return iDisp(base.filter(d => d.Year === yr && d.Month === mo)
+            .reduce((s, d) => s - d.Amount, 0), globalFilters.currency);
+    });
+
+    charts.expTrend = new Chart(canvas, {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [{
+                label: 'Expenses',
+                data: values,
+                borderColor: '#ef4444',
+                backgroundColor: 'rgba(239,68,68,0.1)',
+                pointBackgroundColor: '#ef4444',
+                pointRadius: 4,
+                borderWidth: 2,
+                tension: 0.35,
+                fill: true,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: { label: ctx => ` Expenses: ${formatMoney(ctx.parsed.y)}` } }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { callback: v => `${(v / 1000).toFixed(0)}k ${currSymbol()}` },
+                    grid: { color: '#f1f5f9' }
+                },
+                x: { grid: { display: false }, ticks: { maxRotation: 45, font: { size: 10 } } }
+            }
+        }
+    });
+}
+
+// =====================================================
+//  INCOME TREND MODAL
+// =====================================================
+function openIncomeTrendModal() {
+    document.getElementById('incTrendModal').classList.add('open');
+    renderIncomeTrendChart();
+}
+
+function closeIncomeTrendModal() {
+    const modal = document.getElementById('incTrendModal');
+    if (modal) modal.classList.remove('open');
+    if (charts.incTrend) { charts.incTrend.destroy(); charts.incTrend = null; }
+}
+
+function handleIncTrendModalClick(e) {
+    if (e.target === document.getElementById('incTrendModal')) closeIncomeTrendModal();
+}
+
+function renderIncomeTrendChart() {
+    const canvas = document.getElementById('incTrendChart');
+    if (!canvas) return;
+    if (charts.incTrend) { charts.incTrend.destroy(); charts.incTrend = null; }
+
+    // Respect active chart cross-filters (pie / heatmap selection)
+    const base = getChartData(false, false).filter(d => d.kind === 'saving' && d.PlannedReal === 'Real');
+    if (!base.length) { if (charts.incTrend) { charts.incTrend.destroy(); charts.incTrend = null; } return; }
+
+    const MNAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+    const ymKeys = [...new Set(base.map(d => `${d.Year}-${String(d.Month).padStart(2,'0')}`))].sort();
+    const labels = ymKeys.map(ym => {
+        const [y, m] = ym.split('-');
+        return `${MNAMES[parseInt(m) - 1]} '${y.slice(2)}`;
+    });
+    const values = ymKeys.map(ym => {
+        const [y, m] = ym.split('-');
+        const yr = parseInt(y), mo = parseInt(m);
+        return iDisp(base.filter(d => d.Year === yr && d.Month === mo)
+            .reduce((s, d) => s + d.Amount, 0), globalFilters.currency);
+    });
+
+    charts.incTrend = new Chart(canvas, {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [{
+                label: 'Income',
+                data: values,
+                borderColor: '#10b981',
+                backgroundColor: 'rgba(16,185,129,0.1)',
+                pointBackgroundColor: '#10b981',
+                pointRadius: 4,
+                borderWidth: 2,
+                tension: 0.35,
+                fill: true,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: { label: ctx => ` Income: ${formatMoney(ctx.parsed.y)}` } }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { callback: v => `${(v / 1000).toFixed(0)}k ${currSymbol()}` },
+                    grid: { color: '#f1f5f9' }
+                },
+                x: { grid: { display: false }, ticks: { maxRotation: 45, font: { size: 10 } } }
+            }
+        }
+    });
+}
+
+
 
 function setKpiBadge(id, real, planned, kind) {
     const el = document.getElementById(id);
@@ -1139,13 +1361,21 @@ function resetDrillDown(which) {
 }
 
 function drillMonthlyHeatmap(catIdx) {
-    monthlyDrillType = _monthlyCategories[catIdx];
-    renderMonthlyChart();
+    const cat = _monthlyCategories[catIdx];
+    monthlyDrillType       = cat;
+    // Update chart type filter so KPIs reflect this category selection
+    chartFilters.typeKey   = cat;
+    chartFilters.kind      = monthlyHeatmapKind;
+    chartFilters.typeLevel = 'Type';
+    renderDashboard();
 }
 
 function resetMonthlyDrill() {
-    monthlyDrillType = null;
-    renderMonthlyChart();
+    monthlyDrillType       = null;
+    chartFilters.typeKey   = null;
+    chartFilters.kind      = null;
+    chartFilters.typeLevel = null;
+    renderDashboard();
 }
 
 function renderMonthlyChart() {
@@ -1204,12 +1434,12 @@ function renderMonthlyChart() {
             ${months.map(m => `<th>${MNAMES[m-1]}</th>`).join('')}
         </tr></thead><tbody>`;
 
-    catSet.forEach((cat, catIdx) => {
-        const rowVals = months.map(m => map[cat][m] || 0);
-        const rowMax  = Math.max(...rowVals, 1);
-        const rowPos  = rowVals.filter(v => v > 0);
-        const rowMin  = rowPos.length ? Math.min(...rowPos) : 0;
+    // Global min/max across all rows so colour scale is consistent
+    const allNonZero = catSet.flatMap(c => months.map(m => map[c][m] || 0)).filter(v => v > 0);
+    const globalMax  = Math.max(...allNonZero, 1);
+    const globalMin  = allNonZero.length ? Math.min(...allNonZero) : 0;
 
+    catSet.forEach((cat, catIdx) => {
         // Row label: top-level → click to drill; drilled → click opens drawer
         const rowClick = monthlyDrillType
             ? `openMonthlyRowDrawer(${catIdx})`
@@ -1224,7 +1454,7 @@ function renderMonthlyChart() {
             if (!val) {
                 html += `<td class="empty-cell">—</td>`;
             } else {
-                const t   = (val - rowMin) / (rowMax - rowMin || 1);
+                const t   = (val - globalMin) / (globalMax - globalMin || 1);
                 const a   = 0.18 + t * 0.82;
                 const bg  = isExp
                     ? `rgba(239,68,68,${a.toFixed(2)})`
