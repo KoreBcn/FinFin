@@ -14,7 +14,7 @@ EB_BASE_URL = os.getenv("ENABLEBANKING_BASE_URL", "https://api.enablebanking.com
 EB_APP_ID = os.getenv("ENABLEBANKING_APP_ID", "5d858d0d-9348-4305-8f9f-0a588f81ead1")
 EB_REDIRECT_URL = os.getenv("ENABLEBANKING_REDIRECT_URL", "https://google.com/")
 # Read private key contents from .pem file
-EB_CERTIFICATE_PATH = os.getenv("ENABLEBANKING_CERTIFICATE", "C:\\Users\\CMIQ\\repositories\\home_fin\\api\\5d858d0d-9348-4305-8f9f-0a588f81ead1.pem")
+EB_CERTIFICATE_PATH = os.getenv("ENABLEBANKING_CERTIFICATE", "C:\\Users\\carlo\\source\\repos\\HomeFin\\api\\5d858d0d-9348-4305-8f9f-0a588f81ead1.pem")
 
 # === TRANSACTION DATE RANGE ===
 DATE_FROM = datetime(2024, 1, 1, tzinfo=timezone.utc)
@@ -72,7 +72,7 @@ CATEGORY_RULES = [
 
     # Electricity
     (["andel energi", "energi", "el ", "electricity", "dong", "ørsted",
-      "radius", "nrgi"],
+      "radius", "nrgi","Evdk ApS"],
      "Electricity", "🏠 Home"),
 
     # Hot Water / Gas
@@ -97,7 +97,7 @@ CATEGORY_RULES = [
     (["silvan", "bauhaus", "jem og fix", "xl-byg", "hornbach",
       "maintenance", "repair", "vedligehold", "tømrer", "maler",
       "electrician", "plumber", "vvs", "skousen", "texas as",
-      "nordic lights", "sp nordic"],
+      "nordic lights", "sp nordic","jem & fix", "silvan", "bauhaus", "HARALD NYBORG", "RØVERKØB A/S"],
      "Maintenance", "🏠 Home"),
 
     # Furniture & Misc home
@@ -108,6 +108,10 @@ CATEGORY_RULES = [
     # Water
     (["vand ", "vand,", "water", "hofor"],
      "Water", "🏠 Home"),
+
+    #Internet
+    (["EWII"],
+    "Internet", "🏠 Home"),
 
     # ── Groceries ───────────────────────────────────────────────────────────
     (["netto", "lidl", "aldi", "fakta", "bilka", "føtex", "fotex", "f@tex",
@@ -157,7 +161,11 @@ CATEGORY_RULES = [
     (["shell", "circle k", "q8", "ok benzin", "benzin", "fuel",
       "esso", "st1"],
      "Gasoline", "🚗 Car"),
-
+    # Leasing
+    ([""Volkswagen Semler Finans"],
+     "Leasing", "🚗 Car"),
+    
+    
     # Car insurance
     (["bilforsikring", "car insurance", "motoransvar", "kaskoforsikring"],
      "Insurance", "🚗 Car"),

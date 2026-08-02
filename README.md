@@ -9,7 +9,7 @@ python api_call.py categorize — categorize only (for when you've manually drop
 
 ## 2. Pull transactions via API:
 cd api
-python .\api_call.py
+python api\api_call.py
 python api/api_call.py categorize
 python api/api_call.py categorize --all (not applying last 3 monhts filter)
 python api_call.py categorize --file 20260601_anna_raw.csv
