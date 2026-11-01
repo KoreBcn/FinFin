@@ -43,6 +43,8 @@ let charts = {};
 let drawerData     = [];
 let drawerFiltered = [];
 let drawerPage     = 1;
+let drawerDirtyRows = new Set();
+let drawerSaving    = false;
 const DRAWER_PER   = 15;
 let drawerSort     = { key: 'Date', dir: 'asc' };
 let txSort         = { key: 'DateSortKey', dir: 'desc' };
@@ -63,6 +65,35 @@ const YEAR_PALETTE = [
     { border: '#14b8a6', bg: 'rgba(20,184,166,0.78)' },
 ];
 function yearColor(i) { return YEAR_PALETTE[i % YEAR_PALETTE.length]; }
+
+function chartGridColor() {
+    return document.documentElement.getAttribute('data-theme') === 'dark'
+        ? 'rgba(148,163,184,0.2)'
+        : '#e2e8f0';
+}
+
+function chartTextColor() {
+    return getComputedStyle(document.documentElement).getPropertyValue('--text').trim();
+}
+
+function applyChartTheme() {
+    const textColor = chartTextColor();
+    const gridColor = chartGridColor();
+    Chart.defaults.color = textColor;
+    Chart.defaults.borderColor = gridColor;
+
+    Object.values(charts).forEach(chart => {
+        chart.options.color = textColor;
+        Object.values(chart.options.scales || {}).forEach(scale => {
+            if (scale.ticks) scale.ticks.color = textColor;
+            if (scale.grid) scale.grid.color = gridColor;
+            if (scale.title) scale.title.color = textColor;
+        });
+        const legendLabels = chart.options.plugins?.legend?.labels;
+        if (legendLabels) legendLabels.color = textColor;
+        chart.update('none');
+    });
+}
 
 
 // =====================================================
@@ -186,11 +217,13 @@ async function loadData() {
     }
 }
 
-async function apiSaveRow(row) {
+async function apiSaveRow(row, insertAfterId = '') {
     const payload = rowToApiData(row);
     const url     = row.id
         ? '/api/transactions/' + encodeURIComponent(row.id)
-        : '/api/transactions';
+        : '/api/transactions' + (insertAfterId
+            ? '?after=' + encodeURIComponent(insertAfterId)
+            : '');
     const method  = row.id ? 'PUT' : 'POST';
     const res = await fetch(url, {
         method,
@@ -808,7 +841,7 @@ function renderSavingsProjection() {
             scales: {
                 y: {
                     ticks: { callback: v => `${(v/1000).toFixed(0)}k ${sym}` },
-                    grid:  { color: '#f1f5f9' },
+                    grid:  { color: chartGridColor() },
                     title: { display: true, text: `Cumulative Net Savings (${sym})`, font: { size: 11 } }
                 },
                 x: { grid: { display: false } }
@@ -872,7 +905,7 @@ function makeInsightsBarOptions(onBarClick, currency) {
             y: {
                 beginAtZero: true,
                 ticks: { callback: v => `${(v/1000).toFixed(0)}k ${sym}` },
-                grid:  { color: '#f1f5f9' }
+                grid:  { color: chartGridColor() }
             },
             x: { grid: { display: false } }
         }
@@ -1025,7 +1058,7 @@ function renderExpensesTrendChart() {
                 y: {
                     beginAtZero: true,
                     ticks: { callback: v => `${(v / 1000).toFixed(0)}k ${currSymbol()}` },
-                    grid: { color: '#f1f5f9' }
+                    grid: { color: chartGridColor() }
                 },
                 x: { grid: { display: false }, ticks: { maxRotation: 45, font: { size: 10 } } }
             }
@@ -1101,7 +1134,7 @@ function renderIncomeTrendChart() {
                 y: {
                     beginAtZero: true,
                     ticks: { callback: v => `${(v / 1000).toFixed(0)}k ${currSymbol()}` },
-                    grid: { color: '#f1f5f9' }
+                    grid: { color: chartGridColor() }
                 },
                 x: { grid: { display: false }, ticks: { maxRotation: 45, font: { size: 10 } } }
             }
@@ -1277,7 +1310,7 @@ function renderPieChart() {
                 }
 
                 // ── label outside with leader line ───────────
-                if (pct >= 2) {
+                if (pct > 7) {
                     const lx1 = cx + Math.cos(midAngle) * (outerR + 6);
                     const ly1 = cy + Math.sin(midAngle) * (outerR + 6);
                     const lx2 = cx + Math.cos(midAngle) * (outerR + 20);
@@ -1293,7 +1326,7 @@ function renderPieChart() {
                     ctx.stroke();
 
                     ctx.font         = '11px system-ui,sans-serif';
-                    ctx.fillStyle    = '#334155';
+                    ctx.fillStyle    = chartTextColor();
                     ctx.textAlign    = isRight ? 'left' : 'right';
                     ctx.textBaseline = 'middle';
                     ctx.fillText(data.labels[i], textX, ly2);
@@ -1459,7 +1492,8 @@ function renderMonthlyChart() {
                 const bg  = isExp
                     ? `rgba(239,68,68,${a.toFixed(2)})`
                     : `rgba(16,185,129,${a.toFixed(2)})`;
-                const fg  = t > 0.55 ? '#ffffff' : '#1e293b';
+                const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+                const fg  = isDark || t > 0.55 ? '#ffffff' : '#1e293b';
                 const disp = iFormatShort(val, globalFilters.currency);
                 const tip  = `${cat} — ${MNAMES[m-1]}: ${formatMoney(toDisplay(val))}`;
                 html += `<td style="background:${bg};color:${fg};cursor:pointer" title="${tip}"
@@ -1543,14 +1577,14 @@ function makeBarOptions(onBarClick, onLegendClick, horizontal = false) {
             x: {
                 beginAtZero: true,
                 ticks: { callback: v => `${(v/1000).toFixed(0)}k ${currSymbol()}` },
-                grid:  { color: '#f1f5f9' }
+                grid:  { color: chartGridColor() }
             },
             y: { grid: { display: false } }
         } : {
             y: {
                 beginAtZero: true,
                 ticks: { callback: v => `${(v/1000).toFixed(0)}k ${currSymbol()}` },
-                grid:  { color: '#f1f5f9' }
+                grid:  { color: chartGridColor() }
             },
             x: { grid: { display: false } }
         }
@@ -1589,6 +1623,75 @@ function closeDrawer() {
     document.getElementById('transactionDrawer').classList.remove('open');
 }
 
+function updateDrawerSaveButton() {
+    const button = document.getElementById('drawerSaveButton');
+    if (!button) return;
+    const count = drawerDirtyRows.size;
+    button.disabled = drawerSaving || count === 0;
+    button.textContent = drawerSaving
+        ? 'Saving…'
+        : count ? `💾 Save changes (${count})` : '💾 Save changes';
+}
+
+function markDrawerRowDirty(row) {
+    drawerDirtyRows.add(row);
+    updateDrawerSaveButton();
+}
+
+function dateInputValue(date) {
+    const parsed = parseDateFromString(date);
+    if (!parsed || isNaN(parsed)) return '';
+    const pad = value => String(value).padStart(2, '0');
+    return `${parsed.getFullYear()}-${pad(parsed.getMonth() + 1)}-${pad(parsed.getDate())}`;
+}
+
+function updateDrawerRowDate(row, value) {
+    const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!match) return false;
+    const year = parseInt(match[1], 10);
+    const month = parseInt(match[2], 10);
+    const day = parseInt(match[3], 10);
+    const parsed = new Date(year, month - 1, day);
+    if (parsed.getFullYear() !== year || parsed.getMonth() !== month - 1 || parsed.getDate() !== day) {
+        return false;
+    }
+
+    const pad = number => String(number).padStart(2, '0');
+    row.Date = `${pad(day)}/${pad(month)}/${String(year).slice(-2)}`;
+    row.DateSortKey = parseDateSortKey(row.Date);
+    row.Month = month;
+    row.Year = year;
+    return true;
+}
+
+async function saveDrawerChanges() {
+    if (drawerSaving || !drawerDirtyRows.size) return;
+    drawerSaving = true;
+    updateDrawerSaveButton();
+
+    let saved = 0;
+    const failed = [];
+    for (const row of [...drawerDirtyRows]) {
+        const snapshot = JSON.stringify(rowToApiData(row));
+        try {
+            await apiSaveRow(row);
+            saved++;
+            if (JSON.stringify(rowToApiData(row)) === snapshot) drawerDirtyRows.delete(row);
+        } catch (err) {
+            failed.push(err.message);
+        }
+    }
+
+    drawerSaving = false;
+    updateDrawerSaveButton();
+    if (failed.length) {
+        const message = `❌ Saved ${saved}; ${failed.length} failed: ${failed[0]}`;
+        showToast(message, 'error');
+    } else {
+        showToast(`✅ Saved ${saved} transaction${saved === 1 ? '' : 's'}`, 'success');
+    }
+}
+
 function renderDrawerTable() {
     const search = document.getElementById('drawerSearch').value.toLowerCase();
 
@@ -1625,7 +1728,7 @@ function renderDrawerTable() {
 
     if (!page.length) {
         const empty = document.createElement('tr');
-        empty.innerHTML = `<td colspan="8" style="text-align:center;padding:1.5rem;color:var(--text-light)">No transactions found.</td>`;
+        empty.innerHTML = `<td colspan="7" style="text-align:center;padding:1.5rem;color:var(--text-light)">No transactions found.</td>`;
         tbody.appendChild(empty);
     } else {
         page.forEach(row => {
@@ -1634,8 +1737,19 @@ function renderDrawerTable() {
 
             // ── Date ──────────────────────────────────
             const tdDate = document.createElement('td');
-            tdDate.className = 'tx-date';
-            tdDate.textContent = row.Date;
+            const inpDate = document.createElement('input');
+            inpDate.className = 'tx-date-input drawer-date-input';
+            inpDate.type = 'date';
+            inpDate.value = dateInputValue(row.Date);
+            inpDate.setAttribute('aria-label', 'Transaction date');
+            inpDate.addEventListener('change', () => {
+                if (!updateDrawerRowDate(row, inpDate.value)) return;
+                markDrawerRowDirty(row);
+                applyGlobalFilters();
+                renderDashboard();
+                if (activeTab === 'insights') renderInsightsTab();
+            });
+            tdDate.appendChild(inpDate);
             tr.appendChild(tdDate);
 
             // ── Amount ────────────────────────────────
@@ -1654,6 +1768,7 @@ function renderDrawerTable() {
             inpExp.placeholder = 'Sub-category…';
             inpExp.addEventListener('change', () => {
                 row.Expense = inpExp.value.trim();
+                markDrawerRowDirty(row);
                 updateTxDataLists();
                 applyGlobalFilters();
                 renderDashboard();
@@ -1672,6 +1787,7 @@ function renderDrawerTable() {
             inpType.addEventListener('change', () => {
                 row.Type = inpType.value.trim();
                 row.kind = (row.Amount < 0 || !row.Type.startsWith('💰')) ? 'expense' : 'saving';
+                markDrawerRowDirty(row);
                 updateTxDataLists();
                 applyGlobalFilters();
                 renderDashboard();
@@ -1690,6 +1806,7 @@ function renderDrawerTable() {
             inpDesc.addEventListener('change', () => {
                 row.Comments     = inpDesc.value;
                 inpDesc.title    = inpDesc.value;
+                markDrawerRowDirty(row);
             });
             tdDesc.appendChild(inpDesc);
             tr.appendChild(tdDesc);
@@ -1710,6 +1827,7 @@ function renderDrawerTable() {
             acctSel.addEventListener('change', () => {
                 row.Account = acctSel.value;
                 acctSel.className = `tx-acct-select tx-acct-${acctSel.value}`;
+                markDrawerRowDirty(row);
             });
             tdAcct.appendChild(acctSel);
             tr.appendChild(tdAcct);
@@ -1729,54 +1847,13 @@ function renderDrawerTable() {
             btn.addEventListener('click', () => {
                 row.excluded = !row.excluded;
                 setBtn();
+                markDrawerRowDirty(row);
                 applyGlobalFilters();
                 renderDashboard();
                 if (activeTab === 'insights') renderInsightsTab();
             });
             tdExcl.appendChild(btn);
             tr.appendChild(tdExcl);
-
-            // ── Actions ─────────────────────────────────
-            const tdActions = document.createElement('td');
-            tdActions.className = 'tx-actions-cell';
-
-            const btnSave = document.createElement('button');
-            btnSave.className   = 'tx-action-btn tx-save-btn';
-            btnSave.textContent = '💾 Save';
-            btnSave.title       = 'Persist changes to CSV';
-            btnSave.addEventListener('click', async () => {
-                try {
-                    await apiSaveRow(row);
-                    showToast('✅ Saved', 'success');
-                } catch (err) {
-                    showToast('❌ Save failed: ' + err.message, 'error');
-                }
-            });
-
-            const btnDel = document.createElement('button');
-            btnDel.className   = 'tx-action-btn tx-delete-btn';
-            btnDel.textContent = '🗑 Delete';
-            btnDel.title       = 'Delete this transaction';
-            btnDel.addEventListener('click', async () => {
-                if (!confirm('Delete this transaction?')) return;
-                try {
-                    await apiDeleteRow(row.id);
-                    rawData = rawData.filter(r => r !== row);
-                    drawerData = drawerData.filter(r => r !== row);
-                    applyGlobalFilters();
-                    renderDashboard();
-                    if (activeTab === 'insights') renderInsightsTab();
-                    if (activeTab === 'transactions') renderTransactionsTab();
-                    renderDrawerTable();
-                    showToast('✅ Transaction deleted', 'success');
-                } catch (err) {
-                    showToast('❌ Delete failed: ' + err.message, 'error');
-                }
-            });
-
-            tdActions.appendChild(btnSave);
-            tdActions.appendChild(btnDel);
-            tr.appendChild(tdActions);
 
             tbody.appendChild(tr);
         });
@@ -1791,6 +1868,7 @@ function renderDrawerTable() {
         ${totSav ? `<div class="drawer-summary-item">Savings: <strong class="amount-saving">${fmtFn(totSav)}</strong></div>` : ''}`;
 
     renderDrawerPagination();
+    updateDrawerSaveButton();
 }
 
 function renderDrawerPagination() {
@@ -1950,8 +2028,9 @@ function renderTransactionsTab() {
                     value="${escHtml(r.Type)}" data-field="Type" data-idx="${i}"></td>
             <td><button class="${exclCls}" data-idx="${i}">${exclTxt}</button></td>
             <td class="tx-actions-cell">
-                <button class="tx-action-btn tx-save-btn" data-idx="${i}" title="Save changes to CSV">\ud83d\udcbe Save</button>
-                <button class="btn-tx-delete tx-action-btn tx-delete-btn" data-idx="${i}" title="Delete transaction">\ud83d\uddd1 Delete</button>
+                <button class="tx-action-btn tx-save-btn" data-idx="${i}" title="Save changes to CSV" aria-label="Save transaction">\ud83d\udcbe</button>
+                <button class="tx-action-btn tx-duplicate-btn" data-idx="${i}" title="Duplicate transaction below" aria-label="Duplicate transaction">\ud83d\udccb</button>
+                <button class="btn-tx-delete tx-action-btn tx-delete-btn" data-idx="${i}" title="Delete transaction" aria-label="Delete transaction">\ud83d\uddd1</button>
             </td>
         `;
         tbody.appendChild(tr);
@@ -2043,6 +2122,32 @@ function renderTransactionsTab() {
                 showToast('✅ Transaction deleted', 'success');
             } catch (err) {
                 showToast('❌ Delete failed: ' + err.message, 'error');
+            }
+        });
+    });
+
+    tbody.querySelectorAll('.tx-duplicate-btn').forEach(btn => {
+        btn.addEventListener('click', async e => {
+            const idx = parseInt(e.currentTarget.dataset.idx, 10);
+            if (isNaN(idx) || !rawData[idx]) return;
+
+            const source = rawData[idx];
+            const duplicate = { ...source, id: '' };
+            try {
+                const saved = await apiSaveRow(duplicate, source.id);
+                const newRow = apiDataToRow(saved);
+                const sourceIndex = rawData.indexOf(source);
+                rawData.splice(sourceIndex + 1, 0, newRow);
+                const drawerSourceIndex = drawerData.indexOf(source);
+                if (drawerSourceIndex !== -1) drawerData.splice(drawerSourceIndex + 1, 0, newRow);
+                applyGlobalFilters();
+                renderDashboard();
+                if (activeTab === 'insights') renderInsightsTab();
+                if (activeTab === 'transactions') renderTransactionsTab();
+                renderDrawerTable();
+                showToast('✅ Transaction duplicated', 'success');
+            } catch (err) {
+                showToast('❌ Duplicate failed: ' + err.message, 'error');
             }
         });
     });
@@ -2379,19 +2484,21 @@ function toggleTheme() {
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     const next   = isDark ? 'light' : 'dark';
     document.documentElement.setAttribute('data-theme', next);
-    document.getElementById('themeToggle').textContent = next === 'dark' ? '☀️' : '🌙';
+    const button = document.getElementById('themeToggle');
+    if (button) button.textContent = next === 'dark' ? '☀️' : '🌙';
     localStorage.setItem('finTheme', next);
+    applyChartTheme();
 }
 
 // Apply saved theme on load; always boot data
 (function () {
     const saved = localStorage.getItem('finTheme');
-    if (saved === 'dark') {
-        document.documentElement.setAttribute('data-theme', 'dark');
-    }
+    const initialTheme = saved === 'light' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', initialTheme);
     document.addEventListener('DOMContentLoaded', () => {
         const btn = document.getElementById('themeToggle');
-        if (btn) btn.textContent = saved === 'dark' ? '☀️' : '🌙';
+        if (btn) btn.textContent = initialTheme === 'dark' ? '☀️' : '🌙';
+        applyChartTheme();
         loadData();
     });
 })();

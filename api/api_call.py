@@ -115,7 +115,7 @@ CATEGORY_RULES = [
 
     # ── Groceries ───────────────────────────────────────────────────────────
     (["netto", "lidl", "aldi", "fakta", "bilka", "føtex", "fotex", "f@tex",
-      "superbrugsen", "meny", "rema 1000", "rema,", "irma", "coop",
+      "superbrugsen", "meny", "rema 1000", "rema1000", "rema,", "irma", "coop",
       "salling", "kvickly", "mad ", "grocery", "groceries",
       "min køb", "dagli", "supermarket", "lagkagehuset", "bageri",
       "carlsro", "spar r"],
@@ -162,7 +162,7 @@ CATEGORY_RULES = [
       "esso", "st1"],
      "Gasoline", "🚗 Car"),
     # Leasing
-    ([""Volkswagen Semler Finans"],
+    (["Volkswagen Semler Finans"],
      "Leasing", "🚗 Car"),
     
     
@@ -234,7 +234,7 @@ CATEGORY_RULES = [
 
     # ── Entertainment ────────────────────────────────────────────────────────
     # Subscriptions (streaming, apps)
-    (["netflix", "spotify", "hbo", "viaplay", "disney+", "youtube",
+    (["netflix", "spotify", "hbo", "viaplay", "disney+", "disney plus", "disney +", "youtube",
       "apple.com/bill", "subscription", "abonnement"],
      "Subscriptions", "🎉 Entertainment"),
 

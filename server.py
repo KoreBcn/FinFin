@@ -70,7 +70,14 @@ def get_transactions():
 def add_transaction():
     data = sanitise(request.get_json(force=True))
     rows = read_db()
-    rows.append(data)
+    after_id = request.args.get('after')
+    if after_id:
+        insert_at = next((i + 1 for i, row in enumerate(rows) if row.get('id') == after_id), None)
+        if insert_at is None:
+            return jsonify({'error': 'Transaction to duplicate not found'}), 404
+        rows.insert(insert_at, data)
+    else:
+        rows.append(data)
     write_db(rows)
     return jsonify(data), 201
 

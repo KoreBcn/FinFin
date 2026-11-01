@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -126,6 +126,7 @@
             <p class="drawer-subtitle" id="drawerSubtitle"></p>
         </div>
         <div class="drawer-header-actions">
+            <button class="btn-tx-add" id="drawerSaveButton" onclick="saveDrawerChanges()" disabled>💾 Save changes</button>
             <button class="btn-tx-download" onclick="downloadCSV()" title="Download full dataset as CSV">⬇ Download CSV</button>
             <button class="drawer-close" onclick="closeDrawer()">✕ Hide</button>
         </div>
@@ -145,7 +146,6 @@
                     <th>Description</th>
                     <th>Account</th>
                     <th>Analytics</th>
-                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody id="drawerTableBody"></tbody>
