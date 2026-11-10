@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Home Finance Dashboard</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=14">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 </head>
@@ -32,6 +32,11 @@
             <h1>FinanceHome</h1>
         </div>
         <nav>
+            <button class="mobile-menu-btn" id="tabMenuToggle" type="button"
+                aria-label="Toggle navigation tabs" aria-controls="tabSwitcher" aria-expanded="false"
+                onclick="toggleTabMenu()">
+                <span></span><span></span><span></span>
+            </button>
             <div class="tab-switcher" id="tabSwitcher" style="display:none">
                 <button class="tab-btn active" onclick="switchTab('dashboard')">
                     📊 Dashboard
@@ -45,11 +50,9 @@
                 <button class="tab-btn" onclick="switchTab('transactions')">
                     📋 Transactions
                 </button>
+                <button id="signOutButton" class="nav-link nav-btn sign-out-btn" type="button">Sign out</button>
             </div>
-            <button class="nav-btn-icon" id="themeToggle" onclick="toggleTheme()" title="Toggle dark mode">🌙</button>
-            <button class="nav-link nav-btn" onclick="openTxModal(null)">＋ Add Transaction</button>
             <span id="signedInEmail" class="signed-in-email"></span>
-            <button id="signOutButton" class="nav-link nav-btn sign-out-btn" type="button">Sign out</button>
         </nav>
     </div>
 </header>
@@ -143,9 +146,10 @@
             <p class="drawer-subtitle" id="drawerSubtitle"></p>
         </div>
         <div class="drawer-header-actions">
-            <button class="btn-tx-add" id="drawerSaveButton" onclick="saveDrawerChanges()" disabled>💾 Save changes</button>
-            <button class="btn-tx-download" onclick="downloadCSV()" title="Download full dataset as CSV">⬇ Download CSV</button>
-            <button class="drawer-close" onclick="closeDrawer()">✕ Hide</button>
+            <button class="btn-tx-add" id="drawerSaveButton" type="button" onclick="saveDrawerChanges()"
+                aria-label="Save changes" title="Save changes" disabled>💾</button>
+            <button class="drawer-close" type="button" onclick="closeDrawer()"
+                aria-label="Hide transactions" title="Hide transactions">×</button>
         </div>
     </div>
     <div class="drawer-filters">
@@ -179,8 +183,7 @@
     <div id="emptyState" class="empty-state">
         <div class="empty-icon">📊</div>
         <h2>No data loaded yet</h2>
-        <p>Add your first transaction or wait while data loads…</p>
-        <button class="btn-upload-cta" onclick="openTxModal(null)">＋ Add Transaction</button>
+        <p>Transactions will appear here once data is available.</p>
     </div>
 
     <!-- ═══════════════════════════════════════════
@@ -210,9 +213,6 @@
                     <button class="toggle-btn active" data-value="DKK">DKK</button>
                     <button class="toggle-btn" data-value="EUR">EUR</button>
                 </div>
-            </div>
-            <div class="filter-group">
-                <button class="btn-reset" onclick="resetFilters()">↺ Reset</button>
             </div>
             <div class="filter-group" style="margin-left:auto">
                 <div class="toggle-group">
@@ -316,9 +316,6 @@
                     <button class="toggle-btn" data-value="EUR">EUR</button>
                 </div>
             </div>
-            <div class="filter-group">
-                <button class="btn-reset" onclick="resetInsightsFilters()">↺ Reset</button>
-            </div>
             <div class="filter-group" style="margin-left:auto">
                 <span class="filter-note">📌 Deep Insights shows Real data only</span>
             </div>
@@ -394,8 +391,8 @@
                 <option value="included">Included in analytics</option>
                 <option value="excluded">Excluded from analytics</option>
             </select>
-            <span id="txRowCount" class="tx-row-count"></span>
-            <button onclick="downloadCSV()" class="btn-tx-download">⬇ Download CSV</button>
+            <button type="button" class="transaction-add-btn" onclick="openTxModal(null)"
+                title="Add transaction" aria-label="Add transaction">+</button>
         </div>
 
         <!-- Table -->
@@ -438,6 +435,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-config.js"></script>
-<script src="app.js?v=4"></script>
+<script src="app.js?v=12"></script>
 </body>
 </html>

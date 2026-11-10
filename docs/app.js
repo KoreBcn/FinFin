@@ -133,6 +133,7 @@ function parseDateFromString(raw) {
 // =====================================================
 function switchTab(tab) {
     activeTab = tab;
+    closeTabMenu();
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     document.querySelector(`.tab-btn[onclick="switchTab('${tab}')"]`).classList.add('active');
     document.getElementById('tabDashboard').style.display    = tab === 'dashboard'    ? 'flex' : 'none';
@@ -143,6 +144,26 @@ function switchTab(tab) {
     if (tab === 'transactions') renderTransactionsTab();
     if (tab === 'highlights')   renderHighlightsTab();
 }
+
+function toggleTabMenu() {
+    const menu = document.getElementById('tabSwitcher');
+    const toggle = document.getElementById('tabMenuToggle');
+    const isOpen = menu.classList.toggle('mobile-open');
+    toggle.setAttribute('aria-expanded', String(isOpen));
+}
+
+function closeTabMenu() {
+    const menu = document.getElementById('tabSwitcher');
+    const toggle = document.getElementById('tabMenuToggle');
+    if (!menu || !toggle) return;
+    menu.classList.remove('mobile-open');
+    toggle.setAttribute('aria-expanded', 'false');
+}
+
+document.addEventListener('click', event => {
+    const nav = document.querySelector('header nav');
+    if (nav && !nav.contains(event.target)) closeTabMenu();
+});
 
 
 // =====================================================
@@ -349,6 +370,7 @@ function handleTxModalClick(e) {
 }
 document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
+        closeTabMenu();
         closeTxModal();
         closeExpensesTrendModal();
         closeIncomeTrendModal();
@@ -513,18 +535,6 @@ function applyGlobalFilters() {
     renderDashboard();
 }
 
-function resetFilters() {
-    globalFilters.years      = [];
-    globalFilters.categories = [];
-    chartFilters  = { monthKey: null, typeKey: null, typeLevel: null, kind: null };
-    drillDown     = { expenses: null, savings: null };
-    document.querySelectorAll('#yearMsPanel input[type="checkbox"]').forEach(cb => cb.checked = false);
-    document.querySelectorAll('#catMsPanel  input[type="checkbox"]').forEach(cb => cb.checked = false);
-    updateMsTriggerLabel('yearMs', [], 'All Years');
-    updateMsTriggerLabel('catMs',  [], 'All Categories');
-    applyGlobalFilters();
-}
-
 function renderDashboard() {
     updateStats();
     renderPieChart();
@@ -552,14 +562,6 @@ document.getElementById('insightsCurrencyToggle').addEventListener('click', e =>
     insightsFilters.currency = e.target.dataset.value;
     renderInsightsTab();
 });
-
-function resetInsightsFilters() {
-    insightsFilters = { year: 'all', currency: insightsFilters.currency };
-    yoyFilter = { typeKey: null, typeLevel: null, kind: null };
-    yoyDrill  = { expenses: null, savings: null };
-    document.getElementById('insightsYearFilter').value = 'all';
-    renderInsightsTab();
-}
 
 // Insights: Real only + year filter (also excludes flagged rows)
 function getInsightsBase() {
@@ -1692,9 +1694,11 @@ function updateDrawerSaveButton() {
     if (!button) return;
     const count = drawerDirtyRows.size;
     button.disabled = drawerSaving || count === 0;
-    button.textContent = drawerSaving
-        ? 'Saving…'
-        : count ? `💾 Save changes (${count})` : '💾 Save changes';
+    const label = drawerSaving
+        ? 'Saving changes…'
+        : count ? `Save changes (${count})` : 'Save changes';
+    button.setAttribute('aria-label', label);
+    button.title = label;
 }
 
 function markDrawerRowDirty(row) {
@@ -2052,9 +2056,6 @@ function renderTransactionsTab() {
 
     updateTxDataLists();
 
-    const countEl = document.getElementById('txRowCount');
-    if (countEl) countEl.textContent = `${shown.length} of ${rawData.length} rows`;
-
     // Update sort arrows
     document.querySelectorAll('.tx-sort-arrow').forEach(el => {
         const col = el.dataset.col;
@@ -2270,44 +2271,6 @@ function addTransaction() {
     renderTransactionsTab();
 }
 
-function downloadCSV() {
-    if (!rawData.length) { showToast('❌ No data to download.', 'error'); return; }
-    const MONTH_NAMES = ['','January','February','March','April','May','June',
-                         'July','August','September','October','November','December'];
-    const cols = ['Expense','Planned/Rea','Type','Date','Month','Year','Amount','Comments','Account','Excluded'];
-    const esc = v => {
-        const s = v !== undefined && v !== null ? String(v) : '';
-        return (s.includes(',') || s.includes('"') || s.includes('\n'))
-            ? `"${s.replace(/"/g, '""')}"` : s;
-    };
-    const lines = [cols.join(',')];
-    rawData.forEach(r => {
-        lines.push([
-            esc(r.Expense),
-            esc(r.PlannedReal === 'Planned' ? 'Planned' : 'REA'),
-            esc(r.Type),
-            esc(r.Date),
-            esc(MONTH_NAMES[r.Month] || r.Month),
-            esc(r.Year),
-            esc(r.Amount),   // plain number — no thousands separator
-            esc(r.Comments),
-            esc(r.Account),
-            esc(r.excluded ? 'true' : 'false'),
-        ].join(','));
-    });
-    const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href     = url;
-    a.download = 'transactions_categorized.csv';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    showToast('✅ CSV downloaded!', 'success');
-}
-
-
 // =====================================================
 //  TOAST
 // =====================================================
@@ -2435,7 +2398,7 @@ function renderHighlightsTab() {
             </div>
         </div>
         <div class="filter-group" style="margin-left:auto">
-            <span class="filter-note">💡 ${realAll.length} real transactions · ${monthCount} month${monthCount !== 1 ? 's' : ''} of data</span>
+            <span class="filter-note">💡 ${monthCount} month${monthCount !== 1 ? 's' : ''} of data</span>
         </div>
     </section>`;
 
@@ -2541,27 +2504,10 @@ function renderHighlightsTab() {
 }
 
 
-// =====================================================
-//  DARK MODE
-// =====================================================
-function toggleTheme() {
-    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    const next   = isDark ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', next);
-    const button = document.getElementById('themeToggle');
-    if (button) button.textContent = next === 'dark' ? '☀️' : '🌙';
-    localStorage.setItem('finTheme', next);
-    applyChartTheme();
-}
-
-// Apply saved theme and initialize authentication on load.
+// Initialize the fixed dark theme and authentication on load.
 (function () {
-    const saved = localStorage.getItem('finTheme');
-    const initialTheme = saved === 'light' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', initialTheme);
+    document.documentElement.setAttribute('data-theme', 'dark');
     document.addEventListener('DOMContentLoaded', () => {
-        const btn = document.getElementById('themeToggle');
-        if (btn) btn.textContent = initialTheme === 'dark' ? '☀️' : '🌙';
         applyChartTheme();
         initializeSupabaseAuth().catch(error => {
             setAuthMessage('Could not initialize Supabase: ' + error.message);
