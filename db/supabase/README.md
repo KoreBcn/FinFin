@@ -29,7 +29,7 @@ replace this shared-access policy with user-scoped policies.
 
 ## Configure the frontend
 
-Set `url` and `anonKey` in `webapp\supabase-config.js` using the Supabase
+Set `url` and `anonKey` in `docs\supabase-config.js` using the Supabase
 project URL and the public anon/publishable key. Never put a `service_role`
 key in the browser. The frontend calls Supabase directly; RLS protects the
 table and Supabase Auth manages passwords.

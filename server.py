@@ -4,7 +4,7 @@ import uuid
 from flask import Flask, jsonify, request, send_from_directory
 
 DB_PATH    = os.path.join(os.path.dirname(__file__), 'db', 'db.csv')
-WEBAPP_DIR = os.path.join(os.path.dirname(__file__), 'webapp')
+WEBAPP_DIR = os.path.join(os.path.dirname(__file__), 'docs')
 
 FIELDS = [
     'id', 'Expense', 'Planned/Rea', 'Type',
