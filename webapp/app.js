@@ -50,6 +50,8 @@ let drawerSort     = { key: 'Date', dir: 'asc' };
 let txSort         = { key: 'DateSortKey', dir: 'desc' };
 
 let activeTab = 'dashboard';
+let supabaseClient = null;
+let activeAuthUserId = null;
 
 // Highlights tab currency
 let highlightsCurrency = 'DKK';
@@ -146,97 +148,180 @@ function switchTab(tab) {
 // =====================================================
 //  API HELPERS
 // =====================================================
-const MONTH_NAMES = [
-    '','January','February','March','April','May','June',
-    'July','August','September','October','November','December',
-];
+function rowToSupabaseData(row) {
+    const dateMatch = (row.Date || '').match(/^(\d{2})\/(\d{2})\/(\d{2,4})$/);
+    if (!dateMatch) throw new Error(`Invalid transaction date: ${row.Date || '(empty)'}`);
+    let year = parseInt(dateMatch[3], 10);
+    if (year < 100) year += 2000;
+    const month = parseInt(dateMatch[2], 10);
+    const day = parseInt(dateMatch[1], 10);
+    const date = new Date(year, month - 1, day);
+    if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
+        throw new Error(`Invalid transaction date: ${row.Date}`);
+    }
 
-function rowToApiData(row) {
+    const amount = Number(row.Amount);
+    if (!Number.isFinite(amount)) throw new Error(`Invalid transaction amount: ${row.Amount}`);
+
     return {
-        id:           row.id || '',
-        Expense:      row.Expense,
-        'Planned/Rea':row.PlannedReal === 'Planned' ? 'Planned' : 'REA',
-        Type:         row.Type,
-        Date:         row.Date,
-        Month:        MONTH_NAMES[row.Month] || String(row.Month),
-        Year:         String(row.Year),
-        Amount:       String(row.Amount),
-        Comments:     row.Comments || '',
-        Account:      row.Account || '',
-        Excluded:     row.excluded ? 'true' : 'false',
+        id: row.id || crypto.randomUUID(),
+        expense: row.Expense,
+        transaction_status: row.PlannedReal === 'Planned' ? 'Planned' : 'REA',
+        category: row.Type,
+        transaction_date: `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
+        amount,
+        comments: row.Comments || null,
+        account: row.Account || '',
+        is_excluded: Boolean(row.excluded),
     };
 }
 
-function apiDataToRow(d) {
-    const MONTH_MAP = {
-        january:1,february:2,march:3,april:4,may:5,june:6,
-        july:7,august:8,september:9,october:10,november:11,december:12
-    };
-    function parseMonth(raw) {
-        const n = parseInt(raw);
-        if (!isNaN(n) && n >= 1 && n <= 12) return n;
-        return MONTH_MAP[(raw || '').toLowerCase().trim()] || 0;
-    }
-    const amount   = parseFloat((d['Amount'] || '').replace(/,/g, ''));
-    const pr       = d['Planned/Rea'] || '';
-    const typeField = d['Type'] || '';
-    let account     = d['Account'] || '';
+function supabaseDataToRow(d) {
+    const dateMatch = (d.transaction_date || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!dateMatch) throw new Error(`Invalid date returned by Supabase: ${d.transaction_date}`);
+    const year = parseInt(dateMatch[1], 10);
+    const month = parseInt(dateMatch[2], 10);
+    const day = parseInt(dateMatch[3], 10);
+    const amount = Number(d.amount);
+    const typeField = d.category || '';
+    let account = d.account || '';
     const typeLower = typeField.toLowerCase();
     if (typeLower === 'anna')   account = 'anna';
     else if (typeLower === 'carlos') account = 'carlos';
     return {
-        id:          d['id'] || '',
-        Expense:     d['Expense'] || '',
-        PlannedReal: pr.toLowerCase().startsWith('plan') ? 'Planned' : 'Real',
+        id:          d.id || '',
+        Expense:     d.expense || '',
+        PlannedReal: (d.transaction_status || '').toLowerCase().startsWith('plan') ? 'Planned' : 'Real',
         Type:        typeField,
-        Date:        d['Date'] || '',
-        DateSortKey: parseDateSortKey(d['Date'] || ''),
-        Month:       parseMonth(d['Month']),
-        Year:        parseInt(d['Year']) || 0,
+        Date:        `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${String(year).slice(-2)}`,
+        DateSortKey: parseDateSortKey(d.transaction_date),
+        Month:       month,
+        Year:        year,
         Amount:      amount,
-        Comments:    d['Comments'] || '',
+        Comments:    d.comments || '',
         Account:     account,
         kind:        (amount < 0 || !typeField.startsWith('💰')) ? 'expense' : 'saving',
-        excluded:    d['Excluded'] === 'true' || d['Excluded'] === '1',
+        excluded:    Boolean(d.is_excluded),
     };
 }
 
 async function loadData() {
     try {
-        const res = await fetch('/api/transactions');
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        const data = await res.json();
-        rawData = data.filter(d => {
-            const amt = parseFloat((d['Amount'] || '').replace(/,/g, ''));
-            return !isNaN(amt) && amt !== 0;
-        }).map(apiDataToRow);
+        const data = [];
+        const pageSize = 1000;
+        for (let offset = 0; ; offset += pageSize) {
+            const { data: page, error } = await supabaseClient
+                .from('transactions')
+                .select('id, expense, transaction_status, category, transaction_date, amount, comments, account, is_excluded')
+                .order('transaction_date', { ascending: false })
+                .range(offset, offset + pageSize - 1);
+            if (error) throw new Error(error.message);
+            data.push(...page);
+            if (page.length < pageSize) break;
+        }
+        rawData = data.filter(d => Number(d.amount) !== 0).map(supabaseDataToRow);
         bootstrapApp();
         showToast(`✅ Loaded ${rawData.length} transactions`, 'success');
     } catch (e) {
-        showToast('❌ Failed to load data from server: ' + e.message, 'error');
+        showToast('❌ Failed to load data from Supabase: ' + e.message, 'error');
     }
 }
 
-async function apiSaveRow(row, insertAfterId = '') {
-    const payload = rowToApiData(row);
-    const url     = row.id
-        ? '/api/transactions/' + encodeURIComponent(row.id)
-        : '/api/transactions' + (insertAfterId
-            ? '?after=' + encodeURIComponent(insertAfterId)
-            : '');
-    const method  = row.id ? 'PUT' : 'POST';
-    const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-    });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    return res.json();
+async function apiSaveRow(row) {
+    const { data, error } = await supabaseClient
+        .from('transactions')
+        .upsert(rowToSupabaseData(row))
+        .select()
+        .single();
+    if (error) throw new Error(error.message);
+    return data;
 }
 
 async function apiDeleteRow(id) {
-    const res = await fetch('/api/transactions/' + encodeURIComponent(id), { method: 'DELETE' });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const { error } = await supabaseClient.from('transactions').delete().eq('id', id);
+    if (error) throw new Error(error.message);
+}
+
+function setAuthMessage(message) {
+    document.getElementById('authMessage').textContent = message;
+}
+
+async function applyAuthSession(session) {
+    const user = session?.user || null;
+    const userId = user?.id || null;
+    if (userId === activeAuthUserId) return;
+
+    activeAuthUserId = userId;
+    if (!user) {
+        document.body.classList.remove('is-authenticated');
+        document.getElementById('signedInEmail').textContent = '';
+        rawData = [];
+        return;
+    }
+
+    document.getElementById('signedInEmail').textContent = user.email || '';
+    document.body.classList.add('is-authenticated');
+    await loadData();
+}
+
+async function initializeSupabaseAuth() {
+    const config = window.SUPABASE_CONFIG;
+    const loginButton = document.getElementById('loginButton');
+    const loginForm = document.getElementById('loginForm');
+
+    loginForm.addEventListener('submit', async event => {
+        event.preventDefault();
+        if (!supabaseClient) return;
+        loginButton.disabled = true;
+        loginButton.textContent = 'Signing in…';
+        setAuthMessage('');
+        try {
+            const { data, error } = await supabaseClient.auth.signInWithPassword({
+                email: document.getElementById('loginEmail').value.trim(),
+                password: document.getElementById('loginPassword').value,
+            });
+            if (error) throw error;
+            await applyAuthSession(data.session);
+        } catch (error) {
+            setAuthMessage(error.message || 'Unable to sign in.');
+        } finally {
+            loginButton.disabled = false;
+            loginButton.textContent = 'Sign in';
+        }
+    });
+
+    document.getElementById('signOutButton').addEventListener('click', async () => {
+        try {
+            const { error } = await supabaseClient.auth.signOut();
+            if (error) throw error;
+        } catch (error) {
+            showToast('❌ Sign out failed: ' + error.message, 'error');
+        }
+    });
+
+    if (!config?.url?.trim() || !config?.anonKey?.trim()) {
+        setAuthMessage('Set the Supabase project URL and public anon key in supabase-config.js.');
+        loginButton.disabled = true;
+        return;
+    }
+    if (!window.supabase?.createClient) {
+        setAuthMessage('Could not load the Supabase client. Check the network and reload.');
+        loginButton.disabled = true;
+        return;
+    }
+
+    supabaseClient = window.supabase.createClient(config.url.trim(), config.anonKey.trim());
+    supabaseClient.auth.onAuthStateChange((_event, session) => {
+        queueMicrotask(() => {
+            applyAuthSession(session).catch(error => {
+                showToast('❌ Authentication error: ' + error.message, 'error');
+            });
+        });
+    });
+
+    const { data, error } = await supabaseClient.auth.getSession();
+    if (error) throw error;
+    await applyAuthSession(data.session);
 }
 
 
@@ -280,41 +365,20 @@ async function submitTxForm(e) {
     e.preventDefault();
     const dateRaw = document.getElementById('txDate').value.trim();
     const amount  = parseFloat(document.getElementById('txAmount').value);
-    const MONTH_MAP = {
-        1:'January',2:'February',3:'March',4:'April',5:'May',6:'June',
-        7:'July',8:'August',9:'September',10:'October',11:'November',12:'December'
-    };
-    // Derive Month + Year from date
-    const dmy = dateRaw.match(/^(\d{2})\/(\d{2})\/(\d{2,4})$/);
-    let monthNum = 0, yearNum = 0;
-    if (dmy) {
-        monthNum = parseInt(dmy[2]);
-        yearNum  = parseInt(dmy[3]); if (yearNum < 100) yearNum += 2000;
-    }
-    const payload = {
+    const row = {
         id:           _txEditId || '',
         Expense:      document.getElementById('txExpense').value.trim(),
-        'Planned/Rea': 'REA',
+        PlannedReal:  'Real',
         Type:         document.getElementById('txType').value.trim(),
         Date:         dateRaw,
-        Month:        MONTH_MAP[monthNum] || String(monthNum),
-        Year:         String(yearNum || ''),
-        Amount:       String(amount),
+        Amount:       amount,
         Comments:     document.getElementById('txComments').value.trim(),
         Account:      document.getElementById('txAccount').value,
-        Excluded:     document.getElementById('txExcluded').value,
+        excluded:     document.getElementById('txExcluded').value === 'true',
     };
     try {
-        const url    = _txEditId ? '/api/transactions/' + encodeURIComponent(_txEditId) : '/api/transactions';
-        const method = _txEditId ? 'PUT' : 'POST';
-        const res = await fetch(url, {
-            method,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
-        });
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        const saved = await res.json();
-        const newRow = apiDataToRow(saved);
+        const saved = await apiSaveRow(row);
+        const newRow = supabaseDataToRow(saved);
         if (_txEditId) {
             const idx = rawData.findIndex(r => r.id === _txEditId);
             if (idx !== -1) rawData[idx] = newRow;
@@ -1672,11 +1736,11 @@ async function saveDrawerChanges() {
     let saved = 0;
     const failed = [];
     for (const row of [...drawerDirtyRows]) {
-        const snapshot = JSON.stringify(rowToApiData(row));
+        const snapshot = JSON.stringify(rowToSupabaseData(row));
         try {
             await apiSaveRow(row);
             saved++;
-            if (JSON.stringify(rowToApiData(row)) === snapshot) drawerDirtyRows.delete(row);
+            if (JSON.stringify(rowToSupabaseData(row)) === snapshot) drawerDirtyRows.delete(row);
         } catch (err) {
             failed.push(err.message);
         }
@@ -2135,7 +2199,7 @@ function renderTransactionsTab() {
             const duplicate = { ...source, id: '' };
             try {
                 const saved = await apiSaveRow(duplicate, source.id);
-                const newRow = apiDataToRow(saved);
+                const newRow = supabaseDataToRow(saved);
                 const sourceIndex = rawData.indexOf(source);
                 rawData.splice(sourceIndex + 1, 0, newRow);
                 const drawerSourceIndex = drawerData.indexOf(source);
@@ -2490,7 +2554,7 @@ function toggleTheme() {
     applyChartTheme();
 }
 
-// Apply saved theme on load; always boot data
+// Apply saved theme and initialize authentication on load.
 (function () {
     const saved = localStorage.getItem('finTheme');
     const initialTheme = saved === 'light' ? 'light' : 'dark';
@@ -2499,6 +2563,8 @@ function toggleTheme() {
         const btn = document.getElementById('themeToggle');
         if (btn) btn.textContent = initialTheme === 'dark' ? '☀️' : '🌙';
         applyChartTheme();
-        loadData();
+        initializeSupabaseAuth().catch(error => {
+            setAuthMessage('Could not initialize Supabase: ' + error.message);
+        });
     });
 })();
