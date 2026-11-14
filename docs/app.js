@@ -1961,7 +1961,7 @@ function renderHighlightsTab() {
     const realExp = realAll.filter(d => d.kind === 'expense');
     const realInc = realAll.filter(d => d.kind === 'saving');
     const filterHtml = `
-    <section class="filters-bar">
+    <section class="filters-bar hl-filter-bar">
         <div class="filter-group">
             <label>Year</label>
             <div class="ms-wrap" id="hlYearMsWrap">
@@ -1977,7 +1977,11 @@ function renderHighlightsTab() {
             </div>
         </div>
         <div class="filter-group hl-quick-facts-filter">
-            <button type="button" class="hl-quick-facts-button" onclick="openHighlightsQuickFacts()">💡 Quick Facts</button>
+            <button type="button" class="hl-quick-facts-button" onclick="openHighlightsQuickFacts()"
+                aria-label="Open Quick Facts" title="Quick Facts">
+                <span class="hl-quick-facts-label">💡 Quick Facts</span>
+                <span class="hl-quick-facts-icon" aria-hidden="true">💡</span>
+            </button>
         </div>
     </section>`;
 

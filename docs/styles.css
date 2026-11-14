@@ -1272,6 +1272,7 @@ body.is-authenticated .auth-gate { display: none; }
 }
 .hl-quick-facts-button:hover { background: var(--primary-dark); }
 .hl-quick-facts-button:focus-visible { outline: 2px solid #60a5fa; outline-offset: 2px; }
+.hl-quick-facts-icon { display: none; }
 .hl-fact {
     background: var(--light); border: 1px solid var(--border);
     border-radius: var(--radius-sm); padding: 0.875rem 1rem;
@@ -1400,6 +1401,26 @@ body.is-authenticated .auth-gate { display: none; }
     body { overflow-x: clip; }
 
     main { padding: 0.85rem; }
+
+    .hl-filter-bar {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 2.5rem;
+        align-items: center;
+    }
+    .hl-filter-bar .hl-quick-facts-filter {
+        width: 2.5rem;
+        height: 2.5rem;
+        justify-content: center;
+    }
+    .hl-quick-facts-button {
+        display: inline-flex;
+        width: 2.5rem;
+        height: 2.5rem;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+    }
+    .hl-quick-facts-label { display: none; }
+    .hl-quick-facts-icon { display: inline; }
 
     .charts-grid { grid-template-columns: minmax(0, 1fr); gap: 1rem; }
     .charts-grid-pie-heatmap { height: auto; gap: 1rem; }
