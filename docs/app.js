@@ -2195,7 +2195,7 @@ function renderHighlightsCategoriesChart(rows, allYears, currency, selectedYears
                 return {
                     label: String(year),
                     data: topCategories.map(category =>
-                        totalsByCategory.get(category)?.get(year) || 0
+                        iDisp(totalsByCategory.get(category)?.get(year) || 0, currency)
                     ),
                     backgroundColor: color.bg,
                     borderColor: color.border,
