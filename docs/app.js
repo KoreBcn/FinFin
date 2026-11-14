@@ -436,7 +436,9 @@ async function submitTxForm(e) {
 //  BOOTSTRAP
 // =====================================================
 function bootstrapApp() {
-    globalFilters.years = [];
+    const currentYear = new Date().getFullYear();
+    const availableYears = [...new Set(rawData.map(row => Number(row.Year)))];
+    globalFilters.years = availableYears.includes(currentYear) ? [currentYear] : [];
 
     populateYearFilter();
     populateCategoryFilter();
