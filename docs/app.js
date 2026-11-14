@@ -9,7 +9,6 @@ let rawData      = [];
 let filteredData = [];
 
 let globalFilters   = { years: [], currency: 'DKK', categories: [] }; // empty array = "all"
-let insightsFilters = { year: 'all', currency: 'DKK' };
 
 // Dashboard cross-chart filters
 let chartFilters = { monthKey: null, typeKey: null, typeLevel: null, kind: null };
@@ -17,10 +16,6 @@ let drillDown    = { expenses: null, savings: null };
 
 // Pie chart toggle state
 let pieKind = 'expense';
-
-// Insights cross-chart filters
-let yoyFilter    = { typeKey: null, typeLevel: null, kind: null };
-let yoyDrill     = { expenses: null, savings: null };
 
 // Monthly heatmap toggle state
 let monthlyHeatmapKind  = 'expense';
@@ -48,6 +43,8 @@ let drawerSaving    = false;
 const DRAWER_PER   = 15;
 let drawerSort     = { key: 'Date', dir: 'asc' };
 let txSort         = { key: 'DateSortKey', dir: 'desc' };
+let txPage         = 1;
+const TX_PER_PAGE  = 50;
 
 let activeTab = 'dashboard';
 let supabaseClient = null;
@@ -55,7 +52,7 @@ let activeAuthUserId = null;
 
 // Highlights tab currency
 let highlightsCurrency = 'DKK';
-let highlightsYear     = 'all';
+let highlightsCategoryKind = 'expense';
 
 // Year colour palette for YoY charts
 const YEAR_PALETTE = [
@@ -137,10 +134,8 @@ function switchTab(tab) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     document.querySelector(`.tab-btn[onclick="switchTab('${tab}')"]`).classList.add('active');
     document.getElementById('tabDashboard').style.display    = tab === 'dashboard'    ? 'flex' : 'none';
-    document.getElementById('tabInsights').style.display     = tab === 'insights'     ? 'flex' : 'none';
     document.getElementById('tabTransactions').style.display = tab === 'transactions' ? 'flex' : 'none';
     document.getElementById('tabHighlights').style.display   = tab === 'highlights'   ? 'flex' : 'none';
-    if (tab === 'insights')     renderInsightsTab();
     if (tab === 'transactions') renderTransactionsTab();
     if (tab === 'highlights')   renderHighlightsTab();
 }
@@ -366,7 +361,8 @@ function openTxModal(row) {
     document.getElementById('txType').value               = row ? row.Type         : '';
     document.getElementById('txDate').value               = row ? row.Date          : '';
     document.getElementById('txAmount').value             = row ? row.Amount        : '';
-    document.getElementById('txAccount').value            = row ? (row.Account || 'personal') : 'personal';
+    const accountSelect = document.getElementById('txAccount');
+    accountSelect.innerHTML = accountOptionsHtml(row ? row.Account : '');
     document.getElementById('txComments').value           = row ? row.Comments      : '';
     document.getElementById('txExcluded').value           = row ? (row.excluded ? 'true' : 'false') : 'false';
     document.getElementById('txModal').classList.add('open');
@@ -381,6 +377,7 @@ document.addEventListener('keydown', e => {
         closeTxModal();
         closeExpensesTrendModal();
         closeIncomeTrendModal();
+        closeHighlightsQuickFacts();
         // Close any open multi-select panels
         document.querySelectorAll('.ms-panel').forEach(p => p.style.display = 'none');
     }
@@ -394,6 +391,11 @@ async function submitTxForm(e) {
     e.preventDefault();
     const dateRaw = document.getElementById('txDate').value.trim();
     const amount  = parseFloat(document.getElementById('txAmount').value);
+    const account = document.getElementById('txAccount').value;
+    if (!account) {
+        showToast('❌ Select an account before saving', 'error');
+        return;
+    }
     const row = {
         id:           _txEditId || '',
         Expense:      document.getElementById('txExpense').value.trim(),
@@ -402,7 +404,7 @@ async function submitTxForm(e) {
         Date:         dateRaw,
         Amount:       amount,
         Comments:     document.getElementById('txComments').value.trim(),
-        Account:      document.getElementById('txAccount').value,
+        Account:      account,
         excluded:     document.getElementById('txExcluded').value === 'true',
     };
     try {
@@ -413,15 +415,15 @@ async function submitTxForm(e) {
             if (idx !== -1) rawData[idx] = newRow;
         } else {
             rawData.push(newRow);
+            txPage = 1;
         }
         closeTxModal();
         applyGlobalFilters();
         populateYearFilter();
-        populateInsightsYearFilter();
         populateCategoryFilter();
         renderDashboard();
-        if (activeTab === 'insights') renderInsightsTab();
         if (activeTab === 'transactions') renderTransactionsTab();
+        if (activeTab === 'highlights') renderHighlightsTab();
         renderDrawerTable();
         showToast(_txEditId ? '✅ Transaction saved' : '✅ Transaction added', 'success');
     } catch (err) {
@@ -434,17 +436,12 @@ async function submitTxForm(e) {
 //  BOOTSTRAP
 // =====================================================
 function bootstrapApp() {
-    // Default to current year
-    const currentYear = new Date().getFullYear();
-    const availableYears = [...new Set(rawData.map(d => d.Year))];
-    globalFilters.years = availableYears.includes(currentYear) ? [currentYear] : [];
+    globalFilters.years = [];
 
     populateYearFilter();
-    populateInsightsYearFilter();
     populateCategoryFilter();
     document.getElementById('emptyState').style.display      = 'none';
     document.getElementById('tabDashboard').style.display    = 'flex';
-    document.getElementById('tabInsights').style.display     = 'none';
     document.getElementById('tabTransactions').style.display = 'none';
     document.getElementById('tabHighlights').style.display   = 'none';
     document.getElementById('tabSwitcher').style.display     = 'flex';
@@ -452,30 +449,30 @@ function bootstrapApp() {
 }
 
 function populateYearFilter() {
-    const years = [...new Set(rawData.map(d => d.Year))].sort();
-    const panel = document.getElementById('yearMsPanel');
-    if (!panel) return;
-    panel.innerHTML = years.map(y => `<label class="ms-item">
-        <input type="checkbox" value="${y}" ${globalFilters.years.includes(y) ? 'checked' : ''} onchange="onYearCheckbox(this)">
-        <span>${y}</span></label>`).join('');
-    updateMsTriggerLabel('yearMs', globalFilters.years.map(String), 'All Years');
-}
-
-function populateInsightsYearFilter() {
-    const years = [...new Set(rawData.map(d => d.Year))].sort();
-    document.getElementById('insightsYearFilter').innerHTML =
-        '<option value="all">All Years</option>' +
-        years.map(y => `<option value="${y}">${y}</option>`).join('');
+    const years = [...new Set(rawData.map(d => Number(d.Year)))].sort((a, b) => a - b);
+    ['yearMs', 'hlYearMs'].forEach(id => {
+        const panel = document.getElementById(id + 'Panel');
+        if (!panel) return;
+        panel.innerHTML = years.map(year => `<label class="ms-item">
+            <input type="checkbox" value="${year}" ${globalFilters.years.includes(year) ? 'checked' : ''} onchange="onYearCheckbox(this)">
+            <span>${year}</span></label>`).join('');
+        updateMsTriggerLabel(id, globalFilters.years.map(String), 'All Years');
+    });
 }
 
 function populateCategoryFilter() {
-    const cats = [...new Set(rawData.map(d => d.Type).filter(Boolean))].sort();
+    const cats = [...new Set(rawData.map(d => d.Type).filter(cat => cat && !isReviewCategory(cat)))].sort();
     const panel = document.getElementById('catMsPanel');
     if (!panel) return;
     panel.innerHTML = cats.map(c => `<label class="ms-item">
         <input type="checkbox" value="${c.replace(/"/g,'&quot;')}" ${globalFilters.categories.includes(c) ? 'checked' : ''} onchange="onCatCheckbox(this)">
         <span>${c}</span></label>`).join('');
     updateMsTriggerLabel('catMs', globalFilters.categories, 'All Categories');
+}
+
+function isReviewCategory(value) {
+    const normalized = String(value || '').trim().toLowerCase().replace(/^⚠️\s*/, '');
+    return normalized === 'review' || normalized === 'to review';
 }
 
 // ── Multi-select helpers ──────────────────────────
@@ -506,7 +503,9 @@ function onYearCheckbox(cb) {
     if (cb.checked) { if (!globalFilters.years.includes(yr)) globalFilters.years.push(yr); }
     else            { globalFilters.years = globalFilters.years.filter(y => y !== yr); }
     updateMsTriggerLabel('yearMs', globalFilters.years.map(String), 'All Years');
+    updateMsTriggerLabel('hlYearMs', globalFilters.years.map(String), 'All Years');
     applyGlobalFilters();
+    if (activeTab === 'highlights') renderHighlightsTab();
 }
 
 function onCatCheckbox(cb) {
@@ -553,463 +552,7 @@ function renderDashboard() {
 
 
 // =====================================================
-//  INSIGHTS FILTERS
-// =====================================================
-document.getElementById('insightsYearFilter').addEventListener('change', e => {
-    insightsFilters.year = e.target.value;
-    yoyFilter = { typeKey: null, typeLevel: null, kind: null };
-    yoyDrill  = { expenses: null, savings: null };
-    renderInsightsTab();
-});
-
-document.getElementById('insightsCurrencyToggle').addEventListener('click', e => {
-    if (!e.target.classList.contains('toggle-btn')) return;
-    document.querySelectorAll('#insightsCurrencyToggle .toggle-btn').forEach(b => b.classList.remove('active'));
-    e.target.classList.add('active');
-    insightsFilters.currency = e.target.dataset.value;
-    renderInsightsTab();
-});
-
-// Insights: Real only + year filter (also excludes flagged rows)
-function getInsightsBase() {
-    return rawData.filter(row => {
-        if (row.excluded) return false;
-        const okReal = row.PlannedReal === 'Real';
-        const okYear = insightsFilters.year === 'all' || row.Year === parseInt(insightsFilters.year);
-        return okReal && okYear;
-    });
-}
-
-// Apply yoy type cross-filter (skipType=true means ignore it — used by the chart being clicked)
-function getYoyData(skipType = false) {
-    return getInsightsBase().filter(row => {
-        if (!skipType && yoyFilter.typeKey && yoyFilter.kind) {
-            if (row.kind === yoyFilter.kind) {
-                const val = yoyFilter.typeLevel === 'Expense' ? row.Expense : row.Type;
-                if (val !== yoyFilter.typeKey) return false;
-            }
-        }
-        return true;
-    });
-}
-
-function toggleYoyTypeFilter(label, kind, level) {
-    if (yoyFilter.typeKey === label && yoyFilter.kind === kind) {
-        yoyFilter = { typeKey: null, typeLevel: null, kind: null };
-    } else {
-        yoyFilter = { typeKey: label, typeLevel: level, kind };
-    }
-    renderInsightsTab();
-}
-
-
-// =====================================================
-//  INSIGHTS TAB RENDER
-// =====================================================
-function renderInsightsTab() {
-    renderYoyExpensesChart();
-    renderYoySavingsChart();
-    renderSavingsProjection();
-}
-
-
-// =====================================================
-//  YoY EXPENSES
-// =====================================================
-function renderYoyExpensesChart() {
-    const canvas = document.getElementById('yoyExpensesChart');
-    if (charts.yoyExpenses) { charts.yoyExpenses.destroy(); charts.yoyExpenses = null; }
-
-    const base  = getYoyData(true).filter(d => d.kind === 'expense');
-    if (!base.length) return;
-
-    const years = [...new Set(base.map(d => d.Year))].sort();
-    let labels, isDrilled, title;
-
-    if (yoyDrill.expenses) {
-        const rows = base.filter(d => d.Type === yoyDrill.expenses);
-        labels    = [...new Set(rows.map(d => d.Expense))].sort();
-        title     = `💸 Expenses › ${yoyDrill.expenses}`;
-        isDrilled = true;
-        document.getElementById('breadcrumbYoyExpenses').style.display   = 'block';
-        document.getElementById('breadcrumbYoyExpensesType').textContent = yoyDrill.expenses;
-    } else {
-        labels    = [...new Set(base.map(d => d.Type))].sort();
-        title     = '💸 Year-over-Year Expenses by Type';
-        isDrilled = false;
-        document.getElementById('breadcrumbYoyExpenses').style.display = 'none';
-    }
-
-    const totals = buildYoyTotals(base, labels, years, isDrilled, yoyDrill.expenses, 'expense');
-
-    // Sort by grand total descending
-    labels.sort((a, b) =>
-        years.reduce((s, y) => s + (totals[b][y] || 0), 0) -
-        years.reduce((s, y) => s + (totals[a][y] || 0), 0)
-    );
-
-    document.getElementById('yoyExpensesBox').querySelector('h3').textContent = title;
-    document.getElementById('yoyExpensesBox').classList.toggle(
-        'filtered', !!yoyFilter.typeKey && yoyFilter.kind === 'expense'
-    );
-
-    charts.yoyExpenses = new Chart(canvas, {
-        type: 'bar',
-        data: {
-            labels,
-            datasets: years.map((yr, i) => {
-                const c = yearColor(i);
-                return {
-                    label: String(yr),
-                    data:  labels.map(l => iDisp(totals[l]?.[yr] || 0, insightsFilters.currency)),
-                    backgroundColor: c.bg, borderColor: c.border, borderWidth: 2, borderRadius: 4
-                };
-            })
-        },
-        options: makeInsightsBarOptions(idx => {
-            const clicked = labels[idx];
-            if (!isDrilled) {
-                yoyDrill.expenses = clicked;
-                toggleYoyTypeFilter(clicked, 'expense', 'Type');
-                openDrawerWith(
-                    base.filter(d => d.Type === clicked),
-                    `💸 ${clicked}`, `Type: ${clicked}`
-                );
-            } else {
-                toggleYoyTypeFilter(clicked, 'expense', 'Expense');
-                openDrawerWith(
-                    base.filter(d => d.Type === yoyDrill.expenses && d.Expense === clicked),
-                    `💸 ${clicked}`, `Expense: ${clicked}`
-                );
-            }
-        }, insightsFilters.currency)
-    });
-}
-
-
-// =====================================================
-//  YoY SAVINGS
-// =====================================================
-function renderYoySavingsChart() {
-    const canvas = document.getElementById('yoySavingsChart');
-    if (charts.yoySavings) { charts.yoySavings.destroy(); charts.yoySavings = null; }
-
-    const base  = getYoyData(true).filter(d => d.kind === 'saving');
-    if (!base.length) return;
-
-    const years = [...new Set(base.map(d => d.Year))].sort();
-    let labels, isDrilled, title;
-
-    if (yoyDrill.savings) {
-        const rows = base.filter(d => d.Type === yoyDrill.savings);
-        labels    = [...new Set(rows.map(d => d.Expense))].sort();
-        title     = `💰 Income › ${yoyDrill.savings}`;
-        isDrilled = true;
-        document.getElementById('breadcrumbYoySavings').style.display   = 'block';
-        document.getElementById('breadcrumbYoySavingsType').textContent = yoyDrill.savings;
-    } else {
-        labels    = [...new Set(base.map(d => d.Type))].sort();
-        title     = '💰 Year-over-Year Income by Type';
-        isDrilled = false;
-        document.getElementById('breadcrumbYoySavings').style.display = 'none';
-    }
-
-    const totals = buildYoyTotals(base, labels, years, isDrilled, yoyDrill.savings, 'saving');
-
-    labels.sort((a, b) =>
-        years.reduce((s, y) => s + (totals[b][y] || 0), 0) -
-        years.reduce((s, y) => s + (totals[a][y] || 0), 0)
-    );
-
-    document.getElementById('yoySavingsBox').querySelector('h3').textContent = title;
-    document.getElementById('yoySavingsBox').classList.toggle(
-        'filtered', !!yoyFilter.typeKey && yoyFilter.kind === 'saving'
-    );
-
-    charts.yoySavings = new Chart(canvas, {
-        type: 'bar',
-        data: {
-            labels,
-            datasets: years.map((yr, i) => {
-                const c = yearColor(i);
-                return {
-                    label: String(yr),
-                    data:  labels.map(l => iDisp(totals[l]?.[yr] || 0, insightsFilters.currency)),
-                    backgroundColor: c.bg, borderColor: c.border, borderWidth: 2, borderRadius: 4
-                };
-            })
-        },
-        options: makeInsightsBarOptions(idx => {
-            const clicked = labels[idx];
-            if (!isDrilled) {
-                yoyDrill.savings = clicked;
-                toggleYoyTypeFilter(clicked, 'saving', 'Type');
-                openDrawerWith(
-                    base.filter(d => d.Type === clicked),
-                    `💰 ${clicked}`, `Type: ${clicked}`
-                );
-            } else {
-                toggleYoyTypeFilter(clicked, 'saving', 'Expense');
-                openDrawerWith(
-                    base.filter(d => d.Type === yoyDrill.savings && d.Expense === clicked),
-                    `💰 ${clicked}`, `Expense: ${clicked}`
-                );
-            }
-        }, insightsFilters.currency)
-    });
-}
-
-function resetYoyDrill(which) {
-    yoyDrill[which]     = null;
-    yoyFilter.typeKey   = null;
-    yoyFilter.kind      = null;
-    yoyFilter.typeLevel = null;
-    closeDrawer();
-    renderInsightsTab();
-}
-
-
-// =====================================================
-//  SAVINGS PROJECTION
-// =====================================================
-function renderSavingsProjection() {
-    const canvas = document.getElementById('savingsProjectionChart');
-    if (charts.savingsProjection) { charts.savingsProjection.destroy(); charts.savingsProjection = null; }
-    if (!canvas) return;
-
-    const base = getInsightsBase(); // Real, year-filtered, not excluded
-    if (!base.length) return;
-
-    // Build monthly net per year
-    const MNAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    const years  = [...new Set(base.map(d => d.Year))].sort();
-    const months = [1,2,3,4,5,6,7,8,9,10,11,12];
-
-    // net[year][month] = income - expenses
-    const net = {};
-    years.forEach(y => { net[y] = {}; months.forEach(m => { net[y][m] = 0; }); });
-    base.forEach(d => {
-        const contrib = d.Amount;
-        net[d.Year][d.Month] = (net[d.Year][d.Month] || 0) + contrib;
-    });
-
-    // Build cumulative per year
-    // Determine the last month that has any data across all years
-    const hasData = {};
-    base.forEach(d => { hasData[`${d.Year}-${d.Month}`] = true; });
-
-    // For each year build cumulative array (12 points), null after last data month
-    const statsCards = [];
-    const datasets = years.map((yr, i) => {
-        let cumulative = 0;
-        // Track which months genuinely had transactions (for avg calculation)
-        const monthsWithData = [];
-        const data = months.map(m => {
-            if (hasData[`${yr}-${m}`] !== undefined) {
-                cumulative += net[yr][m];
-                monthsWithData.push(m);
-                return iDisp(cumulative, insightsFilters.currency);
-            }
-            // No transactions in this month — carry forward only if an earlier month had data
-            const hasAny = months.slice(0, m - 1).some(pm => hasData[`${yr}-${pm}`]);
-            if (hasAny) {
-                return iDisp(cumulative, insightsFilters.currency);
-            }
-            return null;
-        });
-
-        // Find last non-null index (for display line extent)
-        let lastIdx = -1;
-        data.forEach((v, idx) => { if (v !== null) lastIdx = idx; });
-
-        // Last index with REAL transaction data (not carry-forward) — used for projection
-        const lastDataIdx = monthsWithData.length > 0 ? monthsWithData[monthsWithData.length - 1] - 1 : -1;
-
-        const c = yearColor(i);
-
-        // Actual line — drawn up to lastIdx (includes carry-forward visually)
-        const actualData = data.map((v, idx) => idx <= lastIdx ? v : null);
-
-        // slope = average monthly net over months that actually had transactions
-        const endValRaw = monthsWithData.reduce((s, m) => s + net[yr][m], 0);
-        const endVal = lastDataIdx >= 0 ? iDisp(endValRaw, insightsFilters.currency) : 0;
-        const avgMonthly = monthsWithData.length > 0 ? endValRaw / monthsWithData.length : 0;
-
-        // Projection anchor = current month for current year, last real data month for past years
-        const _todayMonth = new Date().getMonth() + 1; // 1-based
-        const _todayYear  = new Date().getFullYear();
-        const projStartIdx = yr === _todayYear ? Math.max(lastDataIdx, _todayMonth - 1) : lastDataIdx;
-        const remainingMonths = yr === _todayYear ? 12 - _todayMonth : 0;
-        const projectedYearEnd = endValRaw + avgMonthly * remainingMonths;
-
-        const projData = months.map((_, idx) => {
-            if (idx < lastDataIdx) return null;
-            if (idx <= projStartIdx) return endVal; // flat carry to current month
-            return iDisp(endValRaw + avgMonthly * (idx - projStartIdx), insightsFilters.currency);
-        });
-
-        statsCards.push({ yr, avgMonthly, endVal, projectedYearEnd, monthsWithData: monthsWithData.length, remainingMonths });
-
-        return [
-            {
-                label: String(yr),
-                data: actualData,
-                borderColor: c.border,
-                backgroundColor: c.bg.replace('0.78', '0.12'),
-                borderWidth: 2.5,
-                pointRadius: 3,
-                tension: 0.35,
-                fill: true,
-                spanGaps: false,
-                yAxisID: 'y',
-            },
-            {
-                label: `${yr} projected`,
-                data: projData,
-                borderColor: c.border,
-                backgroundColor: 'transparent',
-                borderWidth: 1.5,
-                borderDash: [6, 4],
-                pointRadius: 0,
-                tension: 0.35,
-                fill: false,
-                spanGaps: false,
-                yAxisID: 'y',
-            }
-        ];
-    }).flat();
-
-    const sym = insightsFilters.currency === 'EUR' ? '€' : 'kr';
-
-    charts.savingsProjection = new Chart(canvas, {
-        type: 'line',
-        data: {
-            labels: MNAMES,
-            datasets,
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            interaction: { mode: 'index', intersect: false },
-            plugins: {
-                legend: {
-                    position: 'top',
-                    labels: {
-                        font: { size: 11 },
-                        padding: 10,
-                        filter: item => !item.text.includes('projected'),
-                    }
-                },
-                tooltip: {
-                    callbacks: {
-                        label: ctx => {
-                            if (ctx.parsed.y === null) return null;
-                            const isProj = ctx.dataset.label.includes('projected');
-                            const pfx = isProj ? '~ ' : '';
-                            return ` ${ctx.dataset.label.replace(' projected', '')}${isProj ? ' (proj.)' : ''}: ${pfx}${iFormatMoney(ctx.parsed.y, insightsFilters.currency)}`;
-                        }
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    ticks: { callback: v => `${(v/1000).toFixed(0)}k ${sym}` },
-                    grid:  { color: chartGridColor() },
-                    title: { display: true, text: `Cumulative Net Savings (${sym})`, font: { size: 11 } }
-                },
-                x: { grid: { display: false } }
-            }
-        }
-    });
-
-    // Render stats cards
-    const statsEl = document.getElementById('savingsProjectionStats');
-    if (statsEl) {
-        statsEl.innerHTML = statsCards.map(s => {
-            const isPositive = s.projectedYearEnd >= 0;
-            const avgFmt  = iFormatMoney(iDisp(s.avgMonthly, insightsFilters.currency), insightsFilters.currency);
-            const curFmt  = iFormatMoney(iDisp(s.endVal, insightsFilters.currency), insightsFilters.currency);
-            const projFmt = iFormatMoney(iDisp(s.projectedYearEnd, insightsFilters.currency), insightsFilters.currency);
-            const projCls = isPositive ? 'proj-stat-positive' : 'proj-stat-negative';
-            return `
-            <div class="proj-stat-card">
-                <div class="proj-stat-year">${s.yr}</div>
-                <div class="proj-stat-row">
-                    <span class="proj-stat-label">Avg / month</span>
-                    <span class="proj-stat-val">${avgFmt}</span>
-                </div>
-                <div class="proj-stat-row">
-                    <span class="proj-stat-label">Savings so far</span>
-                    <span class="proj-stat-val">${curFmt}</span>
-                </div>
-                <div class="proj-stat-row">
-                    <span class="proj-stat-label">Projected year-end</span>
-                    <span class="proj-stat-val ${projCls}">${projFmt}</span>
-                </div>
-                <div class="proj-stat-months">${s.monthsWithData} month${s.monthsWithData !== 1 ? 's' : ''} of data · ${s.remainingMonths} remaining</div>
-            </div>`;
-        }).join('');
-    }
-}
-
-
-// =====================================================
-//  INSIGHTS BAR OPTIONS
-// =====================================================
-function makeInsightsBarOptions(onBarClick, currency) {
-    const sym = currency === 'EUR' ? '€' : 'kr';
-    return {
-        responsive: true,
-        maintainAspectRatio: false,
-        onClick(evt, elements) {
-            if (elements.length > 0 && onBarClick)
-                onBarClick(elements[0].index, elements[0].datasetIndex);
-        },
-        onHover(e) { e.native.target.style.cursor = 'pointer'; },
-        plugins: {
-            legend: { position: 'top', labels: { font: { size: 11 }, padding: 10 } },
-            tooltip: {
-                callbacks: {
-                    label: ctx => ` ${ctx.dataset.label}: ${iFormatMoney(ctx.parsed.y, currency)}`
-                }
-            }
-        },
-        scales: {
-            y: {
-                beginAtZero: true,
-                ticks: { callback: v => `${(v/1000).toFixed(0)}k ${sym}` },
-                grid:  { color: chartGridColor() }
-            },
-            x: { grid: { display: false } }
-        }
-    };
-}
-
-
-// =====================================================
-//  YoY HELPER
-// =====================================================
-function buildYoyTotals(base, labels, years, isDrilled, drillType, kind) {
-    const totals = {};
-    labels.forEach(l => {
-        totals[l] = {};
-        years.forEach(y => { totals[l][y] = 0; });
-    });
-    base.forEach(d => {
-        const lbl = isDrilled
-            ? (d.Type === drillType ? d.Expense : null)
-            : d.Type;
-        if (lbl && totals[lbl] !== undefined) {
-            const val = kind === 'expense' ? -d.Amount : d.Amount;
-            totals[lbl][d.Year] = (totals[lbl][d.Year] || 0) + val;
-        }
-    });
-    return totals;
-}
-
-
-// =====================================================
-//  INSIGHTS CURRENCY HELPERS
+//  CURRENCY HELPERS
 // =====================================================
 function iDisp(v, currency) { return currency === 'EUR' ? v / EUR_RATE : v; }
 function iFormatMoney(v, currency) {
@@ -1021,11 +564,6 @@ function iFormatShort(v, currency) {
     const val = currency === 'EUR' ? v / EUR_RATE : v;
     return Math.abs(val) >= 1000 ? `${(val/1000).toFixed(1)}k` : Math.round(val).toString();
 }
-
-
-// =====================================================
-//  DASHBOARD CURRENCY HELPERS
-// =====================================================
 function toDisplay(v) { return globalFilters.currency === 'EUR' ? v / EUR_RATE : v; }
 function currSymbol() { return globalFilters.currency === 'EUR' ? '€' : 'kr'; }
 function formatMoney(v) {
@@ -1155,6 +693,18 @@ function closeIncomeTrendModal() {
 
 function handleIncTrendModalClick(e) {
     if (e.target === document.getElementById('incTrendModal')) closeIncomeTrendModal();
+}
+
+function openHighlightsQuickFacts() {
+    document.getElementById('highlightsQuickFactsModal').classList.add('open');
+}
+function closeHighlightsQuickFacts() {
+    document.getElementById('highlightsQuickFactsModal').classList.remove('open');
+}
+function handleHighlightsQuickFactsModalClick(e) {
+    if (e.target === document.getElementById('highlightsQuickFactsModal')) {
+        closeHighlightsQuickFacts();
+    }
 }
 
 function renderIncomeTrendChart() {
@@ -1792,9 +1342,7 @@ function renderDrawerTable() {
     const page  = drawerFiltered.slice(start, start + DRAWER_PER);
     const tbody = document.getElementById('drawerTableBody');
 
-    const fmtFn = activeTab === 'insights'
-        ? v => iFormatMoney(iDisp(v, insightsFilters.currency), insightsFilters.currency)
-        : v => formatMoney(toDisplay(v));
+    const fmtFn = v => formatMoney(toDisplay(v));
 
     // Ensure datalists are populated for autocomplete
     updateTxDataLists();
@@ -1822,7 +1370,7 @@ function renderDrawerTable() {
                 markDrawerRowDirty(row);
                 applyGlobalFilters();
                 renderDashboard();
-                if (activeTab === 'insights') renderInsightsTab();
+                if (activeTab === 'highlights') renderHighlightsTab();
             });
             tdDate.appendChild(inpDate);
             tr.appendChild(tdDate);
@@ -1847,7 +1395,7 @@ function renderDrawerTable() {
                 updateTxDataLists();
                 applyGlobalFilters();
                 renderDashboard();
-                if (activeTab === 'insights') renderInsightsTab();
+                if (activeTab === 'highlights') renderHighlightsTab();
             });
             tdExp.appendChild(inpExp);
             tr.appendChild(tdExp);
@@ -1866,7 +1414,7 @@ function renderDrawerTable() {
                 updateTxDataLists();
                 applyGlobalFilters();
                 renderDashboard();
-                if (activeTab === 'insights') renderInsightsTab();
+                if (activeTab === 'highlights') renderHighlightsTab();
             });
             tdType.appendChild(inpType);
             tr.appendChild(tdType);
@@ -1888,17 +1436,10 @@ function renderDrawerTable() {
 
             // ── Account ───────────────────────────────
             const tdAcct = document.createElement('td');
-            const acct = (row.Account || 'personal').toLowerCase();
+            const acct = String(row.Account || '').toLowerCase();
             const acctSel = document.createElement('select');
             acctSel.className = `tx-acct-select tx-acct-${acct}`;
-            const acctOpts = { personal: 'Personal', joint: 'Joint', anna: 'Anna', carlos: 'Carlos' };
-            Object.entries(acctOpts).forEach(([val, label]) => {
-                const opt = document.createElement('option');
-                opt.value = val;
-                opt.textContent = label;
-                if (val === acct) opt.selected = true;
-                acctSel.appendChild(opt);
-            });
+            acctSel.innerHTML = accountOptionsHtml(acct);
             acctSel.addEventListener('change', () => {
                 row.Account = acctSel.value;
                 acctSel.className = `tx-acct-select tx-acct-${acctSel.value}`;
@@ -1925,7 +1466,7 @@ function renderDrawerTable() {
                 markDrawerRowDirty(row);
                 applyGlobalFilters();
                 renderDashboard();
-                if (activeTab === 'insights') renderInsightsTab();
+                if (activeTab === 'highlights') renderHighlightsTab();
             });
             tdExcl.appendChild(btn);
             tr.appendChild(tdExcl);
@@ -2020,15 +1561,46 @@ function txSortBy(key) {
         txSort.key = key;
         txSort.dir = key === 'DateSortKey' || key === 'Amount' ? 'desc' : 'asc';
     }
+    txPage = 1;
     renderTransactionsTab();
+}
+
+function filterTransactions() {
+    txPage = 1;
+    renderTransactionsTab();
+}
+
+const FRONTEND_ACCOUNT_OPTIONS = {
+    joint: 'Joint',
+    anna: 'Anna',
+    carlos: 'Carlos',
+};
+
+function accountOptionsHtml(currentValue) {
+    const selected = String(currentValue || '').trim().toLowerCase();
+    const options = [];
+
+    if (!selected) {
+        options.push('<option value="" disabled selected>Select account</option>');
+    } else if (!Object.prototype.hasOwnProperty.call(FRONTEND_ACCOUNT_OPTIONS, selected)) {
+        const label = selected === 'personal'
+            ? 'Personal (existing)'
+            : `${selected.charAt(0).toUpperCase()}${selected.slice(1)} (existing)`;
+        options.push(`<option value="${escHtml(selected)}" disabled selected>${escHtml(label)}</option>`);
+    }
+
+    Object.entries(FRONTEND_ACCOUNT_OPTIONS).forEach(([value, label]) => {
+        options.push(`<option value="${value}" ${selected === value ? 'selected' : ''}>${label}</option>`);
+    });
+    return options.join('');
 }
 
 function updateTxDataLists() {
     const exEl = document.getElementById('expenseOptions');
     const tyEl = document.getElementById('typeOptions');
     if (!exEl || !tyEl) return;
-    const expenses = [...new Set(rawData.map(r => r.Expense).filter(Boolean))].sort();
-    const types    = [...new Set(rawData.map(r => r.Type).filter(Boolean))].sort();
+    const expenses = [...new Set(rawData.map(r => r.Expense).filter(value => value && !isReviewCategory(value)))].sort();
+    const types    = [...new Set(rawData.map(r => r.Type).filter(value => value && !isReviewCategory(value)))].sort();
     exEl.innerHTML = expenses.map(e => `<option value="${escHtml(e)}">`).join('');
     tyEl.innerHTML = types.map(t => `<option value="${escHtml(t)}">`).join('');
 }
@@ -2060,6 +1632,9 @@ function renderTransactionsTab() {
             if (typeof av === 'string') return txSort.dir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
             return txSort.dir === 'asc' ? av - bv : bv - av;
         });
+    const totalPages = Math.ceil(shown.length / TX_PER_PAGE);
+    txPage = Math.min(Math.max(txPage, 1), Math.max(totalPages, 1));
+    const pageRows = shown.slice((txPage - 1) * TX_PER_PAGE, txPage * TX_PER_PAGE);
 
     updateTxDataLists();
 
@@ -2070,22 +1645,18 @@ function renderTransactionsTab() {
     });
 
     tbody.innerHTML = '';
-    shown.forEach(({ r, i }) => {
+    pageRows.forEach(({ r, i }) => {
         const amtCls = r.Amount >= 0 ? 'amount-saving' : 'amount-expense';
         const amtFmt = (r.kind === 'expense' ? '−' : '+') +
             new Intl.NumberFormat('da-DK', { maximumFractionDigits: 2 }).format(Math.abs(r.Amount));
-        const acctVal  = (r.Account || 'personal').toLowerCase();
+        const acctVal  = String(r.Account || '').toLowerCase();
         const exclCls  = r.excluded ? 'tx-excl-btn tx-excluded' : 'tx-excl-btn tx-included';
         const exclTxt  = r.excluded ? '🚫 Excluded' : '✅ Included';
 
         const tr = document.createElement('tr');
         if (r.excluded) tr.classList.add('tx-row-dimmed');
 
-        const acctOpts = ['personal','joint','anna','carlos'];
-        const acctNames = { personal: 'Personal', joint: 'Joint', anna: 'Anna', carlos: 'Carlos' };
-        const acctOptsHtml = acctOpts.map(v =>
-            `<option value="${v}" ${acctVal === v ? 'selected' : ''}>${acctNames[v]}</option>`
-        ).join('');
+        const acctOptsHtml = accountOptionsHtml(acctVal);
 
         tr.innerHTML = `
             <td><input class="tx-date-input" value="${escHtml(r.Date)}" data-idx="${i}" placeholder="DD/MM/YY"></td>
@@ -2107,6 +1678,7 @@ function renderTransactionsTab() {
         `;
         tbody.appendChild(tr);
     });
+    renderTransactionsPagination(shown.length, totalPages);
 
     // Category edit
     tbody.querySelectorAll('.tx-cat-input').forEach(inp => {
@@ -2220,7 +1792,7 @@ function renderTransactionsTab() {
                 if (drawerSourceIndex !== -1) drawerData.splice(drawerSourceIndex + 1, 0, newRow);
                 applyGlobalFilters();
                 renderDashboard();
-                if (activeTab === 'insights') renderInsightsTab();
+                if (activeTab === 'highlights') renderHighlightsTab();
                 if (activeTab === 'transactions') renderTransactionsTab();
                 renderDrawerTable();
                 showToast('✅ Transaction duplicated', 'success');
@@ -2260,6 +1832,43 @@ function renderTransactionsTab() {
     });
 }
 
+function renderTransactionsPagination(totalCount, totalPages) {
+    const pagination = document.getElementById('txPagination');
+    if (!pagination) return;
+
+    const pageCount = Math.max(totalPages, 1);
+    const firstItem = totalCount ? (txPage - 1) * TX_PER_PAGE + 1 : 0;
+    const lastItem = Math.min(txPage * TX_PER_PAGE, totalCount);
+    const pages = [...new Set([
+        1, pageCount, txPage - 2, txPage - 1, txPage, txPage + 1, txPage + 2,
+    ].filter(page => page >= 1 && page <= pageCount))].sort((a, b) => a - b);
+    const pageButtons = [];
+
+    pages.forEach((page, index) => {
+        if (index && page - pages[index - 1] > 1) {
+            pageButtons.push('<span class="tx-pagination-ellipsis">…</span>');
+        }
+        pageButtons.push(`<button type="button" class="page-btn ${page === txPage ? 'active' : ''}"
+            onclick="changeTransactionsPage(${page})" ${page === txPage ? 'aria-current="page"' : ''}>${page}</button>`);
+    });
+
+    pagination.innerHTML = `
+        <span class="tx-pagination-summary">Showing ${firstItem}–${lastItem} of ${totalCount}</span>
+        ${pageCount > 1 ? `<div class="tx-pagination-controls">
+            <button type="button" class="page-btn" onclick="changeTransactionsPage(${txPage - 1})"
+                ${txPage === 1 ? 'disabled' : ''}>← Prev</button>
+            ${pageButtons.join('')}
+            <button type="button" class="page-btn" onclick="changeTransactionsPage(${txPage + 1})"
+                ${txPage === pageCount ? 'disabled' : ''}>Next →</button>
+        </div>` : ''}`;
+}
+
+function changeTransactionsPage(page) {
+    if (!Number.isInteger(page) || page < 1) return;
+    txPage = page;
+    renderTransactionsTab();
+}
+
 function addTransaction() {
     const today = new Date();
     const pad = n => String(n).padStart(2, '0');
@@ -2274,11 +1883,12 @@ function addTransaction() {
         Year:        today.getFullYear(),
         Amount:      0,
         Comments:    '',
-        Account:     'personal',
+        Account:     '',
         kind:        'expense',
         excluded:    false,
     };
     rawData.unshift(newRow);
+    txPage = 1;
     updateTxDataLists();
     applyGlobalFilters();
     renderTransactionsTab();
@@ -2302,33 +1912,86 @@ function setHighlightsCurrency(cur) {
     highlightsCurrency = cur;
     renderHighlightsTab();
 }
-function setHighlightsYear(yr) {
-    highlightsYear = yr;
+function setHighlightsCategoryKind(kind) {
+    highlightsCategoryKind = kind;
     renderHighlightsTab();
+}
+
+function getHighlightsAnalyticsRows() {
+    const now = new Date();
+    const currentMonthIndex = now.getFullYear() * 12 + now.getMonth();
+
+    return rawData.filter(row => {
+        if (row.excluded || row.PlannedReal !== 'Real') return false;
+        const year = Number(row.Year);
+        const month = Number(row.Month);
+        return Number.isInteger(year)
+            && Number.isInteger(month)
+            && month >= 1
+            && month <= 12
+            && year * 12 + month - 1 <= currentMonthIndex;
+    });
 }
 
 function renderHighlightsTab() {
     const content = document.getElementById('highlightsContent');
     if (!content) return;
+    const highlightYearFilterOpen = document.getElementById('hlYearMsPanel')?.style.display === 'block';
+    if (charts.highlightsSavings) {
+        charts.highlightsSavings.destroy();
+        charts.highlightsSavings = null;
+    }
+    if (charts.highlightsCategories) {
+        charts.highlightsCategories.destroy();
+        charts.highlightsCategories = null;
+    }
 
     const cur = highlightsCurrency;
     const fmt = v => iFormatMoney(iDisp(v, cur), cur);
 
-    const allYears = [...new Set(rawData.filter(d => !d.excluded && d.PlannedReal === 'Real').map(d => d.Year))].sort();
-    const realAll = rawData.filter(d => {
-        if (d.excluded || d.PlannedReal !== 'Real') return false;
-        return highlightsYear === 'all' || d.Year === parseInt(highlightsYear);
+    const analyticsReal = getHighlightsAnalyticsRows();
+    const allYears = [...new Set(analyticsReal.map(d => d.Year))]
+        .sort((a, b) => Number(a) - Number(b));
+    const selectedYears = globalFilters.years.map(Number).sort((a, b) => a - b);
+    const realAll = analyticsReal.filter(d => {
+        return !selectedYears.length || selectedYears.includes(Number(d.Year));
     });
     const realExp = realAll.filter(d => d.kind === 'expense');
     const realInc = realAll.filter(d => d.kind === 'saving');
+    const filterHtml = `
+    <section class="filters-bar">
+        <div class="filter-group">
+            <label>Year</label>
+            <div class="ms-wrap" id="hlYearMsWrap">
+                <button class="ms-trigger" id="hlYearMsTrigger" type="button" onclick="toggleMs('hlYearMs')">All Years ▾</button>
+                <div class="ms-panel" id="hlYearMsPanel"></div>
+            </div>
+        </div>
+        <div class="filter-group">
+            <label>Currency</label>
+            <div class="toggle-group">
+                <button class="toggle-btn ${cur === 'DKK' ? 'active' : ''}" onclick="setHighlightsCurrency('DKK')">DKK</button>
+                <button class="toggle-btn ${cur === 'EUR' ? 'active' : ''}" onclick="setHighlightsCurrency('EUR')">EUR</button>
+            </div>
+        </div>
+        <div class="filter-group hl-quick-facts-filter">
+            <button type="button" class="hl-quick-facts-button" onclick="openHighlightsQuickFacts()">💡 Quick Facts</button>
+        </div>
+    </section>`;
 
     if (!realAll.length) {
-        content.innerHTML = `
+        const quickFactsBody = document.getElementById('highlightsQuickFactsBody');
+        if (quickFactsBody) quickFactsBody.innerHTML = '<p class="hl-note">No real data for the selected years.</p>';
+        content.innerHTML = filterHtml + `
             <div class="hl-empty">
                 <div style="font-size:3rem;margin-bottom:1rem">💡</div>
                 <h3>No real data available yet</h3>
                 <p>Upload transactions marked as <em>Real</em> to see your financial highlights.</p>
             </div>`;
+        populateYearFilter();
+        if (highlightYearFilterOpen) {
+            document.getElementById('hlYearMsPanel').style.display = 'block';
+        }
         return;
     }
 
@@ -2342,16 +2005,7 @@ function renderHighlightsTab() {
     const monthCount    = activeMonths.size || 1;
     const avgMonthly    = totalExpenses / monthCount;
 
-    const uncatCount    = rawData.filter(d => {
-        if (d.excluded || d.Expense !== '⚠️ Review') return false;
-        return highlightsYear === 'all' || d.Year === parseInt(highlightsYear);
-    }).length;
-
-    // Top expense categories
-    const byType = {};
-    realExp.forEach(d => { byType[d.Type] = (byType[d.Type] || 0) + (-d.Amount); });
-    const topCats = Object.entries(byType).sort((a, b) => b[1] - a[1]).slice(0, 5);
-    const maxCat  = topCats[0]?.[1] || 1;
+    const uncatCount = getHighlightsReviewRows().length;
 
     // Biggest single expense
     const biggestTx = [...realExp].sort((a, b) => a.Amount - b.Amount)[0];
@@ -2365,11 +2019,6 @@ function renderHighlightsTab() {
     const monthEntries = Object.entries(monthMap);
     const bestMonth    = monthEntries.length ? [...monthEntries].sort((a, b) => a[1] - b[1])[0] : null;
     const worstMonth   = monthEntries.length ? [...monthEntries].sort((a, b) => b[1] - a[1])[0] : null;
-
-    // Person spending
-    const carlosAmt   = realExp.filter(d => d.Type.includes('Carlos')).reduce((s, d) => s - d.Amount, 0);
-    const annaAmt     = realExp.filter(d => d.Type.includes('Anna')).reduce((s, d) => s - d.Amount, 0);
-    const personTotal = carlosAmt + annaAmt || 1;
 
     // Food & dining
     const foodAmt = realExp.filter(d => d.Type === '🛒 Groceries' || d.Expense === 'Bars & Restaurants')
@@ -2395,26 +2044,6 @@ function renderHighlightsTab() {
     // === Build HTML ===
 
     // Filter bar
-    const yearOptions = '<option value="all">All Years</option>' +
-        allYears.map(y => `<option value="${y}" ${String(y) === String(highlightsYear) ? 'selected' : ''}>${y}</option>`).join('');
-    const filterHtml = `
-    <section class="filters-bar">
-        <div class="filter-group">
-            <label>Year</label>
-            <select onchange="setHighlightsYear(this.value)">${yearOptions}</select>
-        </div>
-        <div class="filter-group">
-            <label>Currency</label>
-            <div class="toggle-group">
-                <button class="toggle-btn ${cur === 'DKK' ? 'active' : ''}" onclick="setHighlightsCurrency('DKK')">DKK</button>
-                <button class="toggle-btn ${cur === 'EUR' ? 'active' : ''}" onclick="setHighlightsCurrency('EUR')">EUR</button>
-            </div>
-        </div>
-        <div class="filter-group" style="margin-left:auto">
-            <span class="filter-note">💡 ${monthCount} month${monthCount !== 1 ? 's' : ''} of data</span>
-        </div>
-    </section>`;
-
     // KPI row
     const kpiHtml = `
     <section class="hl-kpi-row">
@@ -2430,56 +2059,40 @@ function renderHighlightsTab() {
             <div class="hl-kpi-value">${fmt(avgMonthly)}</div>
             <div class="hl-kpi-sub">Over ${monthCount} month${monthCount !== 1 ? 's' : ''}</div>
         </div>
-        <div class="hl-kpi-card ${uncatCount > 0 ? 'hl-kpi-warning' : ''}">
+        <button type="button" class="hl-kpi-card hl-kpi-action ${uncatCount > 0 ? 'hl-kpi-warning' : ''}"
+            onclick="openHighlightsReviewDrawer()" ${uncatCount === 0 ? 'disabled' : ''}>
             <div class="hl-kpi-icon">${uncatCount > 0 ? '⚠️' : '✅'}</div>
             <div class="hl-kpi-label">⚠️ Review</div>
             <div class="hl-kpi-value" style="color:${uncatCount > 0 ? '#f59e0b' : '#10b981'}">${uncatCount}</div>
             <div class="hl-kpi-sub">${uncatCount > 0 ? '⚠️ Review items' : 'All categorized!'}</div>
-        </div>
+        </button>
     </section>`;
 
     // Top categories
     const topCatsHtml = `
     <div class="hl-panel">
         <div class="hl-panel-header">
-            <h3>🔥 Top Expense Categories</h3>
-            <span class="chart-hint">Real expenses only</span>
+            <h3>🔥 Top 10 ${highlightsCategoryKind === 'expense' ? 'Expense Categories' : 'Income Sources'}</h3>
+            <div class="toggle-group" role="group" aria-label="Category chart data">
+                <button class="toggle-btn ${highlightsCategoryKind === 'expense' ? 'active' : ''}"
+                    aria-pressed="${highlightsCategoryKind === 'expense'}"
+                    onclick="setHighlightsCategoryKind('expense')">Expenses</button>
+                <button class="toggle-btn ${highlightsCategoryKind === 'saving' ? 'active' : ''}"
+                    aria-pressed="${highlightsCategoryKind === 'saving'}"
+                    onclick="setHighlightsCategoryKind('saving')">Income</button>
+            </div>
         </div>
-        ${topCats.map(([type, amt]) => {
-            const pct   = (amt / maxCat * 100).toFixed(1);
-            const share = (amt / totalExpenses * 100).toFixed(0);
-            return `
-            <div class="hl-bar-row">
-                <div class="hl-bar-label" title="${type}">${type}</div>
-                <div class="hl-bar-track"><div class="hl-bar-fill" style="width:${pct}%"></div></div>
-                <div class="hl-bar-value">${fmt(amt)}</div>
-                <div class="hl-bar-pct">${share}%</div>
-            </div>`;
-        }).join('')}
+        <div class="hl-category-chart-wrap"><canvas id="hlTopCategoriesChart"></canvas></div>
     </div>`;
 
-    // Person split
-    const personHtml = `
+    const savingsTrendHtml = `
     <div class="hl-panel">
         <div class="hl-panel-header">
-            <h3>👥 Spending by Person</h3>
-            <span class="chart-hint">Tagged transactions only</span>
+            <h3>📈 12-Month Rolling Savings Ratio</h3>
+            <span class="chart-hint">Monthly costs and income with rolling ratio</span>
         </div>
-        ${carlosAmt > 0 || annaAmt > 0 ? `
-        <div class="hl-bar-row">
-            <div class="hl-bar-label">👨 Carlos</div>
-            <div class="hl-bar-track"><div class="hl-bar-fill hl-bar-carlos" style="width:${(carlosAmt/personTotal*100).toFixed(1)}%"></div></div>
-            <div class="hl-bar-value">${fmt(carlosAmt)}</div>
-            <div class="hl-bar-pct">${(carlosAmt/personTotal*100).toFixed(0)}%</div>
-        </div>
-        <div class="hl-bar-row">
-            <div class="hl-bar-label">👩 Anna</div>
-            <div class="hl-bar-track"><div class="hl-bar-fill hl-bar-anna" style="width:${(annaAmt/personTotal*100).toFixed(1)}%"></div></div>
-            <div class="hl-bar-value">${fmt(annaAmt)}</div>
-            <div class="hl-bar-pct">${(annaAmt/personTotal*100).toFixed(0)}%</div>
-        </div>
-        <p class="hl-note">Only transactions tagged to a specific person are counted here.</p>
-        ` : `<p class="hl-note">No person-tagged transactions found in the current data.</p>`}
+        <div class="hl-savings-chart-wrap"><canvas id="hlSavingsTrendChart"></canvas></div>
+        <p class="hl-note">The line uses the previous 12 calendar months, including the displayed month. Months without transactions are treated as zero.</p>
     </div>`;
 
     // Fun facts
@@ -2503,17 +2116,264 @@ function renderHighlightsTab() {
         `📊 Money in vs out: <strong>${fmt(totalIncome)}</strong> earned, <strong>${fmt(totalExpenses)}</strong> spent → net <strong style="color:${netColor}">${fmt(Math.abs(netSavings))}</strong> ${netSavings >= 0 ? 'saved ✅' : 'deficit ❌'}`,
     ].filter(Boolean);
 
-    const factsHtml = `
-    <div class="hl-panel hl-facts-panel">
-        <div class="hl-panel-header"><h3>💡 Quick Facts</h3></div>
-        <div class="hl-facts-grid">
-            ${facts.map(f => `<div class="hl-fact">${f}</div>`).join('')}
-        </div>
-    </div>`;
+    const quickFactsBody = document.getElementById('highlightsQuickFactsBody');
+    if (quickFactsBody) {
+        quickFactsBody.innerHTML = facts.map(f => `<div class="hl-fact">${f}</div>`).join('');
+    }
 
     content.innerHTML = filterHtml + kpiHtml +
-        `<div class="hl-two-col">${topCatsHtml}${personHtml}</div>` +
-        factsHtml;
+        `<div class="hl-two-col">${topCatsHtml}${savingsTrendHtml}</div>`;
+    populateYearFilter();
+    if (highlightYearFilterOpen) {
+        document.getElementById('hlYearMsPanel').style.display = 'block';
+    }
+    renderHighlightsCategoriesChart(realAll, allYears, cur, selectedYears);
+    renderHighlightsSavingsChart(analyticsReal, selectedYears, cur);
+}
+
+function getHighlightsReviewRows() {
+    return getHighlightsAnalyticsRows().filter(d =>
+        d.Expense === '⚠️ Review'
+        && (!globalFilters.years.length || globalFilters.years.includes(Number(d.Year)))
+    );
+}
+
+function openHighlightsReviewDrawer() {
+    const rows = getHighlightsReviewRows();
+    const yearLabel = globalFilters.years.length ? globalFilters.years.join(', ') : 'All years';
+    openDrawerWith(
+        rows,
+        '⚠️ Transactions to Review',
+        `${yearLabel} · ${rows.length} transaction${rows.length === 1 ? '' : 's'}`
+    );
+}
+
+function renderHighlightsCategoriesChart(rows, allYears, currency, selectedYears) {
+    const canvas = document.getElementById('hlTopCategoriesChart');
+    if (!canvas) return;
+
+    const categoryKind = highlightsCategoryKind;
+    const categoryField = categoryKind === 'expense' ? 'Type' : 'Expense';
+    const categoryRows = rows.filter(row => row.kind === categoryKind);
+    if (!categoryRows.length) {
+        canvas.parentElement.innerHTML = `<p class="hl-note">No ${categoryKind === 'expense' ? 'expense' : 'income'} data for this selection.</p>`;
+        return;
+    }
+
+    const totalsByCategory = new Map();
+    for (const row of categoryRows) {
+        const category = row[categoryField] || 'Uncategorized';
+        const year = Number(row.Year);
+        const yearTotals = totalsByCategory.get(category) || new Map();
+        const amount = categoryKind === 'expense' ? -row.Amount : row.Amount;
+        yearTotals.set(year, (yearTotals.get(year) || 0) + amount);
+        totalsByCategory.set(category, yearTotals);
+    }
+
+    const topCategories = [...totalsByCategory.entries()]
+        .sort((a, b) =>
+            [...b[1].values()].reduce((sum, value) => sum + value, 0)
+            - [...a[1].values()].reduce((sum, value) => sum + value, 0)
+        )
+        .slice(0, 10)
+        .map(([category]) => category);
+    const years = selectedYears.length ? selectedYears : allYears.map(Number);
+
+    charts.highlightsCategories = new Chart(canvas, {
+        type: 'bar',
+        data: {
+            labels: topCategories,
+            datasets: years.map(year => {
+                const yearIndex = allYears.findIndex(y => Number(y) === year);
+                const color = yearColor(yearIndex >= 0 ? yearIndex : 0);
+                return {
+                    label: String(year),
+                    data: topCategories.map(category =>
+                        totalsByCategory.get(category)?.get(year) || 0
+                    ),
+                    backgroundColor: color.bg,
+                    borderColor: color.border,
+                    borderWidth: 1,
+                    borderRadius: 3,
+                };
+            }),
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { position: 'top' },
+                tooltip: {
+                    callbacks: {
+                        label: context =>
+                            ` ${context.dataset.label}: ${iFormatMoney(context.parsed.x, currency)}`,
+                    },
+                },
+            },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    grid: { color: chartGridColor() },
+                    ticks: { callback: value => iFormatMoney(value, currency) },
+                },
+                y: {
+                    grid: { display: false },
+                },
+            },
+        },
+    });
+}
+
+function renderHighlightsSavingsChart(rows, selectedYears, currency) {
+    const canvas = document.getElementById('hlSavingsTrendChart');
+    if (!canvas) return;
+
+    const monthlyTotals = new Map();
+    for (const row of rows) {
+        const year = Number(row.Year);
+        const month = Number(row.Month);
+        if (
+            !Number.isInteger(year)
+            || !Number.isInteger(month)
+            || month < 1
+            || month > 12
+        ) {
+            continue;
+        }
+        const monthIndex = year * 12 + month - 1;
+        const totals = monthlyTotals.get(monthIndex) || { income: 0, costs: 0 };
+        if (row.kind === 'saving') totals.income += row.Amount;
+        else totals.costs -= row.Amount;
+        monthlyTotals.set(monthIndex, totals);
+    }
+
+    if (!monthlyTotals.size) return;
+
+    let firstDataMonth = Infinity;
+    for (const monthIndex of monthlyTotals.keys()) {
+        firstDataMonth = Math.min(firstDataMonth, monthIndex);
+    }
+
+    const now = new Date();
+    const currentMonth = now.getFullYear() * 12 + now.getMonth();
+    const selectedYearSet = selectedYears.length ? new Set(selectedYears) : null;
+    const firstMonth = selectedYears.length
+        ? Math.min(...selectedYears) * 12
+        : firstDataMonth;
+    const lastMonth = selectedYears.length
+        ? Math.min(Math.max(...selectedYears) * 12 + 11, currentMonth)
+        : currentMonth;
+
+    const labels = [];
+    const costs = [];
+    const income = [];
+    const savingsRatios = [];
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+    for (let monthIndex = firstMonth; monthIndex <= lastMonth; monthIndex++) {
+        const year = Math.floor(monthIndex / 12);
+        if (selectedYearSet && !selectedYearSet.has(year)) continue;
+        const month = monthIndex % 12;
+        const totals = monthlyTotals.get(monthIndex) || { income: 0, costs: 0 };
+        labels.push(selectedYears.length === 1 ? monthNames[month] : `${monthNames[month]} ${year}`);
+        costs.push(iDisp(totals.costs, currency));
+        income.push(iDisp(totals.income, currency));
+
+        let rollingIncome = 0;
+        let rollingCosts = 0;
+        for (let offset = 0; offset < 12; offset++) {
+            const rollingTotals = monthlyTotals.get(monthIndex - offset);
+            if (!rollingTotals) continue;
+            rollingIncome += rollingTotals.income;
+            rollingCosts += rollingTotals.costs;
+        }
+
+        const hasFullWindow = monthIndex - 11 >= firstDataMonth;
+        savingsRatios.push(
+            hasFullWindow && rollingIncome > 0
+                ? (rollingIncome - rollingCosts) / rollingIncome * 100
+                : null
+        );
+    }
+
+    const symbol = currency === 'EUR' ? '€' : 'kr';
+    charts.highlightsSavings = new Chart(canvas, {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [
+                {
+                    label: `Costs (${symbol})`,
+                    data: costs,
+                    backgroundColor: 'rgba(239, 68, 68, 0.68)',
+                    borderColor: '#ef4444',
+                    borderWidth: 1,
+                    borderRadius: 3,
+                    yAxisID: 'yAmount',
+                },
+                {
+                    label: `Income (${symbol})`,
+                    data: income,
+                    backgroundColor: 'rgba(16, 185, 129, 0.68)',
+                    borderColor: '#10b981',
+                    borderWidth: 1,
+                    borderRadius: 3,
+                    yAxisID: 'yAmount',
+                },
+                {
+                    type: 'line',
+                    label: '12-month savings ratio',
+                    data: savingsRatios,
+                    borderColor: '#2563eb',
+                    backgroundColor: '#2563eb',
+                    borderWidth: 3,
+                    pointRadius: 2,
+                    pointHoverRadius: 4,
+                    tension: 0.25,
+                    spanGaps: false,
+                    yAxisID: 'yRatio',
+                },
+            ],
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { position: 'top' },
+                tooltip: {
+                    callbacks: {
+                        label: context => {
+                            const value = context.parsed.y;
+                            if (value === null || value === undefined) return null;
+                            return context.dataset.yAxisID === 'yRatio'
+                                ? ` ${context.dataset.label}: ${value.toFixed(1)}%`
+                                : ` ${context.dataset.label}: ${iFormatMoney(value, currency)}`;
+                        },
+                    },
+                },
+            },
+            scales: {
+                x: {
+                    grid: { display: false },
+                    ticks: { autoSkip: true, maxTicksLimit: 18, maxRotation: 45 },
+                },
+                yAmount: {
+                    position: 'left',
+                    grid: { color: chartGridColor() },
+                    ticks: { callback: value => iFormatMoney(value, currency) },
+                },
+                yRatio: {
+                    position: 'right',
+                    grid: { drawOnChartArea: false },
+                    ticks: { callback: value => `${Number(value).toFixed(0)}%` },
+                },
+            },
+        },
+    });
 }
 
 

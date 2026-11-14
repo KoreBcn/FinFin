@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Home Finance Dashboard</title>
-    <link rel="stylesheet" href="styles.css?v=14">
+    <link rel="stylesheet" href="styles.css?v=18">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 </head>
@@ -40,9 +40,6 @@
             <div class="tab-switcher" id="tabSwitcher" style="display:none">
                 <button class="tab-btn active" onclick="switchTab('dashboard')">
                     📊 Dashboard
-                </button>
-                <button class="tab-btn" onclick="switchTab('insights')">
-                    🔍 Deep Insights
                 </button>
                 <button class="tab-btn" onclick="switchTab('highlights')">
                     💡 Highlights
@@ -85,7 +82,7 @@
                 <div class="form-group">
                     <label>Account</label>
                     <select id="txAccount">
-                        <option value="personal">Personal</option>
+                        <option value="" disabled selected>Select account</option>
                         <option value="joint">Joint</option>
                         <option value="anna">Anna</option>
                         <option value="carlos">Carlos</option>
@@ -134,6 +131,17 @@
         <div style="position:relative;height:360px;padding:0.5rem 0">
             <canvas id="incTrendChart"></canvas>
         </div>
+    </div>
+</div>
+
+<!-- Highlights Quick Facts Modal -->
+<div class="modal-overlay" id="highlightsQuickFactsModal" onclick="handleHighlightsQuickFactsModalClick(event)">
+    <div class="modal modal-wide hl-facts-modal" role="dialog" aria-modal="true" aria-labelledby="highlightsQuickFactsTitle">
+        <div class="modal-header">
+            <h2 id="highlightsQuickFactsTitle">💡 Quick Facts</h2>
+            <button type="button" class="modal-close" onclick="closeHighlightsQuickFacts()" aria-label="Close quick facts">✕</button>
+        </div>
+        <div id="highlightsQuickFactsBody" class="hl-facts-grid"></div>
     </div>
 </div>
 
@@ -297,79 +305,6 @@
     </div>
 
     <!-- ═══════════════════════════════════════════
-         DEEP INSIGHTS TAB
-    ════════════════════════════════════════════ -->
-    <div id="tabInsights" class="tab-panel" style="display:none">
-
-        <!-- Insights Filters -->
-        <section class="filters-bar">
-            <div class="filter-group">
-                <label>Year</label>
-                <select id="insightsYearFilter">
-                    <option value="all">All Years</option>
-                </select>
-            </div>
-            <div class="filter-group">
-                <label>Currency</label>
-                <div class="toggle-group" id="insightsCurrencyToggle">
-                    <button class="toggle-btn active" data-value="DKK">DKK</button>
-                    <button class="toggle-btn" data-value="EUR">EUR</button>
-                </div>
-            </div>
-            <div class="filter-group" style="margin-left:auto">
-                <span class="filter-note">📌 Deep Insights shows Real data only</span>
-            </div>
-        </section>
-
-        <!-- YoY Charts Row -->
-        <div class="charts-grid">
-            <!-- YoY Expenses -->
-            <div class="chart-container" id="yoyExpensesBox">
-                <div class="chart-header">
-                    <h3>📊 Year-over-Year Expenses by Type</h3>
-                    <span class="chart-hint" id="yoyExpensesHint">
-                        Click to drill down & open transactions
-                    </span>
-                </div>
-                <div class="breadcrumb" id="breadcrumbYoyExpenses" style="display:none;margin-bottom:0.5rem">
-                    <span class="breadcrumb-link"
-                        onclick="resetYoyDrill('expenses')">💸 Expenses</span>
-                    <span> › </span>
-                    <span id="breadcrumbYoyExpensesType"></span>
-                </div>
-                <canvas id="yoyExpensesChart"></canvas>
-            </div>
-
-            <!-- YoY Income -->
-            <div class="chart-container" id="yoySavingsBox">
-                <div class="chart-header">
-                    <h3>📊 Year-over-Year Income by Type</h3>
-                    <span class="chart-hint" id="yoySavingsHint">
-                        Click to drill down & open transactions
-                    </span>
-                </div>
-                <div class="breadcrumb" id="breadcrumbYoySavings" style="display:none;margin-bottom:0.5rem">
-                    <span class="breadcrumb-link"
-                        onclick="resetYoyDrill('savings')">💰 Income</span>
-                    <span> › </span>
-                    <span id="breadcrumbYoySavingsType"></span>
-                </div>
-                <canvas id="yoySavingsChart"></canvas>
-            </div>
-        </div>
-
-        <!-- Savings Projection -->
-        <div class="chart-container full-width-cell" id="savingsProjectionBox">
-            <div class="chart-header">
-                <h3 id="savingsProjectionTitle">📈 Cumulative Savings Projection — Month by Month</h3>
-                <span class="chart-hint">Real net savings accumulated over time. Dashed = projection based on average monthly savings.</span>
-            </div>
-            <div id="savingsProjectionStats" class="projection-stats-row"></div>
-            <canvas id="savingsProjectionChart"></canvas>
-        </div>
-    </div>
-
-    <!-- ═══════════════════════════════════════════
          TRANSACTIONS TAB
     ════════════════════════════════════════════ -->
     <div id="tabTransactions" class="tab-panel" style="display:none">
@@ -378,15 +313,14 @@
         <div class="tx-toolbar">
             <input type="text" id="txSearch" class="tx-search-input"
                 placeholder="🔍 Search description, category, account..."
-                oninput="renderTransactionsTab()">
-            <select id="txAccountFilter" onchange="renderTransactionsTab()">
+                oninput="filterTransactions()">
+            <select id="txAccountFilter" onchange="filterTransactions()">
                 <option value="all">All accounts</option>
-                <option value="personal">Personal</option>
                 <option value="joint">Joint</option>
                 <option value="anna">Anna</option>
                 <option value="carlos">Carlos</option>
             </select>
-            <select id="txExcludeFilter" onchange="renderTransactionsTab()">
+            <select id="txExcludeFilter" onchange="filterTransactions()">
                 <option value="all">All transactions</option>
                 <option value="included">Included in analytics</option>
                 <option value="excluded">Excluded from analytics</option>
@@ -413,6 +347,7 @@
                 <tbody id="txTableBody"></tbody>
             </table>
         </div>
+        <div id="txPagination" class="tx-pagination"></div>
     </div>
     <!-- ═══════════════════════════════════════════
          HIGHLIGHTS TAB
@@ -435,6 +370,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-config.js"></script>
-<script src="app.js?v=12"></script>
+<script src="app.js?v=20"></script>
 </body>
 </html>
