@@ -1,0 +1,41 @@
+name: Import bank transactions
+
+on:
+  schedule:
+    - cron: "20 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bank-transaction-import
+  cancel-in-progress: false
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install API dependencies
+        run: python -m pip install --no-input -r requirements.txt
+        working-directory: api
+
+      - name: Import transactions
+        run: python api_call.py
+        working-directory: api
+        env:
+          ENABLEBANKING_BASE_URL: ${{ vars.ENABLEBANKING_BASE_URL || 'https://api.enablebanking.com' }}
+          ENABLEBANKING_APP_ID: ${{ vars.ENABLEBANKING_APP_ID }}
+          ENABLEBANKING_CERTIFICATE_PEM: ${{ secrets.ENABLEBANKING_CERTIFICATE_PEM }}
+          ENABLEBANKING_ACCOUNT_UIDS: ${{ secrets.ENABLEBANKING_ACCOUNT_UIDS }}
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}

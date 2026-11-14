@@ -184,7 +184,7 @@ function rowToSupabaseData(row) {
     const amount = Number(row.Amount);
     if (!Number.isFinite(amount)) throw new Error(`Invalid transaction amount: ${row.Amount}`);
 
-    return {
+    const data = {
         id: row.id || crypto.randomUUID(),
         expense: row.Expense,
         transaction_status: row.PlannedReal === 'Planned' ? 'Planned' : 'REA',
@@ -194,7 +194,11 @@ function rowToSupabaseData(row) {
         comments: row.Comments || null,
         account: row.Account || '',
         is_excluded: Boolean(row.excluded),
+        source_system: row.sourceSystem || null,
+        source_entry_reference: row.sourceEntryReference || null,
     };
+    if (row.insertedAt) data.inserted_at = row.insertedAt;
+    return data;
 }
 
 function supabaseDataToRow(d) {
@@ -221,6 +225,9 @@ function supabaseDataToRow(d) {
         Amount:      amount,
         Comments:    d.comments || '',
         Account:     account,
+        sourceSystem: d.source_system || '',
+        sourceEntryReference: d.source_entry_reference || '',
+        insertedAt:  d.inserted_at || null,
         kind:        (amount < 0 || !typeField.startsWith('💰')) ? 'expense' : 'saving',
         excluded:    Boolean(d.is_excluded),
     };
@@ -233,7 +240,7 @@ async function loadData() {
         for (let offset = 0; ; offset += pageSize) {
             const { data: page, error } = await supabaseClient
                 .from('transactions')
-                .select('id, expense, transaction_status, category, transaction_date, amount, comments, account, is_excluded')
+                .select('id, expense, transaction_status, category, transaction_date, amount, comments, account, is_excluded, source_system, source_entry_reference, inserted_at')
                 .order('transaction_date', { ascending: false })
                 .range(offset, offset + pageSize - 1);
             if (error) throw new Error(error.message);
@@ -2197,7 +2204,13 @@ function renderTransactionsTab() {
             if (isNaN(idx) || !rawData[idx]) return;
 
             const source = rawData[idx];
-            const duplicate = { ...source, id: '' };
+            const duplicate = {
+                ...source,
+                id: '',
+                sourceSystem: '',
+                sourceEntryReference: '',
+                insertedAt: null,
+            };
             try {
                 const saved = await apiSaveRow(duplicate, source.id);
                 const newRow = supabaseDataToRow(saved);

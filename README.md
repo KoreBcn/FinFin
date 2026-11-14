@@ -1,18 +1,12 @@
 
-## To Do Every month
+## Bank transaction import
 
-
-## 1. Ask Anna's extract
-
-python api_call.py — full flow: fetch from bank → save raw → categorize all raw
-python api_call.py categorize — categorize only (for when you've manually dropped a raw file and want to re-run without hitting the bank API)
-
-## 2. Pull transactions via API:
-cd api
-python api\api_call.py
-python api/api_call.py categorize
-python api/api_call.py categorize --all (not applying last 3 monhts filter)
-python api_call.py categorize --file 20260601_anna_raw.csv
+The GitHub Actions workflow imports transactions daily and can also be started
+manually from the Actions tab. It fetches from the Supabase watermark with a
+two-day overlap, categorizes transactions in memory, and sends them directly to
+Supabase without creating local transaction or session files. Configure its
+GitHub variables and secrets as described in
+[db/supabase/README.md](db/supabase/README.md).
 
 ## 3. Run server 
 
