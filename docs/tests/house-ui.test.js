@@ -38,8 +38,10 @@ function setup(configRequest = async () => ({
     elements.get('houseValue').value = '6,100,000';
     elements.set('houseInstallmentDate', new Element());
     elements.set('houseInstallmentAmount', new Element());
-    elements.set('houseViewToggle', new Element());
-    elements.get('houseViewToggle').textContent = 'Show installments';
+    elements.set('houseGraphButton', new Element());
+    elements.get('houseGraphButton').setAttribute('aria-pressed', 'true');
+    elements.set('houseInstallmentsButton', new Element());
+    elements.get('houseInstallmentsButton').setAttribute('aria-pressed', 'false');
     elements.set('houseHistory', new Element());
     elements.get('houseHistory').hidden = false;
     elements.set('houseTableView', new Element());
@@ -147,7 +149,7 @@ test('saves and deletes signed installments, retaining them after House reset', 
     assert.equal(elements.get('houseInstallmentsBody').children[1].children[2].className, 'house-amount-positive');
     assert.equal(elements.get('houseDebtPercent').textContent, '86.07%');
     assert.equal(elements.get('houseEquityPercent').textContent, '13.93%');
-    elements.get('houseViewToggle').listeners.click();
+    elements.get('houseInstallmentsButton').listeners.click();
     const dialog = elements.get('houseInstallmentDialog');
     elements.get('houseAddInstallment').listeners.click();
     assert.equal(dialog.open, true);
@@ -188,7 +190,7 @@ test('saves and deletes signed installments, retaining them after House reset', 
     assert.equal(vm.runInContext('houseStoredInstallments.length', context), 0);
     await vm.runInContext('openHouse()', context);
     assert.equal(elements.get('houseEquity').textContent, '750,000');
-    elements.get('houseViewToggle').listeners.click();
+    elements.get('houseInstallmentsButton').listeners.click();
     await vm.runInContext('deleteHouseInstallment("saved-1")', context);
     assert.equal(elements.get('houseEquity').textContent, '850,000');
     assert.equal(database.rows.length, 2);
@@ -197,13 +199,17 @@ test('saves and deletes signed installments, retaining them after House reset', 
 test('updates monthly history for saves, value changes and resets', async () => {
     const { context, elements } = setup(undefined, [{ id: 'initial', entry_date: '2026-01-01', amount: 800000, concept: 'Initial payment' }]);
     await vm.runInContext('openHouse()', context);
-    const toggle = elements.get('houseViewToggle');
-    assert.equal(toggle.textContent, 'Show installments');
+    const graph = elements.get('houseGraphButton');
+    const installments = elements.get('houseInstallmentsButton');
+    assert.equal(graph['aria-pressed'], 'true');
+    assert.equal(installments['aria-pressed'], 'false');
     assert.equal(elements.get('houseHistory').hidden, false);
     assert.equal(elements.get('houseTableView').hidden, true);
     assert.equal(elements.get('houseAddInstallment').hidden, true);
     assert.equal(elements.get('houseLoadStatus').textContent, '');
     let chart = vm.runInContext('charts.houseHistory', context);
+    graph.listeners.click();
+    assert.equal(vm.runInContext('charts.houseHistory', context), chart);
     assert.equal(chart.data.datasets[2].label, 'Interest');
     assert.equal(chart.data.datasets[2].borderColor, '#ef4444');
     assert.equal(chart.data.datasets[2].yAxisID, 'y');
@@ -222,15 +228,18 @@ test('updates monthly history for saves, value changes and resets', async () => 
     assert.equal(elements.has('houseHistoryDetails'), false);
     assert.equal(elements.has('houseHistoryBody'), false);
 
-    toggle.listeners.click();
+    installments.listeners.click();
     assert.equal(chart.destroyed, true);
-    assert.equal(toggle.textContent, 'Show graph');
+    assert.equal(graph['aria-pressed'], 'false');
+    assert.equal(installments['aria-pressed'], 'true');
+    installments.listeners.click();
+    assert.equal(elements.get('houseTableView').hidden, false);
     assert.equal(elements.get('houseAddInstallment').hidden, false);
     elements.get('houseInstallmentDate').value = '2026-03-01';
     elements.get('houseInstallmentAmount').value = '-100000';
     const form = elements.get('houseInstallmentForm');
     await form.listeners.submit({ preventDefault() {}, currentTarget: form });
-    toggle.listeners.click();
+    graph.listeners.click();
     chart = vm.runInContext('charts.houseHistory', context);
     assert.equal(chart.isDatasetVisible(2), true);
     const march = chart.data.labels.indexOf('2026-03');
@@ -245,14 +254,15 @@ test('updates monthly history for saves, value changes and resets', async () => 
     assert.equal(chart.isDatasetVisible(2), true);
     assert.equal(chart.data.datasets[0].data[march], 1750000);
     assert.equal(chart.data.datasets[1].data[march], 5350000);
-    toggle.listeners.click();
+    installments.listeners.click();
     await vm.runInContext('deleteHouseInstallment("saved-1")', context);
-    toggle.listeners.click();
+    graph.listeners.click();
     chart = vm.runInContext('charts.houseHistory', context);
     assert.equal(chart.data.datasets[0].data.at(-1), 1850000);
     vm.runInContext('clearHouse()', context);
     assert.equal(chart.destroyed, true);
-    assert.equal(toggle.textContent, 'Show installments');
+    assert.equal(graph['aria-pressed'], 'true');
+    assert.equal(installments['aria-pressed'], 'false');
     assert.equal(elements.get('houseHistory').hidden, false);
     assert.equal(elements.get('houseTableView').hidden, true);
     assert.equal(elements.get('houseAddInstallment').hidden, true);
@@ -268,7 +278,7 @@ test('reports when the chart library is unavailable', async () => {
     await vm.runInContext('openHouse()', context);
     assert.match(elements.get('houseHistoryStatus').textContent, /Chart unavailable/);
     assert.equal(elements.get('houseHistoryChartWrap').hidden, true);
-    elements.get('houseViewToggle').listeners.click();
+    elements.get('houseInstallmentsButton').listeners.click();
     assert.equal(elements.get('houseTableView').hidden, false);
 });
 
@@ -309,7 +319,7 @@ test('aggregates mortgage components without treating them as equity payments or
     const chart = vm.runInContext('charts.houseHistory', context);
     const january = chart.data.labels.indexOf('2026-01');
     assert.equal(chart.options.plugins.tooltip.callbacks.afterBody([{ dataIndex: january, datasetIndex: 0 }]).length, 2);
-    elements.get('houseViewToggle').listeners.click();
+    elements.get('houseInstallmentsButton').listeners.click();
     await vm.runInContext('deleteHouseInstallment("fees")', context);
     assert.equal(elements.get('houseMortgage').textContent, '6,049,999.50');
     assert.equal(elements.get('houseInterestTotal').textContent, '-30.00 DKK');
@@ -357,7 +367,7 @@ test('paginates combined entries without changing equity', async () => {
     ];
     const { context, elements } = setup(undefined, rows);
     await vm.runInContext('openHouse()', context);
-    elements.get('houseViewToggle').listeners.click();
+    elements.get('houseInstallmentsButton').listeners.click();
     assert.equal(elements.get('houseInstallmentsBody').children.length, 10);
     assert.equal(elements.get('houseInstallmentsBody').children[0].children[0].textContent, '18/02/2026');
     assert.equal(elements.get('housePageStatus').textContent, 'Page 1 of 3');
@@ -401,7 +411,7 @@ test('combines bank interest and saved negative adjustments in the KPI on every 
     assert.equal(chart.data.datasets[2].data.at(-1), 110);
     assert.equal(chart.options.plugins.tooltip.callbacks.afterBody([{ dataIndex: january, datasetIndex: 0 }]).length, 3);
     assert.equal(chart.options.plugins.tooltip.callbacks.afterBody([{ dataIndex: january, datasetIndex: 2 }]).length, 2);
-    elements.get('houseViewToggle').listeners.click();
+    elements.get('houseInstallmentsButton').listeners.click();
     elements.get('houseNextPage').listeners.click();
     assert.equal(elements.get('houseInterestTotal').textContent, '-110.00 DKK');
     assert.equal(elements.get('houseInstallmentsBody').children[1].children[1].textContent, 'Interest / adjustment');
@@ -424,7 +434,7 @@ test('reports load and save failures instead of showing incomplete totals', asyn
     assert.equal(elements.get('houseRetryConfig').hidden, false);
     database.loadError = null;
     await vm.runInContext('openHouse()', context);
-    elements.get('houseViewToggle').listeners.click();
+    elements.get('houseInstallmentsButton').listeners.click();
     elements.get('houseAddInstallment').listeners.click();
     database.saveError = 'save failed';
     elements.get('houseInstallmentDate').value = '2026-03-01';

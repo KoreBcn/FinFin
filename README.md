@@ -8,25 +8,34 @@ directly to Supabase without creating local transaction or session files. Config
 GitHub variables and secrets as described in
 [db/supabase/README.md](db/supabase/README.md).
 
+The footer shows the latest `inserted_at` in the transactions table, in the
+browser's local time. It includes manual entries and is not the time of the
+last Enable Banking run; a run that adds no transactions does not change it.
+The value is read on sign-in and after transaction changes.
+
 ## Investments
 
 Sign in and open **Investments** to load portfolio items and transactions from
 Supabase. See [db/supabase/README.md](db/supabase/README.md) for the schema and
 one-off CSV migration. Items are identified by ticker and platform. Only items
-marked in scope are displayed and included in totals and price refreshes.
-Use the **+** button to create an item; its quantity is unknown until it has
-transactions. For price refreshes, the item's ticker must be its exact Yahoo
-Finance ticker, such as `NOVO-B.CO` or `IEMM.AS`.
+marked in scope are displayed and refreshed. Use **+** to create an item or
+the row's edit button to change its ticker, name, type or platform. Its quantity
+is unknown until it has transactions. Changing a priced item's ticker or
+changing its type clears its saved value and quote; refresh a priced item afterwards.
+For price refreshes, the ticker must be its exact Yahoo Finance ticker, such as
+`NOVO-B.CO` or `IEMM.AS`.
 Crowdlending values can be entered manually and are saved in Supabase.
 Previously saved browser-only crowdlending values remain a local fallback until
 the value is saved again.
 
-Within Portfolio, choose **Show transactions** to search transactions by ticker,
-browse pages, and add a transaction to an existing item (including an
-out-of-scope item). Enter fees and dividend cash flows with their signs and
-total cost in DKK. A buy or sell clears a priced item's saved value until its
-next price refresh; manually entered crowdlending values are retained. Run the
-updated portfolio SQL before using this feature.
+Within Portfolio, choose **Transactions** to search transactions by ticker,
+browse pages, and add, edit, duplicate or delete transactions for existing
+items (including out-of-scope items). Select the information button next to
+the ticker to see the name, platform, type and currencies. Enter fees and dividend cash flows with
+their signs and total cost in DKK. Adding, editing, duplicating or deleting a
+buy or sell clears affected priced items' saved values until their next price
+refresh; manually entered crowdlending values are retained. Run the updated
+portfolio SQL before using this feature.
 
 Deploy the `market-data` Supabase Edge Function as described in
 [db/supabase/README.md](db/supabase/README.md). When you select the refresh
@@ -40,9 +49,12 @@ public API and may be delayed, rate-limited, or change without notice. Yahoo's
 automated data collection without express prior permission; verify you have the
 necessary permission before deploying or using it. The ticker is sent as stored,
 with no instrument mappings or separate market symbol override. A
-successful quote and currency conversion updates the saved DKK value, using
-the quantity calculated from transactions. Failed refreshes leave the last
-saved value intact; it may be stale. Only crowdlending current values can be
+successful quote saves the price, currency and available quote time for display
+on future loads. A successful currency conversion also updates the saved DKK
+value, using the quantity calculated from transactions. If conversion fails,
+the new price is saved but the previous DKK value remains and may be stale.
+Other refresh failures retain the previous saved quote and value. Price history
+and percentage changes are not persisted. Only crowdlending current values can be
 entered manually.
 
 Select a portfolio column heading to sort ascending or descending; on small
@@ -53,15 +65,20 @@ currencies.
 The CSV's `Total Cost`, `Fees`, and dividends are treated as DKK. Buy and sell
 quantities are netted; missing or invalid quantities are shown as unknown.
 Crowdlending quantities are not meaningful, so their values must be entered
-manually. Non-trade actions are flagged, not
-interpreted. Verify these positions before relying on totals. Existing tickers
-such as `MELI|XNGS` must be changed in Supabase to the intended Yahoo listing
+manually. Actions other than Buy, Sell, Dividend and Dividend Tax do not change
+quantities or cash flows, though their fees are included. Verify these positions
+before relying on totals. Existing tickers
+such as `MELI|XNGS` must be changed to the intended Yahoo listing
 (for example `MELI`) before they can be priced. Check the listing and currency
 before updating. See the portfolio instructions in
 [db/supabase/README.md](db/supabase/README.md) for migration cautions.
 Net P/L is the current value plus buy and sell cash flows, fees, and dividends;
-it is not realized/unrealized tax-lot accounting. The portfolio size and total
-P/L KPIs sum only valued in-scope positions and show when others are excluded.
+it is not realized/unrealized tax-lot accounting. The portfolio size sums valued
+in-scope positions. Use **Show closed positions** in Overview to display
+out-of-scope items. Total P/L excludes positions on the OPS Capital and KuCoin platforms.
+It includes other out-of-scope positions, treating their current value as zero,
+regardless of stored value or calculated quantity.
+Unvalued in-scope positions are excluded and reported.
 Percent changes compare the
 latest quote with the last daily close at least 7, 30, or 90 calendar days ago.
 Hover or focus the Today percentage to see those changes; select the information
@@ -108,7 +125,7 @@ months without payments. It uses today's house and mortgage values throughout,
 not historical valuations. The cumulative interest line is hidden by default;
 select **Interest** in the chart legend to show positive interest costs on the
 same scale. Refunds reduce that total. Hover over a month to see its
-contributing entries; use **Show installments** to view the table.
+contributing entries; use **Installments** to view the table and **Graph** to return to the chart.
 
 ## 3. Run server 
 

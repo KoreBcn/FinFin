@@ -35,7 +35,12 @@ CREATE TABLE IF NOT EXISTS public.portfolio_transactions (
 );
 
 ALTER TABLE public.portfolio_items
-    ADD COLUMN IF NOT EXISTS valuation_version bigint NOT NULL DEFAULT 0;
+    ADD COLUMN IF NOT EXISTS valuation_version bigint NOT NULL DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS market_price numeric,
+    ADD COLUMN IF NOT EXISTS market_currency text,
+    ADD COLUMN IF NOT EXISTS market_price_at timestamptz;
+ALTER TABLE public.portfolio_transactions
+    ADD COLUMN IF NOT EXISTS revision bigint NOT NULL DEFAULT 0;
 
 CREATE INDEX IF NOT EXISTS portfolio_transactions_item_idx
     ON public.portfolio_transactions (portfolio_item_id, id);
@@ -59,24 +64,58 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = ''
 AS $$
+DECLARE
+    old_item uuid;
+    new_item uuid;
+    old_trade boolean := false;
+    new_trade boolean := false;
 BEGIN
+    IF TG_OP <> 'INSERT' THEN
+        old_item := OLD.portfolio_item_id;
+        old_trade := lower(trim(OLD.action)) IN ('buy', 'sell');
+    END IF;
+    IF TG_OP <> 'DELETE' THEN
+        new_item := NEW.portfolio_item_id;
+        new_trade := lower(trim(NEW.action)) IN ('buy', 'sell');
+    END IF;
+    PERFORM id FROM public.portfolio_items
+    WHERE id IN (old_item, new_item) ORDER BY id FOR UPDATE;
     UPDATE public.portfolio_items
     SET current_value_dkk = CASE
-            WHEN lower(trim(NEW.action)) IN ('buy', 'sell') AND lower(type) <> 'crowdlending'
+            WHEN lower(type) <> 'crowdlending'
+                AND ((id = old_item AND old_trade) OR (id = new_item AND new_trade))
             THEN NULL ELSE current_value_dkk END,
         valuation_version = valuation_version + 1
-    WHERE id = NEW.portfolio_item_id;
-    RETURN NEW;
+    WHERE id IN (old_item, new_item);
+    RETURN NULL;
 END;
 $$;
 
 REVOKE ALL ON FUNCTION public.invalidate_portfolio_valuation() FROM PUBLIC, anon, authenticated;
 DROP TRIGGER IF EXISTS portfolio_transaction_invalidate_valuation ON public.portfolio_transactions;
 CREATE TRIGGER portfolio_transaction_invalidate_valuation
-    AFTER INSERT ON public.portfolio_transactions
+    AFTER INSERT OR UPDATE OR DELETE ON public.portfolio_transactions
     FOR EACH ROW EXECUTE FUNCTION public.invalidate_portfolio_valuation();
 
-CREATE OR REPLACE FUNCTION public.add_portfolio_transaction(p_transaction jsonb)
+CREATE OR REPLACE FUNCTION public.increment_portfolio_transaction_revision()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = ''
+AS $$
+BEGIN
+    NEW.revision := OLD.revision + 1;
+    RETURN NEW;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.increment_portfolio_transaction_revision() FROM PUBLIC, anon, authenticated;
+DROP TRIGGER IF EXISTS portfolio_transaction_revision ON public.portfolio_transactions;
+CREATE TRIGGER portfolio_transaction_revision BEFORE UPDATE ON public.portfolio_transactions
+    FOR EACH ROW EXECUTE FUNCTION public.increment_portfolio_transaction_revision();
+
+CREATE OR REPLACE FUNCTION public.save_portfolio_transaction(
+    p_transaction jsonb, p_id uuid DEFAULT NULL, p_expected_revision bigint DEFAULT NULL
+)
 RETURNS public.portfolio_transactions
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -84,6 +123,7 @@ SET search_path = ''
 AS $$
 DECLARE
     item public.portfolio_items%ROWTYPE;
+    existing public.portfolio_transactions%ROWTYPE;
     saved public.portfolio_transactions%ROWTYPE;
     action_value text := trim(p_transaction->>'action');
     field_name text;
@@ -96,8 +136,17 @@ BEGIN
     IF action_value IS NULL OR action_value = '' OR p_transaction->>'transaction_date' IS NULL THEN
         RAISE EXCEPTION 'Date and action are required';
     END IF;
+    IF p_id IS NOT NULL THEN
+        SELECT * INTO existing FROM public.portfolio_transactions WHERE id = p_id FOR UPDATE;
+        IF NOT FOUND OR p_expected_revision IS NULL OR existing.revision <> p_expected_revision THEN
+            RAISE EXCEPTION 'Transaction changed or was deleted; reload the portfolio';
+        END IF;
+    END IF;
+    PERFORM id FROM public.portfolio_items
+        WHERE id IN (existing.portfolio_item_id, (p_transaction->>'portfolio_item_id')::uuid)
+        ORDER BY id FOR UPDATE;
     SELECT * INTO STRICT item FROM public.portfolio_items
-        WHERE id = (p_transaction->>'portfolio_item_id')::uuid FOR UPDATE;
+        WHERE id = (p_transaction->>'portfolio_item_id')::uuid;
 
     FOREACH field_name IN ARRAY ARRAY['quantity', 'price_per_unit', 'exchange_rate', 'commission', 'fees', 'total_cost', 'local_value']
     LOOP
@@ -116,24 +165,94 @@ BEGIN
         END IF;
     END LOOP;
 
+    IF p_id IS NULL THEN
+        INSERT INTO public.portfolio_transactions (
+            portfolio_item_id, transaction_date, action, platform, type, ticker, name,
+            quantity, price_per_unit, exchange_rate, commission, fees, currency,
+            total_cost, local_value, local_currency
+        ) VALUES (
+            item.id, (p_transaction->>'transaction_date')::date, action_value,
+            item.platform, item.type, item.ticker, item.name,
+            coalesce(trim(p_transaction->>'quantity'), ''), coalesce(trim(p_transaction->>'price_per_unit'), ''),
+            coalesce(trim(p_transaction->>'exchange_rate'), ''), coalesce(trim(p_transaction->>'commission'), ''),
+            coalesce(trim(p_transaction->>'fees'), ''), coalesce(trim(p_transaction->>'currency'), ''),
+            coalesce(trim(p_transaction->>'total_cost'), ''), coalesce(trim(p_transaction->>'local_value'), ''),
+            coalesce(trim(p_transaction->>'local_currency'), '')
+        ) RETURNING * INTO saved;
+    ELSE
+        UPDATE public.portfolio_transactions SET
+            portfolio_item_id = item.id, transaction_date = (p_transaction->>'transaction_date')::date,
+            action = action_value,
+            platform = CASE WHEN existing.portfolio_item_id = item.id THEN existing.platform ELSE item.platform END,
+            type = CASE WHEN existing.portfolio_item_id = item.id THEN existing.type ELSE item.type END,
+            ticker = CASE WHEN existing.portfolio_item_id = item.id THEN existing.ticker ELSE item.ticker END,
+            name = CASE WHEN existing.portfolio_item_id = item.id THEN existing.name ELSE item.name END,
+            quantity = coalesce(trim(p_transaction->>'quantity'), ''),
+            price_per_unit = coalesce(trim(p_transaction->>'price_per_unit'), ''),
+            exchange_rate = coalesce(trim(p_transaction->>'exchange_rate'), ''),
+            commission = coalesce(trim(p_transaction->>'commission'), ''),
+            fees = coalesce(trim(p_transaction->>'fees'), ''),
+            currency = coalesce(trim(p_transaction->>'currency'), ''),
+            total_cost = coalesce(trim(p_transaction->>'total_cost'), ''),
+            local_value = coalesce(trim(p_transaction->>'local_value'), ''),
+            local_currency = coalesce(trim(p_transaction->>'local_currency'), '')
+        WHERE id = p_id RETURNING * INTO saved;
+    END IF;
+    RETURN saved;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.save_portfolio_transaction(jsonb, uuid, bigint) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.save_portfolio_transaction(jsonb, uuid, bigint) TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.add_portfolio_transaction(p_transaction jsonb)
+RETURNS public.portfolio_transactions
+LANGUAGE sql SECURITY DEFINER SET search_path = ''
+AS $$ SELECT public.save_portfolio_transaction(p_transaction) $$;
+
+REVOKE ALL ON FUNCTION public.add_portfolio_transaction(jsonb) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.add_portfolio_transaction(jsonb) TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.duplicate_portfolio_transaction(p_id uuid, p_expected_revision bigint)
+RETURNS public.portfolio_transactions
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
+AS $$
+DECLARE
+    source public.portfolio_transactions%ROWTYPE;
+    saved public.portfolio_transactions%ROWTYPE;
+BEGIN
+    IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Authentication required'; END IF;
+    SELECT * INTO source FROM public.portfolio_transactions WHERE id = p_id FOR UPDATE;
+    IF NOT FOUND OR p_expected_revision IS NULL OR source.revision <> p_expected_revision THEN
+        RAISE EXCEPTION 'Transaction changed or was deleted; reload the portfolio';
+    END IF;
     INSERT INTO public.portfolio_transactions (
         portfolio_item_id, transaction_date, action, platform, type, ticker, name,
         quantity, price_per_unit, exchange_rate, commission, fees, currency,
         total_cost, local_value, local_currency
     ) VALUES (
-        item.id, (p_transaction->>'transaction_date')::date, action_value,
-        item.platform, item.type, item.ticker, item.name,
-        coalesce(trim(p_transaction->>'quantity'), ''), coalesce(trim(p_transaction->>'price_per_unit'), ''),
-        coalesce(trim(p_transaction->>'exchange_rate'), ''), coalesce(trim(p_transaction->>'commission'), ''),
-        coalesce(trim(p_transaction->>'fees'), ''), coalesce(trim(p_transaction->>'currency'), ''),
-        coalesce(trim(p_transaction->>'total_cost'), ''), coalesce(trim(p_transaction->>'local_value'), ''),
-        coalesce(trim(p_transaction->>'local_currency'), '')
+        source.portfolio_item_id, source.transaction_date, source.action, source.platform,
+        source.type, source.ticker, source.name, source.quantity, source.price_per_unit,
+        source.exchange_rate, source.commission, source.fees, source.currency,
+        source.total_cost, source.local_value, source.local_currency
     ) RETURNING * INTO saved;
     RETURN saved;
 END;
 $$;
+REVOKE ALL ON FUNCTION public.duplicate_portfolio_transaction(uuid, bigint) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.duplicate_portfolio_transaction(uuid, bigint) TO authenticated;
 
-REVOKE ALL ON FUNCTION public.add_portfolio_transaction(jsonb) FROM PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.add_portfolio_transaction(jsonb) TO authenticated;
+CREATE OR REPLACE FUNCTION public.delete_portfolio_transaction(p_id uuid, p_expected_revision bigint)
+RETURNS void
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
+AS $$
+BEGIN
+    IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Authentication required'; END IF;
+    DELETE FROM public.portfolio_transactions WHERE id = p_id AND revision = p_expected_revision;
+    IF NOT FOUND THEN RAISE EXCEPTION 'Transaction changed or was deleted; reload the portfolio'; END IF;
+END;
+$$;
+REVOKE ALL ON FUNCTION public.delete_portfolio_transaction(uuid, bigint) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.delete_portfolio_transaction(uuid, bigint) TO authenticated;
 
 COMMIT;

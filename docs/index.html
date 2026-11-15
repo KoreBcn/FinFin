@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Home Finance Dashboard</title>
-    <link rel="stylesheet" href="styles.css?v=36">
+    <link rel="stylesheet" href="styles.css?v=44">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 </head>
@@ -38,22 +38,22 @@
                 <span></span><span></span><span></span>
             </button>
             <div class="tab-switcher" id="tabSwitcher" style="display:none">
-                <button class="tab-btn active" onclick="switchTab('dashboard')">
-                    📊 Dashboard
-                </button>
-                <button class="tab-btn" onclick="switchTab('highlights')">
-                    💡 Highlights
-                </button>
-                <button class="tab-btn" onclick="switchTab('transactions')">
-                    📋 Transactions
+                <button class="tab-btn active" onclick="switchTab('home')">
+                    🏠 Home
                 </button>
                 <button class="tab-btn" onclick="switchTab('investments')">
                     📈 Investments
                 </button>
-                <button id="signOutButton" class="nav-link nav-btn sign-out-btn" type="button">Sign out</button>
             </div>
-            <span id="signedInEmail" class="signed-in-email"></span>
         </nav>
+        <div class="account-controls">
+            <button id="signOutButton" class="sign-out-btn" type="button" aria-label="Sign out" title="Sign out">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M10 21 4 19V5l6-2v18ZM10 5h4M10 19h4M13 12h8m-3-3 3 3-3 3" />
+                </svg>
+            </button>
+            <span id="signedInEmail" class="signed-in-email"></span>
+        </div>
     </div>
 </header>
 
@@ -197,10 +197,16 @@
         <p>Transactions will appear here once data is available.</p>
     </div>
 
+    <div id="tabHome" class="tab-panel" style="display:none">
+        <div class="investment-subtabs" role="tablist" aria-label="Home sections">
+            <button type="button" id="homeDashboardTab" class="investment-subtab active" role="tab" aria-selected="true" aria-controls="tabDashboard" onclick="switchHomeSubtab('dashboard')">Dashboard</button>
+            <button type="button" id="homeHighlightsTab" class="investment-subtab" role="tab" aria-selected="false" aria-controls="tabHighlights" onclick="switchHomeSubtab('highlights')">Highlights</button>
+            <button type="button" id="homeTransactionsTab" class="investment-subtab" role="tab" aria-selected="false" aria-controls="tabTransactions" onclick="switchHomeSubtab('transactions')">Transactions</button>
+        </div>
     <!-- ═══════════════════════════════════════════
          DASHBOARD TAB
     ════════════════════════════════════════════ -->
-    <div id="tabDashboard" class="tab-panel" style="display:none">
+    <div id="tabDashboard" class="tab-panel" role="tabpanel" aria-labelledby="homeDashboardTab" style="display:none">
 
         <!-- Global Filters -->
         <section class="filters-bar">
@@ -310,7 +316,7 @@
     <!-- ═══════════════════════════════════════════
          TRANSACTIONS TAB
     ════════════════════════════════════════════ -->
-    <div id="tabTransactions" class="tab-panel" style="display:none">
+    <div id="tabTransactions" class="tab-panel" role="tabpanel" aria-labelledby="homeTransactionsTab" style="display:none">
 
         <!-- Toolbar -->
         <div class="tx-toolbar">
@@ -355,8 +361,9 @@
     <!-- ═══════════════════════════════════════════
          HIGHLIGHTS TAB
     ════════════════════════════════════════════ -->
-    <div id="tabHighlights" class="tab-panel" style="display:none">
+    <div id="tabHighlights" class="tab-panel" role="tabpanel" aria-labelledby="homeHighlightsTab" style="display:none">
         <div id="highlightsContent"></div>
+    </div>
     </div>
 
     <div id="tabInvestments" class="tab-panel" style="display:none">
@@ -367,12 +374,16 @@
         <div id="investmentPortfolio" role="tabpanel" aria-labelledby="investmentPortfolioTab">
         <section class="investments-card">
             <div class="investments-heading">
-                <div class="house-panel-title">
-                    <button id="portfolioViewToggle" class="btn-secondary house-view-toggle" type="button" aria-controls="portfolioOverview portfolioTransactions" aria-pressed="false">Show transactions</button>
-                    <h2>Investments</h2>
+                <h2>Investments</h2>
+                <div class="portfolio-heading-actions">
+                    <button id="investmentClosedToggle" class="btn-secondary investment-closed-toggle" type="button" aria-controls="investmentTableBody" aria-expanded="false">Show closed positions</button>
+                    <button id="investmentAdd" class="btn-primary investment-add" type="button" aria-label="Add portfolio item" title="Add portfolio item">+</button>
+                    <button id="portfolioTransactionAdd" class="btn-primary investment-add" type="button" aria-label="Add portfolio transaction" title="Add portfolio transaction" hidden>+</button>
+                    <div class="portfolio-view-buttons" role="group" aria-label="Portfolio view">
+                        <button id="portfolioOverviewButton" class="btn-secondary" type="button" aria-controls="portfolioOverview" aria-pressed="true">Overview</button>
+                        <button id="portfolioTransactionsButton" class="btn-secondary" type="button" aria-controls="portfolioTransactions" aria-pressed="false">Transactions</button>
+                    </div>
                 </div>
-                <button id="investmentAdd" class="btn-primary investment-add" type="button" aria-label="Add portfolio item" title="Add portfolio item">+</button>
-                <button id="portfolioTransactionAdd" class="btn-primary investment-add" type="button" aria-label="Add portfolio transaction" title="Add portfolio transaction" hidden>+</button>
             </div>
             <p id="investmentStatus" class="investment-status" role="status" aria-live="polite"></p>
             <button id="investmentRetry" class="btn-secondary" type="button" hidden>Retry portfolio load</button>
@@ -417,12 +428,12 @@
                         <th scope="col" id="investment-sort-today"><button type="button" onclick="sortInvestments('today')">Today %<span aria-hidden="true"></span></button></th>
                         <th scope="col" id="investment-sort-pnl"><button type="button" onclick="sortInvestments('pnl')">Net P/L DKK<span aria-hidden="true"></span></button></th>
                         <th scope="col" id="investment-sort-return"><button type="button" onclick="sortInvestments('return')">Return %<span aria-hidden="true"></span></button></th>
-                        <th scope="col" aria-label="Refresh price"></th>
+                        <th scope="col" aria-label="Edit item or refresh price"></th>
                     </tr></thead>
                     <tbody id="investmentTableBody"></tbody>
                 </table>
             </div>
-            <p class="investment-note">Net P/L = current value + buy and sell cash flows + fees + dividends. This is not a tax-lot or realized-gain calculation. Portfolio percentages use only positions with known values; text colors range from green for the smallest allocation to red for the largest. Other transaction actions are flagged for review.</p>
+            <p class="investment-note">Net P/L = current value + buy and sell cash flows + fees + dividends. Total P/L excludes OPS Capital and KuCoin positions and includes other closed positions with zero current value, whether shown or hidden. This is not a tax-lot calculation. Portfolio percentages use only in-scope positions with known values; text colors range from green for the smallest allocation to red for the largest. Other transaction actions do not change quantity or cash flows; their fees still count.</p>
             </div>
             <div id="portfolioTransactions" hidden>
                 <label class="portfolio-transaction-search">Search ticker
@@ -431,7 +442,7 @@
                 <p id="portfolioTransactionStatus" class="investment-note" role="status" aria-live="polite"></p>
                 <div class="tx-table-wrap portfolio-transaction-table-wrap">
                     <table class="tx-table portfolio-transaction-table">
-                        <thead><tr><th>Date</th><th>Action</th><th>Ticker</th><th>Name</th><th>Platform</th><th>Type</th><th>Quantity</th><th>Price / unit</th><th>Exchange rate</th><th>Commission</th><th>Fees DKK</th><th>Currency</th><th>Total cost DKK</th><th>Local value</th><th>Local currency</th></tr></thead>
+                        <thead><tr><th>Actions</th><th>Date</th><th>Action</th><th>Ticker</th><th>Quantity</th><th>Price / unit</th><th>Exchange rate</th><th>Commission</th><th>Fees DKK</th><th>Total cost DKK</th><th>Local value</th></tr></thead>
                         <tbody id="portfolioTransactionBody"></tbody>
                     </table>
                 </div>
@@ -471,7 +482,7 @@
                     <label>Total cost DKK<input id="portfolioTransactionTotal" type="text" inputmode="decimal"></label>
                     <label>Local value<input id="portfolioTransactionLocalValue" type="text" inputmode="decimal"></label>
                     <label>Local currency<input id="portfolioTransactionLocalCurrency" type="text"></label>
-                    <p class="investment-note">Buy and sell quantities must be non-negative. Enter fees and dividend cash flows with their signs; total cost is in DKK. A buy or sell clears the saved value of a priced item until its next refresh.</p>
+                    <p class="investment-note">Buy and sell quantities must be non-negative. Enter fees and dividend cash flows with their signs; total cost is in DKK. Adding, editing or deleting a buy or sell clears the saved value of a priced item until its next refresh.</p>
                     <p id="portfolioTransactionFormStatus" class="investment-note" role="status" aria-live="polite"></p>
                     <div class="modal-actions">
                         <button id="portfolioTransactionCancel" class="btn-secondary" type="button">Cancel</button>
@@ -484,11 +495,14 @@
         <section id="investmentHouse" class="house-layout" role="tabpanel" aria-labelledby="investmentHouseTab" hidden>
             <div class="house-panel house-installments-panel">
                 <div class="house-panel-heading">
-                    <div class="house-panel-title">
-                        <button id="houseViewToggle" class="btn-secondary house-view-toggle" type="button" aria-controls="houseHistory houseTableView">Show installments</button>
-                        <h2>Installments</h2>
+                    <h2>Installments</h2>
+                    <div class="portfolio-heading-actions">
+                        <button id="houseAddInstallment" class="btn-primary house-add" type="button" aria-label="Add installment" title="Add installment" hidden>+</button>
+                        <div class="portfolio-view-buttons" role="group" aria-label="Installments view">
+                            <button id="houseInstallmentsButton" class="btn-secondary" type="button" aria-controls="houseTableView" aria-pressed="false">Installments</button>
+                            <button id="houseGraphButton" class="btn-secondary" type="button" aria-controls="houseHistory" aria-pressed="true">Graph</button>
+                        </div>
                     </div>
-                    <button id="houseAddInstallment" class="btn-primary house-add" type="button" aria-label="Add installment" title="Add installment" hidden>+</button>
                 </div>
                 <p id="houseLoadStatus" class="house-note" role="status" aria-live="polite"></p>
                 <button id="houseRetryConfig" class="btn-secondary" type="button" hidden>Retry configuration</button>
@@ -575,13 +589,14 @@
 
 <footer>
     <p>FinanceHome &mdash; Personal Finance Tracker</p>
+    <span id="transactionInsertDate" class="transaction-insert-date" role="status" aria-live="polite">Latest transaction insert: &mdash;</span>
 </footer>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-config.js"></script>
-<script src="investments.js?v=16"></script>
-<script src="house.js?v=13"></script>
-<script src="app.js?v=26"></script>
+<script src="investments.js?v=25"></script>
+<script src="house.js?v=14"></script>
+<script src="app.js?v=28"></script>
 </body>
 </html>

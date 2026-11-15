@@ -47,8 +47,10 @@ let txPage         = 1;
 const TX_PER_PAGE  = 50;
 
 let activeTab = 'dashboard';
+let homeSubtab = 'dashboard';
 let supabaseClient = null;
 let activeAuthUserId = null;
+let transactionInsertRequest = 0;
 
 // Highlights tab currency
 let highlightsCurrency = 'DKK';
@@ -129,21 +131,32 @@ function parseDateFromString(raw) {
 //  TAB SWITCHING
 // =====================================================
 function switchTab(tab) {
-    activeTab = tab;
     closeTabMenu();
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     document.querySelector(`.tab-btn[onclick="switchTab('${tab}')"]`).classList.add('active');
-    document.getElementById('tabDashboard').style.display    = tab === 'dashboard'    ? 'flex' : 'none';
-    document.getElementById('tabTransactions').style.display = tab === 'transactions' ? 'flex' : 'none';
-    document.getElementById('tabHighlights').style.display   = tab === 'highlights'   ? 'flex' : 'none';
-    document.getElementById('tabInvestments').style.display  = tab === 'investments'  ? 'flex' : 'none';
-    if (tab === 'transactions') renderTransactionsTab();
-    if (tab === 'highlights')   renderHighlightsTab();
+    document.getElementById('tabHome').style.display = tab === 'home' ? 'flex' : 'none';
+    document.getElementById('tabInvestments').style.display = tab === 'investments' ? 'flex' : 'none';
+    if (tab === 'home') switchHomeSubtab(homeSubtab);
     if (tab === 'investments') {
+        activeTab = tab;
         renderInvestments();
         if (investmentSubtab === 'house') openHouse();
         else openInvestments();
     }
+}
+
+function switchHomeSubtab(tab) {
+    homeSubtab = tab;
+    activeTab = tab;
+    for (const [name, suffix] of [['dashboard', 'Dashboard'], ['highlights', 'Highlights'], ['transactions', 'Transactions']]) {
+        const selected = name === tab;
+        const button = document.getElementById(`home${suffix}Tab`);
+        button.classList.toggle('active', selected);
+        button.setAttribute('aria-selected', String(selected));
+        document.getElementById(`tab${suffix}`).style.display = selected ? 'flex' : 'none';
+    }
+    if (tab === 'transactions') renderTransactionsTab();
+    if (tab === 'highlights') renderHighlightsTab();
 }
 
 function toggleTabMenu() {
@@ -263,12 +276,40 @@ async function apiSaveRow(row) {
         .select()
         .single();
     if (error) throw new Error(error.message);
+    void refreshTransactionInsertDate();
     return data;
 }
 
 async function apiDeleteRow(id) {
     const { error } = await supabaseClient.from('transactions').delete().eq('id', id);
     if (error) throw new Error(error.message);
+    void refreshTransactionInsertDate();
+}
+
+async function refreshTransactionInsertDate() {
+    const userId = activeAuthUserId;
+    if (!userId) return;
+    const request = ++transactionInsertRequest;
+    const label = document.getElementById('transactionInsertDate');
+    label.textContent = 'Latest transaction insert: loading…';
+    try {
+        const { data, error } = await supabaseClient.from('transactions')
+            .select('inserted_at').not('inserted_at', 'is', null)
+            .order('inserted_at', { ascending: false }).limit(1).maybeSingle();
+        if (error) throw new Error(error.message);
+        if (request !== transactionInsertRequest || userId !== activeAuthUserId) return;
+        if (!data) {
+            label.textContent = 'Latest transaction insert: —';
+            return;
+        }
+        const date = new Date(data.inserted_at);
+        if (typeof data.inserted_at !== 'string' || !Number.isFinite(date.getTime())) throw new Error('Invalid insert date');
+        label.textContent = `Latest transaction insert: ${date.toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })}`;
+    } catch (error) {
+        if (request === transactionInsertRequest && userId === activeAuthUserId) {
+            label.textContent = `Latest transaction insert unavailable: ${error.message}`;
+        }
+    }
 }
 
 function setAuthMessage(message) {
@@ -281,17 +322,22 @@ async function applyAuthSession(session) {
     if (userId === activeAuthUserId) return;
 
     activeAuthUserId = userId;
+    transactionInsertRequest++;
+    document.getElementById('transactionInsertDate').textContent = 'Latest transaction insert: —';
     clearInvestments();
     clearHouse();
     if (!user) {
         document.body.classList.remove('is-authenticated');
         document.getElementById('signedInEmail').textContent = '';
+        document.getElementById('signedInEmail').title = '';
         rawData = [];
         return;
     }
 
     document.getElementById('signedInEmail').textContent = user.email || '';
+    document.getElementById('signedInEmail').title = user.email || '';
     document.body.classList.add('is-authenticated');
+    void refreshTransactionInsertDate();
     await loadData();
     if (activeAuthUserId === userId) await openInvestments();
 }
@@ -452,12 +498,8 @@ function bootstrapApp() {
     populateYearFilter();
     populateCategoryFilter();
     document.getElementById('emptyState').style.display      = 'none';
-    document.getElementById('tabDashboard').style.display    = 'flex';
-    document.getElementById('tabTransactions').style.display = 'none';
-    document.getElementById('tabHighlights').style.display   = 'none';
-    document.getElementById('tabInvestments').style.display  = 'none';
-    activeTab = 'dashboard';
-    document.querySelectorAll('.tab-btn').forEach(button => button.classList.toggle('active', button.getAttribute('onclick') === "switchTab('dashboard')"));
+    homeSubtab = 'dashboard';
+    switchTab('home');
     document.getElementById('tabSwitcher').style.display     = 'flex';
     applyGlobalFilters();
 }

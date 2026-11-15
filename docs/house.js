@@ -190,7 +190,8 @@ function clearHouseHistory(message) {
 }
 
 function updateHouseView() {
-    document.getElementById('houseViewToggle').textContent = houseHistoryVisible ? 'Show installments' : 'Show graph';
+    document.getElementById('houseGraphButton').setAttribute('aria-pressed', String(houseHistoryVisible));
+    document.getElementById('houseInstallmentsButton').setAttribute('aria-pressed', String(!houseHistoryVisible));
     document.getElementById('houseHistory').hidden = !houseHistoryVisible;
     document.getElementById('houseTableView').hidden = houseHistoryVisible;
     document.getElementById('houseAddInstallment').hidden = houseHistoryVisible;
@@ -505,12 +506,15 @@ if (typeof document !== 'undefined') {
         const width = entries[0].contentRect.width;
         if (width > 0) houseChartWrap.style.setProperty('--house-diagram-width', `${width}px`);
     }).observe(houseDiagram);
-    document.getElementById('houseViewToggle').addEventListener('click', () => {
-        houseHistoryVisible = !houseHistoryVisible;
-        updateHouseView();
-        if (!houseHistoryVisible) clearHouseHistory('');
-        renderHouse();
-    });
+    for (const [id, visible] of [['houseGraphButton', true], ['houseInstallmentsButton', false]]) {
+        document.getElementById(id).addEventListener('click', () => {
+            if (houseHistoryVisible === visible) return;
+            houseHistoryVisible = visible;
+            updateHouseView();
+            if (!houseHistoryVisible) clearHouseHistory('');
+            renderHouse();
+        });
+    }
     document.getElementById('houseRetryConfig').addEventListener('click', openHouse);
     const houseValueInput = document.getElementById('houseValue');
     houseValueInput.addEventListener('focus', () => {

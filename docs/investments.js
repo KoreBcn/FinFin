@@ -19,13 +19,17 @@ const InvestmentMath = (() => {
                 || typeof item.name !== 'string' || !item.name.trim()
                 || typeof item.type !== 'string' || !item.type.trim()
                 || typeof item.is_in_scope !== 'boolean'
-                || (item.current_value_dkk != null && !Number.isFinite(Number(item.current_value_dkk)))) {
+                || (item.current_value_dkk != null && !Number.isFinite(Number(item.current_value_dkk)))
+                || (item.market_price != null && (!Number.isFinite(Number(item.market_price)) || Number(item.market_price) <= 0))
+                || ((item.market_price == null) !== (item.market_currency == null))
+                || (item.market_currency != null && !/^[A-Z]{3}$/.test(item.market_currency))
+                || (item.market_price_at != null && (item.market_price == null || !Number.isFinite(Date.parse(item.market_price_at))))) {
                 throw new Error('A portfolio item contains invalid data.');
             }
-            if (!item.is_in_scope) return;
             positions.set(item.id, {
                 id: item.id, key: JSON.stringify([item.platform, item.ticker]),
                 ticker: item.ticker, platform: item.platform, name: item.name, type: item.type,
+                isInScope: item.is_in_scope,
                 currentValue: item.current_value_dkk == null ? null : Number(item.current_value_dkk),
                 quantity: 0, quantityUnknown: false, tradeCount: 0,
                 bought: 0, sold: 0, fees: 0, dividends: 0, other: new Set()
@@ -59,8 +63,6 @@ const InvestmentMath = (() => {
                 else p.sold += Math.abs(amount);
             } else if (action === 'dividend' || action === 'dividend tax') {
                 p.dividends += amount;
-            } else {
-                p.other.add(row.action || '(empty action)');
             }
         });
         return [...positions.values()].map(p => ({
@@ -86,17 +88,29 @@ let investmentQuotes = new Map();
 let investmentSettings = {};
 let investmentGeneration = 0;
 let investmentBusy = false;
+let investmentItemSaving = false;
+let investmentEditingItem = null;
 let investmentRefreshingKey = null;
 let investmentNextRequestAt = 0;
 let investmentSettingsOwner = null;
 let investmentLoaded = false;
 let investmentLoading = false;
 let investmentSort = { key: '', ascending: true };
+let investmentShowClosed = false;
 let portfolioTransactionsVisible = false;
 let portfolioTransactionPage = 1;
 let portfolioTransactionSaving = false;
+let portfolioTransactionEditing = null;
 const portfolioTransactionPageSize = 10;
 const investmentSortKeys = ['name', 'type', 'qty', 'price', 'value', 'portfolio', 'today', 'pnl', 'return'];
+const portfolioTransactionFields = {
+    portfolio_item_id: 'portfolioTransactionItem', transaction_date: 'portfolioTransactionDate',
+    action: 'portfolioTransactionAction', quantity: 'portfolioTransactionQuantity',
+    price_per_unit: 'portfolioTransactionPrice', exchange_rate: 'portfolioTransactionRate',
+    commission: 'portfolioTransactionCommission', fees: 'portfolioTransactionFees',
+    currency: 'portfolioTransactionCurrency', total_cost: 'portfolioTransactionTotal',
+    local_value: 'portfolioTransactionLocalValue', local_currency: 'portfolioTransactionLocalCurrency'
+};
 
 function investmentStorageKey() { return `financehome.investments.${activeAuthUserId}`; }
 
@@ -125,16 +139,22 @@ function clearInvestments() {
     investmentSettings = {};
     investmentSettingsOwner = null;
     investmentBusy = false;
+    investmentItemSaving = false;
+    investmentEditingItem = null;
     investmentRefreshingKey = null;
     investmentLoaded = false;
     investmentLoading = false;
     investmentSort = { key: '', ascending: true };
+    investmentShowClosed = false;
     portfolioTransactionsVisible = false;
     portfolioTransactionPage = 1;
     portfolioTransactionSaving = false;
+    portfolioTransactionEditing = null;
     const dialog = document.getElementById('investmentDialog');
     if (dialog.open) dialog.close();
     document.getElementById('investmentForm').reset();
+    document.getElementById('investmentSubmit').disabled = false;
+    document.getElementById('investmentCancel').disabled = false;
     const transactionDialog = document.getElementById('portfolioTransactionDialog');
     if (transactionDialog.open) transactionDialog.close();
     document.getElementById('portfolioTransactionForm').reset();
@@ -153,6 +173,15 @@ function investmentSign(element, value) {
     if (Number.isFinite(value) && value !== 0) {
         element.classList.add(value < 0 ? 'investment-negative' : 'investment-positive');
     }
+}
+
+function investmentBadge(text) {
+    const badge = document.createElement('span');
+    badge.className = 'investment-type';
+    const hue = [...text.trim().toLowerCase()].reduce((hash, char) => (hash * 31 + char.codePointAt(0)) % 360, 0);
+    badge.style.setProperty('--investment-type-hue', String(hue));
+    badge.textContent = text;
+    return badge;
 }
 
 function investmentPercent(value) {
@@ -192,23 +221,34 @@ function renderInvestments() {
     renderPortfolioTransactions();
     const body = document.getElementById('investmentTableBody');
     body.replaceChildren();
-    const values = investmentPositions.map(investmentValue);
-    const pnls = investmentPositions.map((p, index) => values[index] === null
+    const visiblePositions = investmentPositions.filter(p => p.isInScope !== false);
+    const values = visiblePositions.map(investmentValue);
+    const pnls = visiblePositions.map((p, index) => values[index] === null
         ? null : values[index] + p.bought + p.sold + p.fees + p.dividends);
     const total = values.reduce((sum, value) => sum + (value === null ? 0 : value), 0);
-    const totalPnl = pnls.reduce((sum, pnl) => sum + (pnl === null ? 0 : pnl), 0);
+    const hiddenPositions = investmentPositions.filter(p => p.isInScope === false);
+    const includedInTotalPnl = p => !['ops capital', 'kucoin'].includes(p.platform.trim().toLowerCase());
+    const pnlHiddenPositions = hiddenPositions.filter(includedInTotalPnl);
+    const totalPnl = pnls.reduce((sum, pnl, index) => sum + (pnl === null || !includedInTotalPnl(visiblePositions[index]) ? 0 : pnl), 0)
+        + pnlHiddenPositions.reduce((sum, p) => sum + p.bought + p.sold + p.fees + p.dividends, 0);
     const known = values.filter(value => value !== null).length;
+    const pnlKnown = pnls.filter((pnl, index) => pnl !== null && includedInTotalPnl(visiblePositions[index])).length
+        + pnlHiddenPositions.length;
     const heatValues = values.filter(Number.isFinite);
     const heatMin = heatValues.reduce((min, value) => Math.min(min, value), Infinity);
     const heatMax = heatValues.reduce((max, value) => Math.max(max, value), -Infinity);
     document.getElementById('investmentPortfolioSize').textContent = known ? `${investmentFormat(total)} DKK` : '—';
     const pnlKpi = document.getElementById('investmentPortfolioPnl');
-    pnlKpi.textContent = known ? `${investmentFormat(totalPnl)} DKK` : '—';
-    pnlKpi.className = `kpi-real${known && totalPnl !== 0 ? (totalPnl < 0 ? ' investment-negative' : ' investment-positive') : ''}`;
-    document.getElementById('investmentCoverage').textContent = investmentPositions.length && known < investmentPositions.length
-        ? `${known} of ${investmentPositions.length} positions valued; totals exclude the remainder.`
+    pnlKpi.textContent = pnlKnown ? `${investmentFormat(totalPnl)} DKK` : '—';
+    pnlKpi.className = `kpi-real${pnlKnown && totalPnl !== 0 ? (totalPnl < 0 ? ' investment-negative' : ' investment-positive') : ''}`;
+    document.getElementById('investmentCoverage').textContent = visiblePositions.length && known < visiblePositions.length
+        ? `${known} of ${visiblePositions.length} in-scope positions valued; totals exclude the remainder.`
         : '';
-    const rows = investmentPositions.map((p, index) => {
+    const closedToggle = document.getElementById('investmentClosedToggle');
+    closedToggle.textContent = investmentShowClosed ? 'Hide closed positions' : 'Show closed positions';
+    closedToggle.setAttribute('aria-expanded', String(investmentShowClosed));
+    closedToggle.disabled = !investmentLoaded;
+    const rows = visiblePositions.map((p, index) => {
         const quote = investmentQuotes.get(p.key);
         const crowdlending = p.type.toLowerCase() === 'crowdlending';
         const value = values[index];
@@ -216,6 +256,15 @@ function renderInvestments() {
         const portfolioPercent = value !== null && total > 0 ? value / total * 100 : null;
         const returnPercent = pnl !== null && p.bought < 0 ? pnl / -p.bought * 100 : null;
         return { p, index, quote, crowdlending, value, pnl, portfolioPercent, returnPercent };
+    });
+    if (investmentShowClosed) hiddenPositions.forEach((p, index) => {
+        const pnl = p.bought + p.sold + p.fees + p.dividends;
+        rows.push({
+            p, index: visiblePositions.length + index, quote: undefined,
+            crowdlending: p.type.toLowerCase() === 'crowdlending',
+            value: 0, pnl, portfolioPercent: null,
+            returnPercent: p.bought < 0 ? pnl / -p.bought * 100 : null
+        });
     });
     if (investmentSort.key) {
         function sortValue(row) {
@@ -281,12 +330,7 @@ function renderInvestments() {
             }
             if (cell.key === 'type') {
                 td.textContent = '';
-                const badge = document.createElement('span');
-                badge.className = 'investment-type';
-                const hue = [...p.type.trim().toLowerCase()].reduce((hash, char) => (hash * 31 + char.codePointAt(0)) % 360, 0);
-                badge.style.setProperty('--investment-type-hue', String(hue));
-                badge.textContent = p.type;
-                td.append(badge);
+                td.append(investmentBadge(p.type));
             }
             if (cell.key === 'name') {
                 td.textContent = '';
@@ -321,26 +365,36 @@ function renderInvestments() {
                 heading.append(name, info);
                 td.append(heading);
                 const details = document.createElement('small');
-                details.textContent = p.ticker + (p.other.length ? ` · Review actions: ${p.other.join(', ')}` : '');
+                details.textContent = p.ticker + (p.isInScope === false ? ' · Closed' : '')
+                    + (p.other.length ? ` · Review actions: ${p.other.join(', ')}` : '');
                 td.append(details);
             }
             if (cell.key === 'actions') {
                 td.classList.add('investment-actions');
+                const edit = document.createElement('button');
+                edit.type = 'button';
+                edit.className = 'investment-edit';
+                edit.textContent = '✎';
+                edit.setAttribute('aria-label', `Edit ${p.name || p.ticker}`);
+                edit.title = `Edit ${p.name || p.ticker}`;
+                edit.disabled = !investmentLoaded || investmentBusy || investmentItemSaving || portfolioTransactionSaving;
+                edit.addEventListener('click', () => openInvestmentDialog(p));
                 const refresh = document.createElement('button');
                 refresh.type = 'button';
                 refresh.className = 'investment-refresh';
                 refresh.textContent = '↻';
                 refresh.setAttribute('aria-label', `Refresh price for ${p.name || p.ticker}`);
-                refresh.title = crowdlending ? 'Crowdlending values are entered manually'
+                refresh.title = p.isInScope === false ? 'Closed positions are not refreshed'
+                    : crowdlending ? 'Crowdlending values are entered manually'
                     : investmentBusy ? 'Another price refresh is in progress' : `Refresh price for ${p.name || p.ticker}`;
-                refresh.disabled = investmentBusy || portfolioTransactionSaving || !investmentLoaded || crowdlending;
+                refresh.disabled = investmentBusy || investmentItemSaving || portfolioTransactionSaving || !investmentLoaded || crowdlending || p.isInScope === false;
                 if (investmentRefreshingKey === p.key) {
                     refresh.classList.add('is-refreshing');
                     refresh.setAttribute('aria-busy', 'true');
                     refresh.title = 'Refreshing price';
                 }
                 refresh.addEventListener('click', () => refreshInvestment(p));
-                td.append(refresh);
+                td.append(edit, refresh);
             }
             if (cell.key === 'price' && quote) {
                 const details = document.createElement('small');
@@ -348,7 +402,7 @@ function renderInvestments() {
                 if (quote.error) details.setAttribute('role', 'status');
                 td.append(details);
             }
-            if (cell.key === 'value' && crowdlending) {
+            if (cell.key === 'value' && crowdlending && p.isInScope !== false) {
                 td.textContent = '';
                 const manual = document.createElement('input');
                 manual.type = 'text';
@@ -429,14 +483,16 @@ function renderInvestments() {
 function renderPortfolioTransactions() {
     document.getElementById('portfolioOverview').hidden = portfolioTransactionsVisible;
     document.getElementById('portfolioTransactions').hidden = !portfolioTransactionsVisible;
-    const toggle = document.getElementById('portfolioViewToggle');
-    toggle.textContent = portfolioTransactionsVisible ? 'Show overview' : 'Show transactions';
-    toggle.setAttribute('aria-pressed', String(portfolioTransactionsVisible));
-    document.getElementById('investmentAdd').hidden = portfolioTransactionsVisible;
+    document.getElementById('portfolioOverviewButton').setAttribute('aria-pressed', String(!portfolioTransactionsVisible));
+    document.getElementById('portfolioTransactionsButton').setAttribute('aria-pressed', String(portfolioTransactionsVisible));
+    document.getElementById('investmentClosedToggle').hidden = portfolioTransactionsVisible;
+    const itemAdd = document.getElementById('investmentAdd');
+    itemAdd.hidden = portfolioTransactionsVisible;
+    itemAdd.disabled = !investmentLoaded || investmentBusy || investmentItemSaving || portfolioTransactionSaving;
     const add = document.getElementById('portfolioTransactionAdd');
     add.hidden = !portfolioTransactionsVisible;
-    add.disabled = !investmentLoaded || investmentBusy || portfolioTransactionSaving || !investmentItems.length;
-    document.getElementById('portfolioTransactionSubmit').disabled = !investmentLoaded || investmentBusy || portfolioTransactionSaving;
+    add.disabled = !investmentLoaded || investmentBusy || investmentItemSaving || portfolioTransactionSaving || !investmentItems.length;
+    document.getElementById('portfolioTransactionSubmit').disabled = !investmentLoaded || investmentBusy || investmentItemSaving || portfolioTransactionSaving;
     document.getElementById('portfolioTransactionCancel').disabled = portfolioTransactionSaving;
 
     const search = (document.getElementById('portfolioTransactionSearch').value || '').trim().toLowerCase();
@@ -449,25 +505,99 @@ function renderPortfolioTransactions() {
     document.getElementById('portfolioTransactionPrevious').disabled = portfolioTransactionPage <= 1;
     document.getElementById('portfolioTransactionNext').disabled = portfolioTransactionPage >= pages;
     document.getElementById('portfolioTransactionStatus').textContent = investmentLoaded
-        ? `${rows.length} transaction${rows.length === 1 ? '' : 's'}${search ? ' matching ticker' : ''}.` : '';
+        ? `${rows.length} transaction${rows.length === 1 ? '' : 's'}${search ? ' matching ticker' : ''}.`
+        : investmentTransactions.length ? 'Showing last-loaded transactions; reload to continue.' : '';
     const body = document.getElementById('portfolioTransactionBody');
     body.replaceChildren();
-    const fields = ['transaction_date', 'action', 'ticker', 'name', 'platform', 'type', 'quantity',
-        'price_per_unit', 'exchange_rate', 'commission', 'fees', 'currency', 'total_cost', 'local_value', 'local_currency'];
+    const fields = [
+        ['transaction_date', 'Date'], ['action', 'Action'], ['ticker', 'Ticker'], ['quantity', 'Quantity'],
+        ['price_per_unit', 'Price / unit'], ['exchange_rate', 'Exchange rate'], ['commission', 'Commission'],
+        ['fees', 'Fees DKK'], ['total_cost', 'Total cost DKK'], ['local_value', 'Local value']
+    ];
     rows.slice((portfolioTransactionPage - 1) * portfolioTransactionPageSize, portfolioTransactionPage * portfolioTransactionPageSize).forEach(row => {
         const tr = document.createElement('tr');
-        fields.forEach(field => {
+        const actions = document.createElement('td');
+        actions.className = 'tx-actions-cell';
+        actions.dataset.label = 'Actions';
+        for (const [label, icon, style, handler] of [
+            ['Edit transaction', '✎', 'tx-save-btn', () => openPortfolioTransaction(row)],
+            ['Duplicate transaction', '📋', 'tx-duplicate-btn', () => mutatePortfolioTransaction('duplicate_portfolio_transaction', { p_id: row.id, p_expected_revision: row.revision })],
+            ['Delete transaction', '🗑', 'tx-delete-btn', () => {
+                if (confirm('Delete this transaction?')) return mutatePortfolioTransaction('delete_portfolio_transaction', { p_id: row.id, p_expected_revision: row.revision });
+            }]
+        ]) {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = `tx-action-btn ${style}`;
+            button.textContent = icon;
+            button.title = label;
+            button.setAttribute('aria-label', `${label} ${row.ticker || ''} ${row.transaction_date || ''}`.trim());
+            button.disabled = !investmentLoaded || investmentBusy || investmentItemSaving || portfolioTransactionSaving;
+            button.addEventListener('click', handler);
+            actions.append(button);
+        }
+        tr.append(actions);
+        fields.forEach(([field, label]) => {
             const td = document.createElement('td');
+            td.dataset.label = label;
             td.textContent = row[field] || '—';
+            if (field === 'ticker') {
+                td.textContent = '';
+                td.className = 'portfolio-transaction-ticker';
+                const heading = document.createElement('div');
+                heading.className = 'investment-name-heading';
+                const ticker = document.createElement('span');
+                ticker.textContent = row.ticker || '—';
+                const info = document.createElement('details');
+                info.className = 'investment-info';
+                const summary = document.createElement('summary');
+                summary.setAttribute('aria-label', `Transaction details for ${row.ticker || 'unknown ticker'}`);
+                summary.textContent = 'i';
+                const popup = document.createElement('div');
+                popup.className = 'investment-popup investment-info-popup';
+                for (const [detail, detailLabel] of [['name', 'Name'], ['platform', 'Platform'], ['type', 'Type'],
+                    ['currency', 'Currency'], ['local_currency', 'Local currency']]) {
+                    const line = document.createElement('div');
+                    const title = document.createElement('strong');
+                    title.textContent = `${detailLabel}: `;
+                    const value = row[detail] || '—';
+                    if ((detail === 'platform' || detail === 'type') && row[detail]) line.append(title, investmentBadge(value));
+                    else {
+                        const text = document.createElement('span');
+                        text.textContent = value;
+                        line.append(title, text);
+                    }
+                    popup.append(line);
+                }
+                info.append(summary, popup);
+                heading.append(ticker, info);
+                td.append(heading);
+            }
+            if (field === 'action') {
+                const action = (row.action || '').trim().toLowerCase();
+                if (action === 'buy') investmentSign(td, -1);
+                if (action === 'sell' || action === 'dividend') investmentSign(td, 1);
+            }
+            if (['commission', 'fees', 'total_cost'].includes(field) && row[field]?.trim()) {
+                try { investmentSign(td, InvestmentMath.number(row[field], field.replace(/_/g, ' '), row.id)); }
+                catch (error) { td.title = error.message; }
+            }
             tr.append(td);
         });
         body.append(tr);
     });
 }
 
-document.getElementById('portfolioViewToggle').addEventListener('click', () => {
-    portfolioTransactionsVisible = !portfolioTransactionsVisible;
-    renderPortfolioTransactions();
+for (const [id, visible] of [['portfolioOverviewButton', false], ['portfolioTransactionsButton', true]]) {
+    document.getElementById(id).addEventListener('click', () => {
+        portfolioTransactionsVisible = visible;
+        renderPortfolioTransactions();
+    });
+}
+document.getElementById('investmentClosedToggle').addEventListener('click', () => {
+    if (!investmentLoaded) return;
+    investmentShowClosed = !investmentShowClosed;
+    renderInvestments();
 });
 document.getElementById('portfolioTransactionSearch').addEventListener('input', () => {
     portfolioTransactionPage = 1;
@@ -481,8 +611,10 @@ document.getElementById('portfolioTransactionNext').addEventListener('click', ()
     portfolioTransactionPage++;
     renderPortfolioTransactions();
 });
-document.getElementById('portfolioTransactionAdd').addEventListener('click', () => {
-    if (!investmentLoaded || investmentBusy || portfolioTransactionSaving || !investmentItems.length) return;
+function openPortfolioTransaction(row = null) {
+    if (!investmentLoaded || investmentBusy || investmentItemSaving || portfolioTransactionSaving || !investmentItems.length) return;
+    const form = document.getElementById('portfolioTransactionForm');
+    form.reset();
     const select = document.getElementById('portfolioTransactionItem');
     select.replaceChildren();
     investmentItems.forEach(item => {
@@ -491,10 +623,19 @@ document.getElementById('portfolioTransactionAdd').addEventListener('click', () 
         option.textContent = `${item.ticker} · ${item.platform} · ${item.name}${item.is_in_scope ? '' : ' (out of scope)'}`;
         select.append(option);
     });
+    portfolioTransactionEditing = row ? { id: row.id, revision: row.revision } : null;
+    if (row) {
+        Object.entries(portfolioTransactionFields).forEach(([field, id]) => {
+            document.getElementById(id).value = row[field] || '';
+        });
+    }
+    document.getElementById('portfolioTransactionDialogTitle').textContent = row ? 'Edit portfolio transaction' : 'Add portfolio transaction';
+    document.getElementById('portfolioTransactionSubmit').textContent = row ? 'Save changes' : 'Add transaction';
     document.getElementById('portfolioTransactionFormStatus').textContent = '';
     const dialog = document.getElementById('portfolioTransactionDialog');
     if (!dialog.open) dialog.showModal();
-});
+}
+document.getElementById('portfolioTransactionAdd').addEventListener('click', () => openPortfolioTransaction());
 document.getElementById('portfolioTransactionCancel').addEventListener('click', () => {
     if (!portfolioTransactionSaving) document.getElementById('portfolioTransactionDialog').close();
 });
@@ -503,18 +644,10 @@ document.getElementById('portfolioTransactionDialog').addEventListener('cancel',
 });
 document.getElementById('portfolioTransactionForm').addEventListener('submit', async event => {
     event.preventDefault();
-    if (portfolioTransactionSaving || investmentBusy || !investmentLoaded || !activeAuthUserId) return;
+    if (portfolioTransactionSaving || investmentItemSaving || investmentBusy || !investmentLoaded || !activeAuthUserId) return;
     const form = event.currentTarget;
     const status = document.getElementById('portfolioTransactionFormStatus');
-    const fields = {
-        portfolio_item_id: 'portfolioTransactionItem', transaction_date: 'portfolioTransactionDate',
-        action: 'portfolioTransactionAction', quantity: 'portfolioTransactionQuantity',
-        price_per_unit: 'portfolioTransactionPrice', exchange_rate: 'portfolioTransactionRate',
-        commission: 'portfolioTransactionCommission', fees: 'portfolioTransactionFees',
-        currency: 'portfolioTransactionCurrency', total_cost: 'portfolioTransactionTotal',
-        local_value: 'portfolioTransactionLocalValue', local_currency: 'portfolioTransactionLocalCurrency'
-    };
-    const transaction = Object.fromEntries(Object.entries(fields).map(([field, id]) => [field, (document.getElementById(id).value || '').trim()]));
+    const transaction = Object.fromEntries(Object.entries(portfolioTransactionFields).map(([field, id]) => [field, (document.getElementById(id).value || '').trim()]));
     try {
         if (!form.checkValidity() || !investmentItems.some(item => item.id === transaction.portfolio_item_id) || !transaction.transaction_date || !transaction.action) {
             throw new Error('Choose an item and enter a valid date and action.');
@@ -531,21 +664,40 @@ document.getElementById('portfolioTransactionForm').addEventListener('submit', a
         return;
     }
 
+    const args = { p_transaction: transaction };
+    const functionName = portfolioTransactionEditing ? 'save_portfolio_transaction' : 'add_portfolio_transaction';
+    if (portfolioTransactionEditing) {
+        args.p_id = portfolioTransactionEditing.id;
+        args.p_expected_revision = portfolioTransactionEditing.revision;
+    }
+    await mutatePortfolioTransaction(functionName, args, true);
+});
+
+async function mutatePortfolioTransaction(functionName, args, fromDialog = false) {
+    if (portfolioTransactionSaving || investmentItemSaving || investmentBusy || !investmentLoaded || !activeAuthUserId) return;
     const generation = investmentGeneration;
+    const status = document.getElementById(fromDialog ? 'portfolioTransactionFormStatus' : 'investmentStatus');
     portfolioTransactionSaving = true;
     status.textContent = '';
     renderInvestments();
     try {
-        const { error } = await supabaseClient.rpc('add_portfolio_transaction', { p_transaction: transaction });
-        if (error) throw new Error(error.message);
+        const { error } = await supabaseClient.rpc(functionName, args);
+        if (error) {
+            const guidance = error.code === 'PGRST202'
+                ? '. Run the complete db/supabase/portfolio.sql in the Supabase SQL Editor'
+                : '';
+            throw new Error(`${error.message.replace(/[.\s]+$/, '')}${guidance}`);
+        }
         if (generation !== investmentGeneration) return;
-        form.reset();
-        document.getElementById('portfolioTransactionDialog').close();
+        if (fromDialog) {
+            document.getElementById('portfolioTransactionForm').reset();
+            document.getElementById('portfolioTransactionDialog').close();
+            portfolioTransactionEditing = null;
+        }
         portfolioTransactionPage = 1;
         investmentLoaded = false;
         investmentPositions = [];
         investmentItems = [];
-        investmentTransactions = [];
         investmentQuotes.clear();
         renderInvestments();
         await openInvestments();
@@ -554,10 +706,10 @@ document.getElementById('portfolioTransactionForm').addEventListener('submit', a
         investmentLoaded = false;
         investmentPositions = [];
         investmentItems = [];
-        investmentTransactions = [];
         investmentQuotes.clear();
-        status.textContent = `Unable to save transaction: ${error.message}. Close this dialog and reload the portfolio before retrying; the save may have completed.`;
-        document.getElementById('investmentStatus').textContent = 'Reload the portfolio before continuing; the transaction save may have completed.';
+        const message = `Unable to change transaction: ${error.message}. ${fromDialog ? 'Close this dialog and reload' : 'Reload'} the portfolio before retrying; the change may have completed.`;
+        status.textContent = message;
+        if (fromDialog) document.getElementById('investmentStatus').textContent = 'Reload the portfolio before continuing; the transaction change may have completed.';
         document.getElementById('investmentRetry').hidden = false;
     } finally {
         if (generation === investmentGeneration) {
@@ -565,7 +717,7 @@ document.getElementById('portfolioTransactionForm').addEventListener('submit', a
             renderInvestments();
         }
     }
-});
+}
 
 async function openInvestments() {
     if (!activeAuthUserId || investmentLoaded || investmentLoading) return;
@@ -585,8 +737,8 @@ async function openInvestments() {
                 if (data.length < pageSize) return rows;
             }
         }
-        const itemColumns = 'id, ticker, platform, name, type, is_in_scope, current_value_dkk, valuation_version';
-        const transactionColumns = 'id, portfolio_item_id, transaction_date, action, platform, type, ticker, name, quantity, price_per_unit, exchange_rate, commission, fees, currency, total_cost, local_value, local_currency';
+        const itemColumns = 'id, ticker, platform, name, type, is_in_scope, current_value_dkk, valuation_version, market_price, market_currency, market_price_at';
+        const transactionColumns = 'id, revision, portfolio_item_id, transaction_date, action, platform, type, ticker, name, quantity, price_per_unit, exchange_rate, commission, fees, currency, total_cost, local_value, local_currency';
         let items, transactions;
         for (let attempt = 0; attempt < 3; attempt++) {
             const before = await readRows('portfolio_items', itemColumns);
@@ -602,6 +754,16 @@ async function openInvestments() {
         investmentItems = items;
         investmentTransactions = transactions;
         investmentQuotes.clear();
+        items.forEach(item => {
+            if (item.market_price != null && item.type.toLowerCase() !== 'crowdlending') {
+                const key = JSON.stringify([item.platform, item.ticker]);
+                investmentQuotes.set(key, {
+                    price: Number(item.market_price), currency: item.market_currency,
+                    datetime: item.market_price_at ? new Date(item.market_price_at).toLocaleString() : '',
+                    rate: null
+                });
+            }
+        });
         investmentLoaded = true;
         document.getElementById('investmentStatus').textContent = '';
         renderInvestments();
@@ -624,9 +786,12 @@ document.getElementById('investmentSortDirection').addEventListener('click', () 
     if (investmentSort.key) sortInvestments(investmentSort.key);
 });
 
-async function saveInvestmentValue(position, value, generation) {
+async function saveInvestmentValue(position, value, generation, quote = null) {
     const item = investmentItems.find(entry => entry.id === position.id);
-    let update = supabaseClient.from('portfolio_items').update({ current_value_dkk: value }).eq('id', position.id);
+    const fields = {};
+    if (value !== undefined) fields.current_value_dkk = value;
+    if (quote) Object.assign(fields, { market_price: quote.price, market_currency: quote.currency, market_price_at: quote.at });
+    let update = supabaseClient.from('portfolio_items').update(fields).eq('id', position.id);
     if (position.type.toLowerCase() !== 'crowdlending') update = update.eq('valuation_version', item.valuation_version);
     const { error } = await update.select('id').single();
     if (error) {
@@ -640,24 +805,50 @@ async function saveInvestmentValue(position, value, generation) {
         throw new Error(error.message);
     }
     if (generation === investmentGeneration) {
-        position.currentValue = value;
-        item.current_value_dkk = value;
+        if (value !== undefined) position.currentValue = value;
+        Object.assign(item, fields);
     }
 }
 
-document.getElementById('investmentAdd').addEventListener('click', () => {
+function openInvestmentDialog(position = null) {
+    if (!activeAuthUserId || !investmentLoaded || investmentBusy || investmentItemSaving || portfolioTransactionSaving) return;
+    const form = document.getElementById('investmentForm');
+    form.reset();
+    investmentEditingItem = position ? investmentItems.find(item => item.id === position.id) : null;
+    if (position && !investmentEditingItem) {
+        document.getElementById('investmentStatus').textContent = 'Unable to edit this item; reload the portfolio.';
+        return;
+    }
+    if (investmentEditingItem) {
+        document.getElementById('investmentTicker').value = investmentEditingItem.ticker;
+        document.getElementById('investmentName').value = investmentEditingItem.name;
+        document.getElementById('investmentType').value = investmentEditingItem.type;
+        document.getElementById('investmentPlatform').value = investmentEditingItem.platform;
+    }
+    document.getElementById('investmentDialogTitle').textContent = position ? 'Edit portfolio item' : 'Add portfolio item';
+    document.getElementById('investmentSubmit').textContent = position ? 'Save changes' : 'Add item';
     document.getElementById('investmentFormStatus').textContent = '';
-    document.getElementById('investmentDialog').showModal();
+    const dialog = document.getElementById('investmentDialog');
+    if (!dialog.open) dialog.showModal();
+}
+document.getElementById('investmentAdd').addEventListener('click', () => openInvestmentDialog());
+document.getElementById('investmentCancel').addEventListener('click', () => {
+    if (!investmentItemSaving) document.getElementById('investmentDialog').close();
 });
-document.getElementById('investmentCancel').addEventListener('click', () => document.getElementById('investmentDialog').close());
+document.getElementById('investmentDialog').addEventListener('cancel', event => {
+    if (investmentItemSaving) event.preventDefault();
+});
 document.getElementById('investmentForm').addEventListener('submit', async event => {
     event.preventDefault();
+    if (investmentItemSaving || investmentBusy || portfolioTransactionSaving) return;
     const generation = investmentGeneration;
     const form = event.currentTarget;
     const status = document.getElementById('investmentFormStatus');
     const submit = document.getElementById('investmentSubmit');
+    const existing = investmentEditingItem;
+    let requestSent = false;
     try {
-        if (!activeAuthUserId || !investmentLoaded) throw new Error('Load the portfolio before adding an item.');
+        if (!activeAuthUserId || !investmentLoaded) throw new Error('Load the portfolio before saving an item.');
         const item = {
             ticker: document.getElementById('investmentTicker').value.trim(),
             name: document.getElementById('investmentName').value.trim(),
@@ -665,20 +856,73 @@ document.getElementById('investmentForm').addEventListener('submit', async event
             platform: document.getElementById('investmentPlatform').value.trim()
         };
         if ([item.ticker, item.name, item.type, item.platform].some(value => !value)) throw new Error('All item fields are required.');
+        const typeChanged = existing && existing.type.toLowerCase() !== item.type.toLowerCase();
+        const tickerChanged = existing && existing.ticker !== item.ticker;
+        if (existing && !Number.isSafeInteger(existing.valuation_version)) throw new Error('Invalid item version; reload the portfolio.');
+        investmentItemSaving = true;
         submit.disabled = true;
-        const { data, error } = await supabaseClient.from('portfolio_items').insert(item)
-            .select('id, ticker, platform, name, type, is_in_scope, current_value_dkk, valuation_version').single();
+        document.getElementById('investmentCancel').disabled = true;
+        status.textContent = '';
+        renderInvestments();
+        let query;
+        if (existing) {
+            const update = { ...item, valuation_version: existing.valuation_version + 1 };
+            if (typeChanged || (tickerChanged && item.type.toLowerCase() !== 'crowdlending')) update.current_value_dkk = null;
+            if (typeChanged || tickerChanged) Object.assign(update, { market_price: null, market_currency: null, market_price_at: null });
+            query = supabaseClient.from('portfolio_items').update(update).eq('id', existing.id)
+                .eq('valuation_version', existing.valuation_version);
+        } else {
+            query = supabaseClient.from('portfolio_items').insert(item);
+        }
+        requestSent = true;
+        const { data, error } = await query.select('id, ticker, platform, name, type, is_in_scope, current_value_dkk, valuation_version, market_price, market_currency, market_price_at').single();
         if (error) throw new Error(error.message);
         if (generation !== investmentGeneration) return;
-        investmentItems.push(data);
-        investmentPositions.push(...InvestmentMath.fromStored([data], []));
+        if (existing) {
+            const oldKey = JSON.stringify([existing.platform, existing.ticker]);
+            const newKey = JSON.stringify([data.platform, data.ticker]);
+            if (typeChanged) {
+                delete investmentSettings[oldKey];
+                delete investmentSettings[newKey];
+                saveInvestmentSettings();
+            } else if (oldKey !== newKey && investmentSettings[oldKey]) {
+                investmentSettings[newKey] = investmentSettings[oldKey];
+                delete investmentSettings[oldKey];
+                saveInvestmentSettings();
+            }
+            const quote = investmentQuotes.get(oldKey);
+            if (oldKey !== newKey || typeChanged || tickerChanged) investmentQuotes.delete(oldKey);
+            if (quote && !typeChanged && !tickerChanged) investmentQuotes.set(newKey, quote);
+            investmentItems = investmentItems.map(entry => entry.id === data.id ? data : entry);
+            investmentPositions = InvestmentMath.fromStored(investmentItems, investmentTransactions);
+        } else {
+            investmentItems.push(data);
+            investmentPositions.push(...InvestmentMath.fromStored([data], []));
+        }
         form.reset();
         document.getElementById('investmentDialog').close();
+        investmentEditingItem = null;
         renderInvestments();
     } catch (error) {
-        if (generation === investmentGeneration) status.textContent = `Unable to add item: ${error.message}`;
+        if (generation === investmentGeneration) {
+            if (requestSent) {
+                investmentLoaded = false;
+                investmentPositions = [];
+                investmentItems = [];
+                investmentTransactions = [];
+                investmentQuotes.clear();
+                document.getElementById('investmentRetry').hidden = false;
+                document.getElementById('investmentStatus').textContent = 'Reload the portfolio before continuing; the item save may have completed.';
+            }
+            status.textContent = `Unable to save item: ${error.message}${requestSent ? '. Close this dialog and reload the portfolio before retrying; the save may have completed.' : ''}`;
+        }
     } finally {
-        submit.disabled = false;
+        if (generation === investmentGeneration) {
+            investmentItemSaving = false;
+            submit.disabled = false;
+            document.getElementById('investmentCancel').disabled = false;
+            renderInvestments();
+        }
     }
 });
 
@@ -708,7 +952,7 @@ async function investmentRequest(path, params) {
 }
 
 async function refreshInvestment(p) {
-    if (investmentBusy || portfolioTransactionSaving || !investmentLoaded || p.type.toLowerCase() === 'crowdlending') return;
+    if (investmentBusy || investmentItemSaving || portfolioTransactionSaving || !investmentLoaded || p.isInScope === false || p.type.toLowerCase() === 'crowdlending') return;
     investmentBusy = true;
     investmentRefreshingKey = p.key;
     const generation = investmentGeneration;
@@ -727,23 +971,33 @@ async function refreshInvestment(p) {
         const data = await request('quote', params);
         const price = Number(data.close);
         const currency = data.currency;
-        if (!Number.isFinite(price) || price <= 0 || !currency) throw new Error('Quote is missing a valid price or currency.');
-        const quote = { price, currency, datetime: data.last_quote_at ? new Date(data.last_quote_at * 1000).toLocaleString() : data.datetime, today: data.percent_change == null ? null : Number(data.percent_change), rate: null };
-        investmentQuotes.set(p.key, quote);
-        renderInvestments();
+        if (!Number.isFinite(price) || price <= 0 || typeof currency !== 'string' || !/^[A-Z]{3}$/.test(currency)) throw new Error('Quote is missing a valid price or currency.');
+        if (data.last_quote_at != null && (!Number.isFinite(data.last_quote_at) || data.last_quote_at <= 0)) throw new Error('Quote has an invalid timestamp.');
+        const at = data.last_quote_at == null ? null : new Date(data.last_quote_at * 1000).toISOString();
+        const quote = { price, currency, at, datetime: at ? new Date(at).toLocaleString() : '', today: data.percent_change == null ? null : Number(data.percent_change), rate: null };
         let rate = 1;
-        if (currency !== 'DKK') {
-            const fx = await request('exchange_rate', { symbol: `${currency}/DKK` });
-            rate = Number(fx.rate);
-            if (!Number.isFinite(rate) || rate <= 0) throw new Error(`Invalid ${currency}/DKK exchange rate.`);
+        let conversionError = null;
+        if (!p.quantityUnknown && currency !== 'DKK') {
+            try {
+                const fx = await request('exchange_rate', { symbol: `${currency}/DKK` });
+                rate = Number(fx.rate);
+                if (!Number.isFinite(rate) || rate <= 0) throw new Error(`Invalid ${currency}/DKK exchange rate.`);
+            } catch (error) {
+                if (generation !== investmentGeneration) return;
+                conversionError = error;
+            }
         }
-        quote.rate = rate;
-        if (!p.quantityUnknown) {
+        if (!p.quantityUnknown && !conversionError) {
+            quote.rate = rate;
             const value = p.quantity * price * quote.rate;
             if (!Number.isFinite(value)) throw new Error('Calculated value is invalid.');
-            await saveInvestmentValue(p, value, generation);
-            if (generation !== investmentGeneration) return;
+            await saveInvestmentValue(p, value, generation, quote);
+        } else {
+            await saveInvestmentValue(p, undefined, generation, quote);
         }
+        if (generation !== investmentGeneration) return;
+        investmentQuotes.set(p.key, quote);
+        if (conversionError) throw new Error(`Price saved, but currency conversion failed: ${conversionError.message}`);
         try {
             const history = await request('time_series', { ...params, interval: '1day', outputsize: '140' });
             if (!Array.isArray(history.values)) throw new Error('Historical prices are unavailable.');

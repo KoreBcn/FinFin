@@ -92,19 +92,28 @@ mortgage entry is required before House totals can be calculated.
 ## Portfolio
 
 Run `portfolio.sql` in the Supabase SQL Editor. It creates shared
-`portfolio_items` and `portfolio_transactions` tables. Authenticated users
+`portfolio_items` and `portfolio_transactions` tables. The migration adds
+nullable saved market price, currency and quote-time columns to existing items;
+previously fetched quotes must be refreshed once to populate them. Authenticated users
 can read both tables, create and update items, and are not isolated from each
 other. Anonymous access is revoked. Run the updated `portfolio.sql` again when
-upgrading an existing installation. The app adds transactions through an
-authenticated database function; direct transaction writes remain unavailable
-to authenticated users. The SQL Editor can be used to correct them.
+upgrading an existing installation. The app adds, edits, duplicates and deletes
+transactions through authenticated database functions; direct transaction
+writes remain unavailable to authenticated users.
+If a transaction action reports that a function is missing from the schema
+cache, run the complete `portfolio.sql`, not just the column alterations, and
+reload the portfolio. If the function still is not found after the script
+finishes, request a schema cache reload with `NOTIFY pgrst, 'reload schema';`.
 
 The function copies the selected item's ticker, platform, name and type into
-each new transaction. An insert trigger clears saved values for priced items
-after a buy or sell, but leaves manually entered crowdlending values intact.
-Price refreshes use a valuation version to reject a stale value if a trade was
-inserted while the refresh was running. Other clients that write valuations
-must use the same version check to avoid overwriting an invalidation.
+each new transaction. An edit preserves these historical fields unless the
+selected item changes. Transaction triggers clear saved values for affected
+priced items when a buy or sell is added, edited or deleted, but leave manually
+entered crowdlending values intact. Transaction revisions reject stale edits,
+duplicates and deletes. Price refreshes use a valuation version to reject
+stale values when transactions change during a refresh. Other clients that
+write valuations must use the same version check to avoid overwriting an
+invalidation.
 
 To migrate the investment CSV, generate a private SQL file locally:
 
@@ -122,10 +131,18 @@ keep it private and do not commit it.
 
 Items with positive known net buy/sell quantity and crowdlending items are
 initially in scope. Closed or uncertain items are stored out of scope. Change
-`is_in_scope` in `portfolio_items` to show or hide an item. Yahoo Finance provides
+`is_in_scope` in `portfolio_items` to change whether an item is treated as open.
+The Overview button can show or hide out-of-scope items. Yahoo Finance provides
 prices, not owned quantities: the app computes quantities and cash flows from
 transactions and stores the latest successfully calculated DKK value on the
-item. Out-of-scope items are excluded from display, refresh, and totals.
+item. The latest market price, currency and quote time are saved on the item and
+restored on load. A trade invalidates the DKK value, not the price. Out-of-scope items are excluded from price refresh and portfolio
+size, but their cash flows and fees contribute to total P/L with a current value
+of zero, except for positions on the OPS Capital and KuCoin platforms, which are excluded
+from total P/L whether in scope or not. Ensure out-of-scope items are actually closed. Item edits increment the
+valuation version; ticker changes and all type changes clear the saved quote,
+and ticker changes for priced items and all type changes also clear the saved
+value so stale price refreshes cannot overwrite it.
 
 ### Price refresh
 
