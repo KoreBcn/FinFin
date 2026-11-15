@@ -26,7 +26,7 @@ const InvestmentMath = (() => {
             positions.set(item.id, {
                 id: item.id, key: JSON.stringify([item.platform, item.ticker]),
                 ticker: item.ticker, platform: item.platform, name: item.name, type: item.type,
-                marketSymbol: item.market_symbol || '', currentValue: item.current_value_dkk == null ? null : Number(item.current_value_dkk),
+                currentValue: item.current_value_dkk == null ? null : Number(item.current_value_dkk),
                 quantity: 0, quantityUnknown: false, tradeCount: 0,
                 bought: 0, sold: 0, fees: 0, dividends: 0, other: new Set()
             });
@@ -68,32 +68,13 @@ const InvestmentMath = (() => {
         }));
     }
 
-    function defaultSymbol(position) {
-        const symbols = {
-            'CPH:NOVO-B': 'NOVO.B|XCSE',
-            'NASDAQ:MELI': 'MELI|XNGS',
-            'AMS:IEMM': 'IEMM|XAMS',
-            'ETH': 'ETH/USD'
-        };
-        return symbols[position.ticker.trim().toUpperCase()] || '';
-    }
-
-    function symbolParams(value) {
-        const parts = value.trim().split('|');
-        if (!parts[0] || parts.length > 2 || !/^[A-Za-z0-9.\/-]+$/.test(parts[0]) ||
-            (parts.length === 2 && !/^[A-Za-z0-9]{4}$/.test(parts[1]))) {
-            throw new Error('Use SYMBOL or SYMBOL|MIC (for example AAPL|XNAS).');
-        }
-        return { symbol: parts[0].toUpperCase(), ...(parts[1] ? { mic_code: parts[1].toUpperCase() } : {}) };
-    }
-
     function changeSince(values, latest, days, now = new Date()) {
         const target = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - days)).toISOString().slice(0, 10);
         const prior = values.find(item => item.datetime <= target && Number(item.close) > 0);
         return prior ? (latest / Number(prior.close) - 1) * 100 : null;
     }
 
-    return { fromStored, number, defaultSymbol, symbolParams, changeSince };
+    return { fromStored, number, changeSince };
 })();
 
 if (typeof module !== 'undefined') module.exports = InvestmentMath;
@@ -159,6 +140,17 @@ function investmentPercent(value) {
     return Number.isFinite(value) ? `${investmentFormat(value)}%` : '—';
 }
 
+function investmentInputNumber(value) {
+    const text = value.trim();
+    if (!text) return null;
+    if (!/^(?:\d+|\d{1,3}(?:,\d{3})+)(?:\.\d*)?(?:e[+-]?\d+)?$|^\.\d+(?:e[+-]?\d+)?$/i.test(text)) return NaN;
+    return Number(text.replace(/,/g, ''));
+}
+
+function investmentInputFormat(value) {
+    return value.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 20 });
+}
+
 function investmentValue(position) {
     if (position.type.toLowerCase() !== 'crowdlending' && position.quantityUnknown) return null;
     if (position.currentValue != null) return position.currentValue;
@@ -178,6 +170,9 @@ function renderInvestments() {
     const total = values.reduce((sum, value) => sum + (value === null ? 0 : value), 0);
     const totalPnl = pnls.reduce((sum, pnl) => sum + (pnl === null ? 0 : pnl), 0);
     const known = values.filter(value => value !== null).length;
+    const heatValues = values.filter(Number.isFinite);
+    const heatMin = heatValues.reduce((min, value) => Math.min(min, value), Infinity);
+    const heatMax = heatValues.reduce((max, value) => Math.max(max, value), -Infinity);
     document.getElementById('investmentPortfolioSize').textContent = known ? `${investmentFormat(total)} DKK` : '—';
     const pnlKpi = document.getElementById('investmentPortfolioPnl');
     pnlKpi.textContent = known ? `${investmentFormat(totalPnl)} DKK` : '—';
@@ -190,7 +185,6 @@ function renderInvestments() {
         const quote = investmentQuotes.get(p.key);
         const settings = investmentSettings[p.key] || {};
         const crowdlending = p.type.toLowerCase() === 'crowdlending';
-        const symbol = p.marketSymbol || InvestmentMath.defaultSymbol(p);
         const value = values[index];
         const pnl = pnls[index];
         const portfolioPercent = value !== null && total > 0 ? value / total * 100 : null;
@@ -201,7 +195,7 @@ function renderInvestments() {
             { key: 'qty', label: 'Qty', text: crowdlending || p.quantityUnknown ? '—' : investmentFormat(p.quantity) },
             { key: 'price', label: 'Price', text: Number.isFinite(quote?.price) ? `${investmentFormat(quote.price)} ${quote.currency}` : '—' },
             { key: 'value', label: 'Current value DKK', text: investmentFormat(value) },
-            { key: 'portfolio', label: 'Portfolio %', text: investmentPercent(portfolioPercent), sign: portfolioPercent },
+            { key: 'portfolio', label: 'Portfolio %', text: investmentPercent(portfolioPercent) },
             { key: 'today', label: 'Today %', text: investmentPercent(quote?.today), sign: quote?.today },
             { key: 'pnl', label: 'Net P/L DKK', text: investmentFormat(pnl), sign: pnl },
             { key: 'return', label: 'Return %', text: investmentPercent(returnPercent), sign: returnPercent },
@@ -213,6 +207,20 @@ function renderInvestments() {
             td.textContent = cell.text;
             investmentSign(td, cell.sign);
             if (cell.key === 'return') td.classList.add('investment-return');
+            if (cell.key === 'portfolio' && Number.isFinite(portfolioPercent)) {
+                const ratio = heatMax === heatMin ? 0.5 : (value - heatMin) / (heatMax - heatMin);
+                td.classList.add('investment-portfolio-heat');
+                td.style.setProperty('--investment-heat', String(Math.round(120 * (1 - ratio))));
+            }
+            if (cell.key === 'type') {
+                td.textContent = '';
+                const badge = document.createElement('span');
+                badge.className = 'investment-type';
+                const hue = [...p.type.trim().toLowerCase()].reduce((hash, char) => (hash * 31 + char.codePointAt(0)) % 360, 0);
+                badge.style.setProperty('--investment-type-hue', String(hue));
+                badge.textContent = p.type;
+                td.append(badge);
+            }
             if (cell.key === 'name') {
                 td.textContent = '';
                 const heading = document.createElement('div');
@@ -227,22 +235,26 @@ function renderInvestments() {
                 const popup = document.createElement('div');
                 popup.className = 'investment-popup investment-info-popup';
                 [
-                    ['Platform', p.platform],
-                    ['Bought DKK', investmentFormat(p.bought)],
-                    ['Sold DKK', investmentFormat(p.sold)],
-                    ['Fees DKK', investmentFormat(p.fees)],
-                    ['Dividends DKK', investmentFormat(p.dividends)]
-                ].forEach(([label, amount]) => {
+                    ['Platform', p.platform, ''],
+                    ['Bought DKK', investmentFormat(p.bought), 'investment-negative'],
+                    ['Sold DKK', investmentFormat(p.sold), 'investment-positive'],
+                    ['Fees DKK', investmentFormat(p.fees), 'investment-negative'],
+                    ['Dividends DKK', investmentFormat(p.dividends), 'investment-positive']
+                ].forEach(([label, amount, color]) => {
                     const line = document.createElement('div');
-                    line.textContent = `${label}: ${amount}`;
+                    const title = document.createElement('strong');
+                    title.textContent = `${label}: `;
+                    const value = document.createElement('span');
+                    value.textContent = amount;
+                    if (color) value.classList.add(color);
+                    line.append(title, value);
                     popup.append(line);
                 });
                 info.append(summary, popup);
                 heading.append(name, info);
                 td.append(heading);
                 const details = document.createElement('small');
-                const tickerLabel = p.ticker.trim().toUpperCase() === 'CPH:NOVO-B' ? 'NOVO-B:XCSE' : p.ticker;
-                details.textContent = tickerLabel + (!crowdlending ? ` · ${symbol || 'No verified market symbol'}` : '') + (p.other.length ? ` · Review actions: ${p.other.join(', ')}` : '');
+                details.textContent = p.ticker + (p.other.length ? ` · Review actions: ${p.other.join(', ')}` : '');
                 td.append(details);
             }
             if (cell.key === 'actions') {
@@ -253,9 +265,8 @@ function renderInvestments() {
                 refresh.textContent = '↻';
                 refresh.setAttribute('aria-label', `Refresh price for ${p.name || p.ticker}`);
                 refresh.title = crowdlending ? 'Crowdlending values are entered manually'
-                    : !symbol ? 'No verified market symbol'
-                        : investmentBusy ? 'Another price refresh is in progress' : `Refresh price for ${p.name || p.ticker}`;
-                refresh.disabled = investmentBusy || crowdlending || !symbol;
+                    : investmentBusy ? 'Another price refresh is in progress' : `Refresh price for ${p.name || p.ticker}`;
+                refresh.disabled = investmentBusy || crowdlending;
                 if (investmentRefreshingKey === p.key) {
                     refresh.classList.add('is-refreshing');
                     refresh.setAttribute('aria-busy', 'true');
@@ -273,26 +284,37 @@ function renderInvestments() {
             if (cell.key === 'value' && crowdlending) {
                 td.textContent = '';
                 const manual = document.createElement('input');
-                manual.type = 'number';
-                manual.min = '0';
-                manual.step = 'any';
+                manual.type = 'text';
+                manual.inputMode = 'decimal';
                 manual.placeholder = 'Enter DKK';
                 manual.setAttribute('aria-label', `Current DKK value for ${p.name}`);
-                manual.value = p.currentValue ?? settings.value ?? '';
+                const initial = p.currentValue ?? settings.value ?? '';
+                const display = initial !== '' && Number.isFinite(Number(initial))
+                    ? investmentInputFormat(Number(initial)) : String(initial);
+                manual.value = display;
+                manual.addEventListener('focus', () => {
+                    if (manual.value === display) manual.value = String(initial);
+                });
+                manual.addEventListener('blur', () => {
+                    const value = investmentInputNumber(manual.value);
+                    if (value !== null && Number.isFinite(value)) manual.value = investmentInputFormat(value);
+                });
                 manual.addEventListener('change', async () => {
-                    if (manual.value && (!Number.isFinite(Number(manual.value)) || Number(manual.value) < 0)) {
+                    const value = investmentInputNumber(manual.value);
+                    if (value !== null && (!Number.isFinite(value) || value < 0)) {
                         document.getElementById('investmentStatus').textContent = 'Crowdlending values must be non-negative numbers.';
                         return;
                     }
                     const generation = investmentGeneration;
                     manual.disabled = true;
                     try {
-                        await saveInvestmentValue(p, manual.value === '' ? null : Number(manual.value), generation);
+                        await saveInvestmentValue(p, value, generation);
                         if (generation !== investmentGeneration) return;
                         if (investmentSettings[p.key]) {
                             delete investmentSettings[p.key];
                             saveInvestmentSettings();
                         }
+                        document.getElementById('investmentStatus').textContent = '';
                         renderInvestments();
                     } catch (error) {
                         if (generation === investmentGeneration) {
@@ -355,7 +377,7 @@ async function openInvestments() {
                 if (data.length < pageSize) return rows;
             }
         }
-        const items = await readRows('portfolio_items', 'id, ticker, platform, name, type, market_symbol, is_in_scope, current_value_dkk');
+        const items = await readRows('portfolio_items', 'id, ticker, platform, name, type, is_in_scope, current_value_dkk');
         const transactions = await readRows('portfolio_transactions', 'id, portfolio_item_id, action, quantity, fees, total_cost');
         if (generation !== investmentGeneration || !activeAuthUserId) return;
         investmentPositions = InvestmentMath.fromStored(items, transactions);
@@ -390,23 +412,20 @@ document.getElementById('investmentForm').addEventListener('submit', async event
     event.preventDefault();
     const generation = investmentGeneration;
     const form = event.currentTarget;
-    const symbol = document.getElementById('investmentMarketSymbol').value.trim();
     const status = document.getElementById('investmentFormStatus');
     const submit = document.getElementById('investmentSubmit');
     try {
         if (!activeAuthUserId || !investmentLoaded) throw new Error('Load the portfolio before adding an item.');
-        if (symbol) InvestmentMath.symbolParams(symbol);
         const item = {
             ticker: document.getElementById('investmentTicker').value.trim(),
             name: document.getElementById('investmentName').value.trim(),
             type: document.getElementById('investmentType').value.trim(),
-            platform: document.getElementById('investmentPlatform').value.trim(),
-            market_symbol: symbol || null
+            platform: document.getElementById('investmentPlatform').value.trim()
         };
         if ([item.ticker, item.name, item.type, item.platform].some(value => !value)) throw new Error('All item fields are required.');
         submit.disabled = true;
         const { data, error } = await supabaseClient.from('portfolio_items').insert(item)
-            .select('id, ticker, platform, name, type, market_symbol, is_in_scope, current_value_dkk').single();
+            .select('id, ticker, platform, name, type, is_in_scope, current_value_dkk').single();
         if (error) throw new Error(error.message);
         if (generation !== investmentGeneration) return;
         investmentPositions.push(...InvestmentMath.fromStored([data], []));
@@ -446,8 +465,7 @@ async function investmentRequest(path, params) {
 }
 
 async function refreshInvestment(p) {
-    const symbol = p.marketSymbol || InvestmentMath.defaultSymbol(p);
-    if (investmentBusy || p.type.toLowerCase() === 'crowdlending' || !symbol) return;
+    if (investmentBusy || p.type.toLowerCase() === 'crowdlending') return;
     investmentBusy = true;
     investmentRefreshingKey = p.key;
     const generation = investmentGeneration;
@@ -462,10 +480,10 @@ async function refreshInvestment(p) {
     }
     renderInvestments();
     try {
-        const params = InvestmentMath.symbolParams(symbol);
+        const params = { symbol: p.ticker };
         const data = await request('quote', params);
         const price = Number(data.close);
-        const currency = data.currency || (params.symbol.endsWith('/USD') ? 'USD' : '');
+        const currency = data.currency;
         if (!Number.isFinite(price) || price <= 0 || !currency) throw new Error('Quote is missing a valid price or currency.');
         const quote = { price, currency, datetime: data.last_quote_at ? new Date(data.last_quote_at * 1000).toLocaleString() : data.datetime, today: data.percent_change == null ? null : Number(data.percent_change), rate: null };
         investmentQuotes.set(p.key, quote);

@@ -7,8 +7,7 @@ Deno.test('requires a user JWT and handles browser preflight', async () => {
         SUPABASE_URL: 'https://project.example.test',
         SUPABASE_PUBLISHABLE_KEYS: JSON.stringify({ default: 'sb_publishable_test' }),
         SUPABASE_SECRET_KEYS: JSON.stringify({ default: 'sb_secret_test' }),
-        SUPABASE_JWKS: JSON.stringify({ keys: [jwk] }),
-        TWELVE_DATA_API_KEY: 'synthetic-twelve-data-key'
+        SUPABASE_JWKS: JSON.stringify({ keys: [jwk] })
     };
     const previous = Object.fromEntries(Object.keys(values).map(name => [name, Deno.env.get(name)]));
     for (const [name, value] of Object.entries(values)) Deno.env.set(name, value);
@@ -16,7 +15,9 @@ Deno.test('requires a user JWT and handles browser preflight', async () => {
     let providerCalls = 0;
     globalThis.fetch = () => {
         providerCalls++;
-        return Promise.resolve(Response.json({ close: '100', currency: 'DKK' }));
+        return Promise.resolve(Response.json({ chart: { error: null, result: [{
+            meta: { symbol: 'AAPL', regularMarketPrice: 100, currency: 'DKK' }
+        }] } }));
     };
     try {
         const { default: handler } = await import('./index.ts');
@@ -49,8 +50,8 @@ Deno.test('requires a user JWT and handles browser preflight', async () => {
             || authenticated.headers.get('access-control-allow-origin') !== '*') {
             throw new Error(`Authenticated request returned ${authenticated.status}; provider calls: ${providerCalls}.`);
         }
-        const body = await authenticated.text();
-        if (body.includes(values.TWELVE_DATA_API_KEY)) throw new Error('Response disclosed the key.');
+        const body = await authenticated.json();
+        if (body.close !== 100) throw new Error('Authenticated response did not contain the quote.');
     } finally {
         globalThis.fetch = originalFetch;
         for (const [name, value] of Object.entries(previous)) {

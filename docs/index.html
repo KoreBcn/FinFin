@@ -398,15 +398,14 @@
                     <tbody id="investmentTableBody"></tbody>
                 </table>
             </div>
-            <p class="investment-note">Net P/L = current value + buy and sell cash flows + fees + dividends. This is not a tax-lot or realized-gain calculation. Portfolio percentages use only positions with known values. Other transaction actions are flagged for review.</p>
+            <p class="investment-note">Net P/L = current value + buy and sell cash flows + fees + dividends. This is not a tax-lot or realized-gain calculation. Portfolio percentages use only positions with known values; text colors range from green for the smallest allocation to red for the largest. Other transaction actions are flagged for review.</p>
             <dialog id="investmentDialog" class="modal house-dialog" aria-labelledby="investmentDialogTitle">
                 <div class="modal-header"><h2 id="investmentDialogTitle">Add portfolio item</h2></div>
                 <form id="investmentForm" class="house-form">
-                    <label>Ticker<input id="investmentTicker" type="text" required></label>
+                    <label>Ticker (Yahoo Finance symbol)<input id="investmentTicker" type="text" placeholder="NOVO-B.CO" required></label>
                     <label>Name<input id="investmentName" type="text" required></label>
                     <label>Type<input id="investmentType" type="text" required></label>
                     <label>Platform<input id="investmentPlatform" type="text" required></label>
-                    <label>Market symbol (optional)<input id="investmentMarketSymbol" type="text" placeholder="AAPL or NOVO.B|XCSE"></label>
                     <p id="investmentFormStatus" class="investment-note" role="status" aria-live="polite"></p>
                     <div class="modal-actions">
                         <button id="investmentCancel" class="btn-secondary" type="button">Cancel</button>
@@ -515,7 +514,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-config.js"></script>
-<script src="investments.js?v=12"></script>
+<script src="investments.js?v=14"></script>
 <script src="house.js?v=13"></script>
 <script src="app.js?v=26"></script>
 </body>

@@ -10,20 +10,34 @@ function isMarketRequest(value: unknown): value is MarketRequest {
         || !request.params || typeof request.params !== 'object' || Array.isArray(request.params)) return false;
     const params = request.params as Record<string, unknown>;
     const allowed = request.path === 'time_series'
-        ? ['symbol', 'mic_code', 'interval', 'outputsize'] : ['symbol', 'mic_code'];
-    if (Object.keys(params).some(key => !allowed.includes(key))
-        || typeof params.symbol !== 'string' || !/^[A-Za-z0-9./-]{1,40}$/.test(params.symbol)
-        || (params.mic_code !== undefined && (typeof params.mic_code !== 'string'
-            || !/^[A-Za-z0-9]{4}$/.test(params.mic_code)))
-        || (request.path === 'time_series' && (params.interval !== '1day' || params.outputsize !== '140'))) return false;
-    return true;
+        ? ['symbol', 'interval', 'outputsize'] : ['symbol'];
+    return !Object.keys(params).some(key => !allowed.includes(key))
+        && typeof params.symbol === 'string' && /^[A-Za-z0-9.^=|:/-]{1,40}$/.test(params.symbol)
+        && params.symbol !== '.' && params.symbol !== '..'
+        && (request.path !== 'time_series' || (params.interval === '1day' && params.outputsize === '140'));
+}
+
+function yahooSymbol(request: MarketRequest): string | null {
+    const symbol = request.params.symbol;
+    if (request.path === 'exchange_rate') {
+        return /^[A-Z]{3}\/DKK$/.test(symbol) ? `${symbol.slice(0, 3)}DKK=X` : null;
+    }
+    return symbol;
+}
+
+function record(value: unknown): Record<string, unknown> | null {
+    return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : null;
+}
+
+function positiveNumber(value: unknown): value is number {
+    return typeof value === 'number' && Number.isFinite(value) && value > 0;
 }
 
 function error(message: string, status: number): Response {
     return Response.json({ error: message }, { status });
 }
 
-export async function marketData(request: Request, apiKey: string | undefined, fetcher: typeof fetch = fetch): Promise<Response> {
+export async function marketData(request: Request, fetcher: typeof fetch = fetch): Promise<Response> {
     if (request.method !== 'POST') return error('Only POST requests are supported.', 405);
     let payload: unknown;
     try {
@@ -32,37 +46,65 @@ export async function marketData(request: Request, apiKey: string | undefined, f
         return error('Expected a JSON market data request.', 400);
     }
     if (!isMarketRequest(payload)) return error('Invalid market data request.', 400);
-    const key = apiKey?.trim();
-    if (!key) return error('Twelve Data is not configured in Supabase.', 503);
+    const symbol = yahooSymbol(payload);
+    if (!symbol) return error('Unsupported currency pair.', 400);
 
-    const url = new URL(`https://api.twelvedata.com/${payload.path}`);
-    for (const [name, value] of Object.entries(payload.params)) url.searchParams.set(name, value);
-    url.searchParams.set('apikey', key);
-    let response: Response;
+    const url = new URL(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}`);
+    url.searchParams.set('interval', payload.path === 'time_series' ? '1d' : '1m');
+    url.searchParams.set('range', payload.path === 'time_series' ? '6mo' : '1d');
     let result: unknown;
     try {
-        response = await fetcher(url, { signal: AbortSignal.timeout(15000), redirect: 'error' });
-        if (!response.ok) return error(`Twelve Data returned HTTP ${response.status}.`, 502);
+        const response = await fetcher(url, { signal: AbortSignal.timeout(15000), redirect: 'error' });
+        if (response.status === 429) return error('Yahoo Finance returned HTTP 429 (rate limited). Try again later.', 502);
+        if (!response.ok) return error(`Yahoo Finance returned HTTP ${response.status}.`, 502);
         result = await response.json();
     } catch {
-        return error('Unable to retrieve valid data from Twelve Data.', 502);
+        return error('Unable to retrieve valid data from Yahoo Finance.', 502);
     }
-    if (!result || typeof result !== 'object' || Array.isArray(result)) {
-        return error('Twelve Data returned an invalid response.', 502);
+    const chart = record(record(result)?.chart);
+    if (chart?.error) return error('Yahoo Finance rejected the market data request.', 502);
+    const item = Array.isArray(chart?.result) ? record(chart.result[0]) : null;
+    const meta = record(item?.meta);
+    if (!item || !meta || typeof meta.symbol !== 'string' || meta.symbol.toUpperCase() !== symbol.toUpperCase()) {
+        return error('Yahoo Finance returned an invalid symbol or response.', 502);
     }
-    if (JSON.stringify(result).includes(key)) return error('Twelve Data returned an unsafe response.', 502);
-    const data = result as Record<string, unknown>;
-    if (data.status === 'error' || data.code) {
-        const detail = Number.isInteger(data.code) ? ` (code ${data.code})` : '';
-        return error(`Twelve Data rejected the request${detail}; check the symbol, plan, and API limits.`, 502);
-    }
-    if (payload.path === 'time_series') {
-        if (!Array.isArray(data.values) || !data.values.every(item => item && typeof item === 'object' && !Array.isArray(item))) {
-            return error('Twelve Data returned invalid price history.', 502);
+
+    if (payload.path !== 'time_series') {
+        const price = meta.regularMarketPrice;
+        if (!positiveNumber(price) || typeof meta.currency !== 'string' || !/^[A-Z]{3}$/.test(meta.currency)
+            || (payload.path === 'exchange_rate' && meta.currency !== 'DKK')) {
+            return error('Yahoo Finance returned an invalid price or currency.', 502);
         }
-        return Response.json({ values: data.values.map(item => ({ datetime: item.datetime, close: item.close })) });
+        if (payload.path === 'exchange_rate') return Response.json({ rate: price });
+        const previous = meta.chartPreviousClose;
+        return Response.json({
+            close: price, currency: meta.currency,
+            last_quote_at: positiveNumber(meta.regularMarketTime) ? meta.regularMarketTime : null,
+            percent_change: positiveNumber(previous) ? (price / previous - 1) * 100 : null
+        });
     }
-    const fields = payload.path === 'exchange_rate'
-        ? ['rate'] : ['close', 'currency', 'datetime', 'last_quote_at', 'percent_change'];
-    return Response.json(Object.fromEntries(fields.map(field => [field, data[field] ?? null])));
+
+    const indicators = record(item.indicators);
+    const quote = Array.isArray(indicators?.quote) ? record(indicators.quote[0]) : null;
+    if (!Array.isArray(item.timestamp) || !Array.isArray(quote?.close)
+        || item.timestamp.length !== quote.close.length || typeof meta.exchangeTimezoneName !== 'string') {
+        return error('Yahoo Finance returned invalid price history.', 502);
+    }
+    const closes: unknown[] = quote.close;
+    try {
+        const formatter = new Intl.DateTimeFormat('en-CA', {
+            timeZone: meta.exchangeTimezoneName, year: 'numeric', month: '2-digit', day: '2-digit'
+        });
+        const values = item.timestamp.flatMap((timestamp: unknown, index: number) => {
+            const close = closes[index];
+            if (!positiveNumber(timestamp) || !positiveNumber(close)) return [];
+            const parts = formatter.formatToParts(new Date(timestamp * 1000));
+            const date = ['year', 'month', 'day'].map(type => parts.find(part => part.type === type)?.value).join('-');
+            return [{ datetime: date, close }];
+        }).sort((a, b) => b.datetime.localeCompare(a.datetime));
+        if (!values.length) return error('Yahoo Finance returned empty price history.', 502);
+        return Response.json({ values });
+    } catch {
+        return error('Yahoo Finance returned invalid price history dates.', 502);
+    }
 }

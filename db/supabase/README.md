@@ -113,7 +113,7 @@ keep it private and do not commit it.
 
 Items with positive known net buy/sell quantity and crowdlending items are
 initially in scope. Closed or uncertain items are stored out of scope. Change
-`is_in_scope` in `portfolio_items` to show or hide an item. Twelve Data provides
+`is_in_scope` in `portfolio_items` to show or hide an item. Yahoo Finance provides
 prices, not owned quantities: the app computes quantities and cash flows from
 transactions and stores the latest successfully calculated DKK value on the
 item. Out-of-scope items are excluded from display, refresh, and totals.
@@ -121,9 +121,10 @@ item. Out-of-scope items are excluded from display, refresh, and totals.
 ### Price refresh
 
 Each item's refresh icon calls the authenticated `market-data` Edge Function
-for that item. Add `TWELVE_DATA_API_KEY` in the Supabase Dashboard under
-**Edge Functions → Secrets**. Enter the key there; do not put it in source
-code, browser configuration, or chat.
+for that item. It uses Yahoo Finance's chart endpoint without an API key. Yahoo's
+[terms](https://legal.yahoo.com/us/en/yahoo/terms/otos/index.html) prohibit
+automated data collection without express prior permission; verify you have the
+necessary permission before deploying or using it.
 
 Install the Supabase CLI and authenticate, then deploy from the repository root.
 Run `supabase init` only if `supabase\config.toml` does not already exist:
@@ -135,11 +136,30 @@ supabase link --project-ref <your-project-ref>
 supabase functions deploy market-data --use-api
 ```
 
+Publish the updated frontend and deploy the updated function together. Older
+frontends that send separate MIC codes are incompatible with the new function.
+
 Keep the function's default JWT verification enabled. The function additionally
 requires an authenticated user and only forwards the supported quote, exchange
 rate and daily history requests. Once deployed, signed-in users can refresh
-prices from GitHub Pages or the local app. Each request uses Twelve Data credits;
-the browser paces its requests, but this is not a server-side rate limit.
+prices from GitHub Pages or the local app. The browser paces its requests, but
+this is not a server-side rate limit. Yahoo may throttle or change the endpoint,
+and quote availability and delay vary by instrument.
+
+The app sends `portfolio_items.ticker` exactly as stored, without instrument
+mappings. Update incompatible tickers in Supabase to the intended Yahoo ticker
+and verify the listing and currency; for example, `MELI|XNGS` is not a Yahoo
+ticker, but `MELI` is. The old `market_symbol` column is retained in the
+database but ignored by the app. Existing transactions remain linked by item ID.
+Ticker and platform must remain unique together. Re-running an old CSV seed
+after renaming a ticker can recreate the old item, so review the import before
+re-running it.
+
+An HTTP 429 means Yahoo rejected the request due to rate limiting. Wait before
+retrying; if it persists, the endpoint may not be usable from the deployed
+function. The app preserves the last saved value on failure.
+The unused legacy local Flask `/api/investments/market-data` endpoint still
+uses Twelve Data and its local key file; the app does not call it.
 
 ## Import new Enable Banking transactions
 

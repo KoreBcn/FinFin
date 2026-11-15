@@ -431,7 +431,18 @@ table.tx-table.investment-table thead th { padding: 0.4rem 0.35rem; white-space:
 table.tx-table.investment-table tbody td { padding: 0.25rem 0.35rem; overflow-wrap: anywhere; }
 table.tx-table.investment-table tbody td:first-child { position: relative; }
 .investment-table small { display: block; color: var(--text-light); margin-top: 0.2rem; }
-.investment-table input { width: 100%; max-width: 110px; min-width: 0; }
+.investment-table input { width: 100%; min-width: 0; }
+.investment-type {
+    display: inline-block; padding: 0.15rem 0.45rem; border-radius: 20px;
+    background: hsl(var(--investment-type-hue), 65%, 86%); color: #1e293b;
+    font-size: 0.72rem; font-weight: 600;
+}
+table.tx-table.investment-table tbody td.investment-portfolio-heat {
+    color: hsl(var(--investment-heat), 72%, 26%);
+}
+[data-theme="dark"] table.tx-table.investment-table tbody td.investment-portfolio-heat {
+    color: hsl(var(--investment-heat), 75%, 72%);
+}
 .investment-name-heading { display: flex; align-items: flex-start; gap: 0.35rem; }
 .investment-name-heading > span { min-width: 0; overflow-wrap: anywhere; }
 .investment-refresh {

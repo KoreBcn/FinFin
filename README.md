@@ -15,22 +15,24 @@ Supabase. See [db/supabase/README.md](db/supabase/README.md) for the schema and
 one-off CSV migration. Items are identified by ticker and platform. Only items
 marked in scope are displayed and included in totals and price refreshes.
 Use the **+** button to create an item; its quantity is unknown until it has
-transactions. The optional market symbol uses `SYMBOL` or `SYMBOL|MIC`.
+transactions. For price refreshes, the item's ticker must be its exact Yahoo
+Finance ticker, such as `NOVO-B.CO` or `IEMM.AS`.
 Crowdlending values can be entered manually and are saved in Supabase.
 Previously saved browser-only crowdlending values remain a local fallback until
 the value is saved again.
 
-Set the [Twelve Data](https://twelvedata.com/) key as the Supabase Edge Function
-secret `TWELVE_DATA_API_KEY` and deploy the `market-data` function as described
-in [db/supabase/README.md](db/supabase/README.md). When you select the refresh
+Deploy the `market-data` Supabase Edge Function as described in
+[db/supabase/README.md](db/supabase/README.md). When you select the refresh
 icon to the right of an item's return, the signed-in app calls the function for
-that item; the key never reaches the browser. This works from GitHub Pages as well as the
-local app. Twelve Data receives requested symbols and the key, but not the
-CSV, quantities, or balances. Requests are paced across item refreshes to
-about eight per minute; each quote, exchange rate, and price history consumes
-API credits. Availability, delay, and exchange access
-depend on the provider and your plan. Verified mappings are built in; items
-without a verified or manually specified market symbol remain unpriced. A
+that item. It retrieves Yahoo Finance chart data without a Twelve Data key.
+This works from GitHub Pages as well as the local app. Yahoo receives requested
+symbols, but not the CSV, quantities, or balances. Requests are paced across
+item refreshes to about eight per minute. This chart endpoint is not a guaranteed
+public API and may be delayed, rate-limited, or change without notice. Yahoo's
+[terms](https://legal.yahoo.com/us/en/yahoo/terms/otos/index.html) prohibit
+automated data collection without express prior permission; verify you have the
+necessary permission before deploying or using it. The ticker is sent as stored,
+with no instrument mappings or separate market symbol override. A
 successful quote and currency conversion updates the saved DKK value, using
 the quantity calculated from transactions. Failed refreshes leave the last
 saved value intact; it may be stale. Only crowdlending current values can be
@@ -40,9 +42,11 @@ The CSV's `Total Cost`, `Fees`, and dividends are treated as DKK. Buy and sell
 quantities are netted; missing or invalid quantities are shown as unknown.
 Crowdlending quantities are not meaningful, so their values must be entered
 manually. Non-trade actions are flagged, not
-interpreted. Verify these positions before relying on totals. Novo is displayed
-as `NOVO-B:XCSE` but quoted as Twelve Data's `NOVO.B` on `XCSE`. The iShares
-UCITS ETF uses its `IEMM` listing rather than the different US-listed `EEM` ETF.
+interpreted. Verify these positions before relying on totals. Existing tickers
+such as `MELI|XNGS` must be changed in Supabase to the intended Yahoo listing
+(for example `MELI`) before they can be priced. Check the listing and currency
+before updating. See the portfolio instructions in
+[db/supabase/README.md](db/supabase/README.md) for migration cautions.
 Net P/L is the current value plus buy and sell cash flows, fees, and dividends;
 it is not realized/unrealized tax-lot accounting. The portfolio size and total
 P/L KPIs sum only valued in-scope positions and show when others are excluded.

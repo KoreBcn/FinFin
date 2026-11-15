@@ -12,6 +12,7 @@ class Element {
         this.attributes = {};
         this.classes = new Set();
         this.classList = { add: name => this.classes.add(name) };
+        this.style = { setProperty(name, value) { this[name] = value; } };
         this.listeners = {};
         this.text = '';
     }
@@ -65,7 +66,7 @@ test('renders compact positions, signed metrics and accessible details', () => {
     const row = elements.get('investmentTableBody').children[0];
     const cell = label => find(row, element => element.dataset.label === label);
     assert.equal(cell('Qty').textContent, '2.12');
-    assert.match(cell('Name / ticker').textContent, /NOVO-B:XCSE · NOVO\.B\|XCSE/);
+    assert.match(cell('Name / ticker').textContent, /CPH:NOVO-B/);
     assert.equal(cell('Today %').classes.has('investment-negative'), true);
     assert.equal(cell('Net P/L DKK').classes.has('investment-positive'), true);
     assert.equal(cell('Return %').classes.has('investment-positive'), true);
@@ -77,6 +78,12 @@ test('renders compact positions, signed metrics and accessible details', () => {
     const info = find(row, element => element.className?.split(' ').includes('investment-info-popup'));
     assert.match(info.textContent, /Platform: Broker/);
     assert.match(info.textContent, /Bought DKK: -200.00/);
+    for (const [index, color] of [[1, 'investment-negative'], [2, 'investment-positive'],
+        [3, 'investment-negative'], [4, 'investment-positive']]) {
+        assert.equal(info.children[index].children[0].tag, 'strong');
+        assert.equal(info.children[index].children[1].classes.has(color), true);
+    }
+    assert.equal(cell('Type').children[0].className, 'investment-type');
     const tooltip = find(row, element => element.attributes.role === 'tooltip');
     assert.match(tooltip.textContent, /7 days2.00%30 days-3.00%90 days0.00%/);
     assert.equal(tooltip.children[0].children[1].classes.has('investment-positive'), true);
@@ -100,7 +107,7 @@ function setupPortfolio(clock = null) {
             quantity: '2', fees: '', total_cost: '-100' }],
         failLoad: false, failSave: false, marketError: null, historyError: null, marketRequests: []
     };
-    ['investmentTicker', 'investmentName', 'investmentType', 'investmentPlatform', 'investmentMarketSymbol']
+    ['investmentTicker', 'investmentName', 'investmentType', 'investmentPlatform']
         .forEach(id => document.getElementById(id));
     const supabaseClient = {
         functions: {
@@ -181,7 +188,6 @@ test('loads stored positions, adds an item with unknown quantity, and persists s
     elements.get('investmentName').value = 'New';
     elements.get('investmentType').value = 'Shares';
     elements.get('investmentPlatform').value = 'Broker';
-    elements.get('investmentMarketSymbol').value = 'NEW|XNAS';
     await elements.get('investmentForm').listeners.submit({ preventDefault() {}, currentTarget: elements.get('investmentForm') });
     const newRow = elements.get('investmentTableBody').children[1];
     assert.equal(find(newRow, e => e.dataset.label === 'Qty').textContent, '—');
@@ -212,6 +218,27 @@ test('totals valued positions and explains excluded positions', async () => {
     assert.equal(elements.get('investmentPortfolioPnl').textContent, '58.00 DKK');
     assert.match(elements.get('investmentPortfolioPnl').className, /investment-positive/);
     assert.equal(elements.get('investmentCoverage').textContent, '2 of 3 positions valued; totals exclude the remainder.');
+});
+
+test('scales allocation colors across valued positions and leaves unknown values uncolored', async () => {
+    const { context, elements, database } = setupPortfolio();
+    for (const [id, value] of [['low', 100], ['middle', 140], ['unknown', null]]) {
+        database.items.push({ id, ticker: id, platform: 'Broker', name: id, type: 'Shares',
+            market_symbol: null, is_in_scope: true, current_value_dkk: value });
+        database.transactions.push({ id: `tx-${id}`, portfolio_item_id: id, action: 'Buy',
+            quantity: '1', fees: '', total_cost: '-10' });
+    }
+    await vm.runInContext('openInvestments()', context);
+    const cells = elements.get('investmentTableBody').children.map(row => find(row, e => e.dataset.label === 'Portfolio %'));
+    assert.deepEqual(cells.map(cell => cell.style['--investment-heat']), ['0', '120', '60', undefined]);
+    assert.deepEqual(cells.map(cell => cell.textContent), ['42.86%', '23.81%', '33.33%', '—']);
+    database.items[0].current_value_dkk = 100;
+    database.items[2].current_value_dkk = 100;
+    vm.runInContext('investmentLoaded = false', context);
+    await vm.runInContext('openInvestments()', context);
+    const equalCells = elements.get('investmentTableBody').children.slice(0, 3)
+        .map(row => find(row, e => e.dataset.label === 'Portfolio %'));
+    assert.deepEqual(equalCells.map(cell => cell.style['--investment-heat']), ['60', '60', '60']);
 });
 
 test('distinguishes no valuations from zero values and negative PnL', async () => {
@@ -250,7 +277,7 @@ test('refreshes only the selected item and paces requests across items', async (
     assert.equal(elements.get('investmentStatus').textContent, '');
 });
 
-test('disables refresh for crowdlending and items without market symbols', async () => {
+test('disables refresh for crowdlending but allows any stored ticker', async () => {
     const { context, elements, database } = setupPortfolio();
     database.items[0].type = 'Crowdlending';
     database.items.push({ id: 'item-2', ticker: 'UNKNOWN', platform: 'Broker', name: 'Unknown',
@@ -259,8 +286,19 @@ test('disables refresh for crowdlending and items without market symbols', async
     const buttons = elements.get('investmentTableBody').children.map(refreshButton);
     assert.equal(buttons[0].disabled, true);
     assert.match(buttons[0].title, /manually/);
-    assert.equal(buttons[1].disabled, true);
-    assert.match(buttons[1].title, /No verified market symbol/);
+    assert.equal(buttons[1].disabled, false);
+});
+
+test('requests the stored ticker unchanged, ignoring any saved market symbol', async () => {
+    const { context, elements, database } = setupPortfolio();
+    database.items[0].ticker = 'MELI|XNGS';
+    database.items[0].market_symbol = 'OTHER';
+    await vm.runInContext('openInvestments()', context);
+    const row = elements.get('investmentTableBody').children[0];
+    assert.equal(refreshButton(row).disabled, false);
+    await refreshButton(row).listeners.click();
+    assert.equal(database.marketRequests[0].params.symbol, 'MELI|XNGS');
+    assert.equal(database.marketRequests[1].params.symbol, 'MELI|XNGS');
 });
 
 test('reports load and valuation-save failures without losing the saved value', async () => {
@@ -281,10 +319,10 @@ test('reports load and valuation-save failures without losing the saved value', 
 test('shows Edge Function errors and retains the saved valuation', async () => {
     const { context, elements, database } = setupPortfolio();
     await vm.runInContext('openInvestments()', context);
-    database.marketError = 'Twelve Data is not configured in Supabase.';
+    database.marketError = 'Yahoo Finance returned HTTP 429.';
     await refreshButton(elements.get('investmentTableBody').children[0]).listeners.click();
     assert.equal(database.items[0].current_value_dkk, 180);
-    assert.match(elements.get('investmentTableBody').textContent, /not configured in Supabase/);
+    assert.match(elements.get('investmentTableBody').textContent, /Yahoo Finance returned HTTP 429/);
 });
 
 test('keeps the refreshed value when only price history fails', async () => {
@@ -318,4 +356,30 @@ test('saves a crowdlending value in Supabase', async () => {
     vm.runInContext('clearInvestments()', context);
     await vm.runInContext('openInvestments()', context);
     assert.equal(elements.get('investmentPortfolioSize').textContent, '250.00 DKK');
+});
+
+test('formats editable crowdlending values and validates grouped input without losing precision', async () => {
+    const { context, elements, database } = setupPortfolio();
+    database.items[0].type = 'Crowdlending';
+    database.items[0].current_value_dkk = 1234567.12345;
+    await vm.runInContext('openInvestments()', context);
+    const input = () => find(elements.get('investmentTableBody').children[0], e => e.tag === 'input');
+    assert.equal(input().value, '1,234,567.12345');
+    input().listeners.focus();
+    assert.equal(input().value, '1234567.12345');
+    input().listeners.blur();
+    assert.equal(input().value, '1,234,567.12345');
+
+    input().value = '2,345.6789';
+    await input().listeners.change();
+    assert.equal(database.items[0].current_value_dkk, 2345.6789);
+    assert.equal(input().value, '2,345.6789');
+    input().value = '1,2';
+    await input().listeners.change();
+    assert.equal(database.items[0].current_value_dkk, 2345.6789);
+    assert.match(elements.get('investmentStatus').textContent, /non-negative numbers/);
+    input().value = '';
+    await input().listeners.change();
+    assert.equal(database.items[0].current_value_dkk, null);
+    assert.equal(elements.get('investmentStatus').textContent, '');
 });
