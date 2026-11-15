@@ -44,7 +44,9 @@ interpreted. Verify these positions before relying on totals. Novo is displayed
 as `NOVO-B:XCSE` but quoted as Twelve Data's `NOVO.B` on `XCSE`. The iShares
 UCITS ETF uses its `IEMM` listing rather than the different US-listed `EEM` ETF.
 Net P/L is the current value plus buy and sell cash flows, fees, and dividends;
-it is not realized/unrealized tax-lot accounting. Percent changes compare the
+it is not realized/unrealized tax-lot accounting. The portfolio size and total
+P/L KPIs sum only valued in-scope positions and show when others are excluded.
+Percent changes compare the
 latest quote with the last daily close at least 7, 30, or 90 calendar days ago.
 Hover or focus the Today percentage to see those changes; select the information
 icon beside a position for its platform and cash flows. Portfolio percentages

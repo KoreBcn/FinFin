@@ -173,10 +173,17 @@ function renderInvestments() {
     const body = document.getElementById('investmentTableBody');
     body.replaceChildren();
     const values = investmentPositions.map(investmentValue);
+    const pnls = investmentPositions.map((p, index) => values[index] === null
+        ? null : values[index] + p.bought + p.sold + p.fees + p.dividends);
     const total = values.reduce((sum, value) => sum + (value === null ? 0 : value), 0);
+    const totalPnl = pnls.reduce((sum, pnl) => sum + (pnl === null ? 0 : pnl), 0);
     const known = values.filter(value => value !== null).length;
-    document.getElementById('investmentSummary').textContent = investmentPositions.length
-        ? `Known portfolio value: ${investmentFormat(known ? total : null)} DKK (${known} of ${investmentPositions.length} positions valued)`
+    document.getElementById('investmentPortfolioSize').textContent = known ? `${investmentFormat(total)} DKK` : '—';
+    const pnlKpi = document.getElementById('investmentPortfolioPnl');
+    pnlKpi.textContent = known ? `${investmentFormat(totalPnl)} DKK` : '—';
+    pnlKpi.className = `kpi-real${known && totalPnl !== 0 ? (totalPnl < 0 ? ' investment-negative' : ' investment-positive') : ''}`;
+    document.getElementById('investmentCoverage').textContent = investmentPositions.length && known < investmentPositions.length
+        ? `${known} of ${investmentPositions.length} positions valued; totals exclude the remainder.`
         : '';
     investmentPositions.forEach((p, index) => {
         const tr = document.createElement('tr');
@@ -185,7 +192,7 @@ function renderInvestments() {
         const crowdlending = p.type.toLowerCase() === 'crowdlending';
         const symbol = p.marketSymbol || InvestmentMath.defaultSymbol(p);
         const value = values[index];
-        const pnl = value === null ? null : value + p.bought + p.sold + p.fees + p.dividends;
+        const pnl = pnls[index];
         const portfolioPercent = value !== null && total > 0 ? value / total * 100 : null;
         const returnPercent = pnl !== null && p.bought < 0 ? pnl / -p.bought * 100 : null;
         const cells = [

@@ -413,7 +413,11 @@ main {
 .investment-table input { background: var(--input-bg); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.2rem 0.35rem; }
 .investment-status { margin: 0.8rem 0; font-size: 0.85rem; }
 .investment-status:empty { display: none; }
-.investment-summary { margin: 0.8rem 0; font-weight: 600; }
+.investment-kpis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin: 0.8rem 0; }
+.investment-kpis .kpi-real { margin: 0.4rem 0 0; overflow-wrap: anywhere; }
+.investment-kpis .investment-positive { color: #34d399; }
+.investment-kpis .investment-negative { color: #f87171; }
+#investmentCoverage:empty { display: none; }
 .tx-table-wrap.investment-table-wrap { max-height: none; overflow: visible; }
 .tx-table-wrap.investment-table-wrap table.investment-table { min-width: 0; table-layout: fixed; }
 .investment-col-name { width: 22%; }
@@ -474,6 +478,7 @@ table.tx-table.investment-table tbody td:first-child { position: relative; }
 
 @media (max-width: 768px) {
     .investments-card { padding: 0.85rem; }
+    .investment-kpis { gap: 0.5rem; }
     .investment-table colgroup, .investment-table thead { display: none; }
     .investment-table, .investment-table tbody, .investment-table tr { display: block; }
     table.investment-table tbody tr { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 0.45rem 0; }

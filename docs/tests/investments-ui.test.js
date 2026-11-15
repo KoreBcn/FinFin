@@ -171,9 +171,11 @@ test('loads stored positions, adds an item with unknown quantity, and persists s
     const { context, elements, database } = setupPortfolio();
     await vm.runInContext('openInvestments()', context);
     assert.equal(elements.get('investmentTableBody').children.length, 1);
-    assert.match(elements.get('investmentSummary').textContent, /180\.00/);
+    assert.equal(elements.get('investmentPortfolioSize').textContent, '180.00 DKK');
+    assert.equal(elements.get('investmentPortfolioPnl').textContent, '80.00 DKK');
     await refreshButton(elements.get('investmentTableBody').children[0]).listeners.click();
     assert.equal(database.items[0].current_value_dkk, 200);
+    assert.equal(elements.get('investmentPortfolioPnl').textContent, '100.00 DKK');
     assert.equal(database.marketRequests[0].path, 'quote');
     elements.get('investmentTicker').value = 'NEW';
     elements.get('investmentName').value = 'New';
@@ -186,8 +188,49 @@ test('loads stored positions, adds an item with unknown quantity, and persists s
     assert.equal(find(newRow, e => e.dataset.label === 'Current value DKK').textContent, '—');
     vm.runInContext('clearInvestments()', context);
     await vm.runInContext('openInvestments()', context);
-    assert.match(elements.get('investmentSummary').textContent, /200\.00/);
+    assert.equal(elements.get('investmentPortfolioSize').textContent, '200.00 DKK');
     assert.equal(elements.get('investmentTableBody').children.length, 2);
+});
+
+test('totals valued positions and explains excluded positions', async () => {
+    const { context, elements, database } = setupPortfolio();
+    database.items.push(
+        { id: 'item-2', ticker: 'SECOND', platform: 'Broker', name: 'Second',
+            type: 'Shares', market_symbol: 'SECOND', is_in_scope: true, current_value_dkk: 100 },
+        { id: 'unknown', ticker: 'UNKNOWN', platform: 'Broker', name: 'Unknown',
+            type: 'Shares', market_symbol: 'UNKNOWN', is_in_scope: true, current_value_dkk: 500 },
+        { id: 'excluded', ticker: 'EXCLUDED', platform: 'Broker', name: 'Excluded',
+            type: 'Shares', market_symbol: 'EXCLUDED', is_in_scope: false, current_value_dkk: 1000 }
+    );
+    database.transactions.push(
+        { id: 'buy', portfolio_item_id: 'item-2', action: 'Buy', quantity: '2', fees: '-5', total_cost: '-140' },
+        { id: 'sell', portfolio_item_id: 'item-2', action: 'Sell', quantity: '1', fees: '', total_cost: '20' },
+        { id: 'dividend', portfolio_item_id: 'item-2', action: 'Dividend', quantity: '', fees: '', total_cost: '3' }
+    );
+    await vm.runInContext('openInvestments()', context);
+    assert.equal(elements.get('investmentPortfolioSize').textContent, '280.00 DKK');
+    assert.equal(elements.get('investmentPortfolioPnl').textContent, '58.00 DKK');
+    assert.match(elements.get('investmentPortfolioPnl').className, /investment-positive/);
+    assert.equal(elements.get('investmentCoverage').textContent, '2 of 3 positions valued; totals exclude the remainder.');
+});
+
+test('distinguishes no valuations from zero values and negative PnL', async () => {
+    const { context, elements, database } = setupPortfolio();
+    database.items[0].current_value_dkk = null;
+    await vm.runInContext('openInvestments()', context);
+    assert.equal(elements.get('investmentPortfolioSize').textContent, '—');
+    assert.equal(elements.get('investmentPortfolioPnl').textContent, '—');
+    assert.match(elements.get('investmentCoverage').textContent, /0 of 1 positions valued/);
+
+    vm.runInContext('investmentPositions[0].currentValue = 0; renderInvestments()', context);
+    assert.equal(elements.get('investmentPortfolioSize').textContent, '0.00 DKK');
+    assert.equal(elements.get('investmentPortfolioPnl').textContent, '-100.00 DKK');
+    assert.match(elements.get('investmentPortfolioPnl').className, /investment-negative/);
+    assert.equal(elements.get('investmentCoverage').textContent, '');
+    vm.runInContext('clearInvestments()', context);
+    assert.equal(elements.get('investmentPortfolioSize').textContent, '—');
+    assert.equal(elements.get('investmentPortfolioPnl').textContent, '—');
+    assert.equal(elements.get('investmentCoverage').textContent, '');
 });
 
 test('refreshes only the selected item and paces requests across items', async () => {
@@ -232,7 +275,7 @@ test('reports load and valuation-save failures without losing the saved value', 
     await refreshButton(elements.get('investmentTableBody').children[0]).listeners.click();
     assert.equal(database.items[0].current_value_dkk, 180);
     assert.match(elements.get('investmentTableBody').textContent, /save failed/);
-    assert.match(elements.get('investmentSummary').textContent, /180\.00/);
+    assert.equal(elements.get('investmentPortfolioSize').textContent, '180.00 DKK');
 });
 
 test('shows Edge Function errors and retains the saved valuation', async () => {
@@ -274,5 +317,5 @@ test('saves a crowdlending value in Supabase', async () => {
     assert.equal(database.items[0].current_value_dkk, 250);
     vm.runInContext('clearInvestments()', context);
     await vm.runInContext('openInvestments()', context);
-    assert.match(elements.get('investmentSummary').textContent, /250\.00/);
+    assert.equal(elements.get('investmentPortfolioSize').textContent, '250.00 DKK');
 });
