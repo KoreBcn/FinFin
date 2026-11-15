@@ -422,6 +422,7 @@ main {
 .investment-col-price { width: 10%; }
 .investment-col-value, .investment-col-pnl { width: 12%; }
 .investment-col-percent { width: 9.33%; }
+.investment-col-actions { width: 2.2rem; }
 table.tx-table.investment-table thead th { padding: 0.4rem 0.35rem; white-space: normal; overflow-wrap: anywhere; }
 table.tx-table.investment-table tbody td { padding: 0.25rem 0.35rem; overflow-wrap: anywhere; }
 table.tx-table.investment-table tbody td:first-child { position: relative; }
@@ -481,6 +482,9 @@ table.tx-table.investment-table tbody td:first-child { position: relative; }
     table.investment-table tbody td:not(:first-child)::before {
         content: attr(data-label); display: block; color: var(--text-light); font-size: 0.7rem;
     }
+    table.investment-table tbody td.investment-return { grid-column: 2; grid-row: 5; padding-right: 2.1rem; }
+    table.investment-table tbody td.investment-actions { grid-column: 2; grid-row: 5; justify-self: end; align-self: end; }
+    table.investment-table tbody td.investment-actions::before { content: none; }
     .investment-performance-popup { left: 0; right: auto; }
 }
 

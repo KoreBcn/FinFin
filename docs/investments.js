@@ -197,34 +197,21 @@ function renderInvestments() {
             { key: 'portfolio', label: 'Portfolio %', text: investmentPercent(portfolioPercent), sign: portfolioPercent },
             { key: 'today', label: 'Today %', text: investmentPercent(quote?.today), sign: quote?.today },
             { key: 'pnl', label: 'Net P/L DKK', text: investmentFormat(pnl), sign: pnl },
-            { key: 'return', label: 'Return %', text: investmentPercent(returnPercent), sign: returnPercent }
+            { key: 'return', label: 'Return %', text: investmentPercent(returnPercent), sign: returnPercent },
+            { key: 'actions', label: '', text: '' }
         ];
         cells.forEach(cell => {
             const td = document.createElement('td');
             td.dataset.label = cell.label;
             td.textContent = cell.text;
             investmentSign(td, cell.sign);
+            if (cell.key === 'return') td.classList.add('investment-return');
             if (cell.key === 'name') {
                 td.textContent = '';
                 const heading = document.createElement('div');
                 heading.className = 'investment-name-heading';
                 const name = document.createElement('span');
                 name.textContent = cell.text;
-                const refresh = document.createElement('button');
-                refresh.type = 'button';
-                refresh.className = 'investment-refresh';
-                refresh.textContent = '↻';
-                refresh.setAttribute('aria-label', `Refresh price for ${p.name || p.ticker}`);
-                refresh.title = crowdlending ? 'Crowdlending values are entered manually'
-                    : !symbol ? 'No verified market symbol'
-                        : investmentBusy ? 'Another price refresh is in progress' : `Refresh price for ${p.name || p.ticker}`;
-                refresh.disabled = investmentBusy || crowdlending || !symbol;
-                if (investmentRefreshingKey === p.key) {
-                    refresh.classList.add('is-refreshing');
-                    refresh.setAttribute('aria-busy', 'true');
-                    refresh.title = 'Refreshing price';
-                }
-                refresh.addEventListener('click', () => refreshInvestment(p));
                 const info = document.createElement('details');
                 info.className = 'investment-info';
                 const summary = document.createElement('summary');
@@ -244,12 +231,31 @@ function renderInvestments() {
                     popup.append(line);
                 });
                 info.append(summary, popup);
-                heading.append(name, refresh, info);
+                heading.append(name, info);
                 td.append(heading);
                 const details = document.createElement('small');
                 const tickerLabel = p.ticker.trim().toUpperCase() === 'CPH:NOVO-B' ? 'NOVO-B:XCSE' : p.ticker;
                 details.textContent = tickerLabel + (!crowdlending ? ` · ${symbol || 'No verified market symbol'}` : '') + (p.other.length ? ` · Review actions: ${p.other.join(', ')}` : '');
                 td.append(details);
+            }
+            if (cell.key === 'actions') {
+                td.classList.add('investment-actions');
+                const refresh = document.createElement('button');
+                refresh.type = 'button';
+                refresh.className = 'investment-refresh';
+                refresh.textContent = '↻';
+                refresh.setAttribute('aria-label', `Refresh price for ${p.name || p.ticker}`);
+                refresh.title = crowdlending ? 'Crowdlending values are entered manually'
+                    : !symbol ? 'No verified market symbol'
+                        : investmentBusy ? 'Another price refresh is in progress' : `Refresh price for ${p.name || p.ticker}`;
+                refresh.disabled = investmentBusy || crowdlending || !symbol;
+                if (investmentRefreshingKey === p.key) {
+                    refresh.classList.add('is-refreshing');
+                    refresh.setAttribute('aria-busy', 'true');
+                    refresh.title = 'Refreshing price';
+                }
+                refresh.addEventListener('click', () => refreshInvestment(p));
+                td.append(refresh);
             }
             if (cell.key === 'price' && quote) {
                 const details = document.createElement('small');

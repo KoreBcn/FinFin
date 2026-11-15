@@ -69,6 +69,10 @@ test('renders compact positions, signed metrics and accessible details', () => {
     assert.equal(cell('Today %').classes.has('investment-negative'), true);
     assert.equal(cell('Net P/L DKK').classes.has('investment-positive'), true);
     assert.equal(cell('Return %').classes.has('investment-positive'), true);
+    assert.equal(row.children.at(-2), cell('Return %'));
+    assert.equal(row.children.at(-1).children[0], refreshButton(row));
+    assert.equal(find(cell('Name / ticker'), element => element.className === 'investment-refresh'), undefined);
+    assert.equal(refreshButton(row).attributes['aria-label'], 'Refresh price for Example');
     assert.equal(cell('Bought DKK'), undefined);
     const info = find(row, element => element.className?.split(' ').includes('investment-info-popup'));
     assert.match(info.textContent, /Platform: Broker/);

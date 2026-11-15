@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Home Finance Dashboard</title>
-    <link rel="stylesheet" href="styles.css?v=32">
+    <link rel="stylesheet" href="styles.css?v=33">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 </head>
@@ -378,12 +378,12 @@
                     <colgroup>
                         <col class="investment-col-name"><col class="investment-col-type"><col class="investment-col-qty">
                         <col class="investment-col-price"><col class="investment-col-value"><col class="investment-col-percent">
-                        <col class="investment-col-percent"><col class="investment-col-pnl"><col class="investment-col-percent">
+                        <col class="investment-col-percent"><col class="investment-col-pnl"><col class="investment-col-percent"><col class="investment-col-actions">
                     </colgroup>
                     <thead><tr>
                         <th>Name / ticker</th><th>Type</th><th>Qty</th>
                         <th>Price</th><th>Current value DKK</th><th>Portfolio %</th>
-                        <th>Today %</th><th>Net P/L DKK</th><th>Return %</th>
+                        <th>Today %</th><th>Net P/L DKK</th><th>Return %</th><th scope="col" aria-label="Refresh price"></th>
                     </tr></thead>
                     <tbody id="investmentTableBody"></tbody>
                 </table>
@@ -505,7 +505,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-config.js"></script>
-<script src="investments.js?v=10"></script>
+<script src="investments.js?v=11"></script>
 <script src="house.js?v=13"></script>
 <script src="app.js?v=26"></script>
 </body>

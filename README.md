@@ -23,8 +23,8 @@ the value is saved again.
 Set the [Twelve Data](https://twelvedata.com/) key as the Supabase Edge Function
 secret `TWELVE_DATA_API_KEY` and deploy the `market-data` function as described
 in [db/supabase/README.md](db/supabase/README.md). When you select the refresh
-icon next to an item, the signed-in app calls the function for that item; the
-key never reaches the browser. This works from GitHub Pages as well as the
+icon to the right of an item's return, the signed-in app calls the function for
+that item; the key never reaches the browser. This works from GitHub Pages as well as the
 local app. Twelve Data receives requested symbols and the key, but not the
 CSV, quantities, or balances. Requests are paced across item refreshes to
 about eight per minute; each quote, exchange rate, and price history consumes
