@@ -61,6 +61,38 @@ test('converts exchange pairs to Yahoo tickers and validates the returned curren
     assert.equal(invalid.status, 502);
 });
 
+test('uses query2 once after a 429 with the same request and no credentials', async () => {
+    const calls = [];
+    const response = await marketData(request({ path: 'quote', params: { symbol: 'NOVO-B.CO' } }),
+        async (url, options) => {
+            calls.push({ url: new URL(url), options });
+            return calls.length === 1 ? new Response('', { status: 429 }) : Response.json(chart('NOVO-B.CO'));
+        });
+    assert.equal(response.status, 200);
+    assert.equal((await response.json()).close, 110);
+    assert.deepEqual(calls.map(call => call.url.hostname), ['query1.finance.yahoo.com', 'query2.finance.yahoo.com']);
+    assert.equal(calls[0].url.pathname + calls[0].url.search, calls[1].url.pathname + calls[1].url.search);
+    for (const { url, options } of calls) {
+        assert.deepEqual([...url.searchParams.keys()], ['interval', 'range']);
+        assert.equal(new Headers(options.headers).get('user-agent'), 'Mozilla/5.0');
+        assert.equal(new Headers(options.headers).has('cookie'), false);
+        assert.equal(options.credentials, 'omit');
+        assert.equal(options.redirect, 'error');
+    }
+    assert.equal(calls[0].options.signal, calls[1].options.signal);
+});
+
+test('does not retry non-429 failures and reports repeated rate limiting', async () => {
+    for (const [status, expectedCalls] of [[404, 1], [429, 2]]) {
+        let calls = 0;
+        const response = await marketData(request({ path: 'quote', params: { symbol: 'AAPL' } }),
+            async () => { calls++; return new Response('', { status }); });
+        assert.equal(calls, expectedCalls);
+        assert.equal(response.status, 502);
+        assert.match((await response.json()).error, new RegExp(String(status)));
+    }
+});
+
 test('returns sorted exchange-local daily history and skips missing closes', async () => {
     const input = { path: 'time_series', params: { symbol: 'AAPL', interval: '1day', outputsize: '140' } };
     const response = await marketData(request(input), async url => {

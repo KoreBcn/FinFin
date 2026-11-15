@@ -155,9 +155,11 @@ Ticker and platform must remain unique together. Re-running an old CSV seed
 after renaming a ticker can recreate the old item, so review the import before
 re-running it.
 
-An HTTP 429 means Yahoo rejected the request due to rate limiting. Wait before
-retrying; if it persists, the endpoint may not be usable from the deployed
-function. The app preserves the last saved value on failure.
+The function sends a minimal user agent without cookies or crumb tokens, and
+tries Yahoo's `query2` host once if `query1` returns HTTP 429. If both hosts
+still rate-limit requests, wait before retrying; the endpoint may not be usable
+from the deployed function. This fallback does not guarantee availability. The
+app preserves the last saved value on failure.
 The unused legacy local Flask `/api/investments/market-data` endpoint still
 uses Twelve Data and its local key file; the app does not call it.
 

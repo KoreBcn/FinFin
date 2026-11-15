@@ -54,7 +54,17 @@ export async function marketData(request: Request, fetcher: typeof fetch = fetch
     url.searchParams.set('range', payload.path === 'time_series' ? '6mo' : '1d');
     let result: unknown;
     try {
-        const response = await fetcher(url, { signal: AbortSignal.timeout(15000), redirect: 'error' });
+        const options: RequestInit = {
+            headers: { 'User-Agent': 'Mozilla/5.0' },
+            credentials: 'omit', signal: AbortSignal.timeout(15000), redirect: 'error'
+        };
+        let response = await fetcher(url, options);
+        if (response.status === 429) {
+            await response.body?.cancel();
+            const fallback = new URL(url);
+            fallback.hostname = 'query2.finance.yahoo.com';
+            response = await fetcher(fallback, options);
+        }
         if (response.status === 429) return error('Yahoo Finance returned HTTP 429 (rate limited). Try again later.', 502);
         if (!response.ok) return error(`Yahoo Finance returned HTTP ${response.status}.`, 502);
         result = await response.json();
