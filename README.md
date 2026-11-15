@@ -21,6 +21,13 @@ Crowdlending values can be entered manually and are saved in Supabase.
 Previously saved browser-only crowdlending values remain a local fallback until
 the value is saved again.
 
+Within Portfolio, choose **Show transactions** to search transactions by ticker,
+browse pages, and add a transaction to an existing item (including an
+out-of-scope item). Enter fees and dividend cash flows with their signs and
+total cost in DKK. A buy or sell clears a priced item's saved value until its
+next price refresh; manually entered crowdlending values are retained. Run the
+updated portfolio SQL before using this feature.
+
 Deploy the `market-data` Supabase Edge Function as described in
 [db/supabase/README.md](db/supabase/README.md). When you select the refresh
 icon to the right of an item's return, the signed-in app calls the function for
@@ -37,6 +44,11 @@ successful quote and currency conversion updates the saved DKK value, using
 the quantity calculated from transactions. Failed refreshes leave the last
 saved value intact; it may be stale. Only crowdlending current values can be
 entered manually.
+
+Select a portfolio column heading to sort ascending or descending; on small
+screens, use the sort controls above the portfolio. Unavailable values stay
+last. Price sorting compares the displayed numeric prices without converting
+currencies.
 
 The CSV's `Total Cost`, `Fees`, and dividends are treated as DKK. Buy and sell
 quantities are netted; missing or invalid quantities are shown as unknown.

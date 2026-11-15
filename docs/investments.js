@@ -80,6 +80,8 @@ const InvestmentMath = (() => {
 if (typeof module !== 'undefined') module.exports = InvestmentMath;
 
 let investmentPositions = [];
+let investmentItems = [];
+let investmentTransactions = [];
 let investmentQuotes = new Map();
 let investmentSettings = {};
 let investmentGeneration = 0;
@@ -89,6 +91,12 @@ let investmentNextRequestAt = 0;
 let investmentSettingsOwner = null;
 let investmentLoaded = false;
 let investmentLoading = false;
+let investmentSort = { key: '', ascending: true };
+let portfolioTransactionsVisible = false;
+let portfolioTransactionPage = 1;
+let portfolioTransactionSaving = false;
+const portfolioTransactionPageSize = 10;
+const investmentSortKeys = ['name', 'type', 'qty', 'price', 'value', 'portfolio', 'today', 'pnl', 'return'];
 
 function investmentStorageKey() { return `financehome.investments.${activeAuthUserId}`; }
 
@@ -111,6 +119,8 @@ function saveInvestmentSettings() {
 function clearInvestments() {
     investmentGeneration++;
     investmentPositions = [];
+    investmentItems = [];
+    investmentTransactions = [];
     investmentQuotes.clear();
     investmentSettings = {};
     investmentSettingsOwner = null;
@@ -118,9 +128,18 @@ function clearInvestments() {
     investmentRefreshingKey = null;
     investmentLoaded = false;
     investmentLoading = false;
+    investmentSort = { key: '', ascending: true };
+    portfolioTransactionsVisible = false;
+    portfolioTransactionPage = 1;
+    portfolioTransactionSaving = false;
     const dialog = document.getElementById('investmentDialog');
     if (dialog.open) dialog.close();
     document.getElementById('investmentForm').reset();
+    const transactionDialog = document.getElementById('portfolioTransactionDialog');
+    if (transactionDialog.open) transactionDialog.close();
+    document.getElementById('portfolioTransactionForm').reset();
+    document.getElementById('portfolioTransactionSearch').value = '';
+    document.getElementById('portfolioTransactionFormStatus').textContent = '';
     document.getElementById('investmentRetry').hidden = true;
     document.getElementById('investmentStatus').textContent = '';
     renderInvestments();
@@ -160,8 +179,17 @@ function investmentValue(position) {
     return quote && !position.quantityUnknown && Number.isFinite(quote.rate) ? position.quantity * quote.price * quote.rate : null;
 }
 
+function sortInvestments(key) {
+    investmentSort = {
+        key,
+        ascending: investmentSort.key === key ? !investmentSort.ascending : true
+    };
+    renderInvestments();
+}
+
 function renderInvestments() {
     if (activeAuthUserId) loadInvestmentSettings();
+    renderPortfolioTransactions();
     const body = document.getElementById('investmentTableBody');
     body.replaceChildren();
     const values = investmentPositions.map(investmentValue);
@@ -180,15 +208,54 @@ function renderInvestments() {
     document.getElementById('investmentCoverage').textContent = investmentPositions.length && known < investmentPositions.length
         ? `${known} of ${investmentPositions.length} positions valued; totals exclude the remainder.`
         : '';
-    investmentPositions.forEach((p, index) => {
-        const tr = document.createElement('tr');
+    const rows = investmentPositions.map((p, index) => {
         const quote = investmentQuotes.get(p.key);
-        const settings = investmentSettings[p.key] || {};
         const crowdlending = p.type.toLowerCase() === 'crowdlending';
         const value = values[index];
         const pnl = pnls[index];
         const portfolioPercent = value !== null && total > 0 ? value / total * 100 : null;
         const returnPercent = pnl !== null && p.bought < 0 ? pnl / -p.bought * 100 : null;
+        return { p, index, quote, crowdlending, value, pnl, portfolioPercent, returnPercent };
+    });
+    if (investmentSort.key) {
+        function sortValue(row) {
+            switch (investmentSort.key) {
+                case 'name': return row.p.name || row.p.ticker;
+                case 'type': return row.p.type;
+                case 'qty': return row.crowdlending || row.p.quantityUnknown ? null : row.p.quantity;
+                case 'price': return row.quote?.price;
+                case 'value': return row.value;
+                case 'portfolio': return row.portfolioPercent;
+                case 'today': return row.quote?.today;
+                case 'pnl': return row.pnl;
+                case 'return': return row.returnPercent;
+            }
+        }
+        rows.sort((a, b) => {
+            const left = sortValue(a);
+            const right = sortValue(b);
+            const leftMissing = left == null || (typeof left === 'number' && !Number.isFinite(left));
+            const rightMissing = right == null || (typeof right === 'number' && !Number.isFinite(right));
+            if (leftMissing !== rightMissing) return leftMissing ? 1 : -1;
+            if (leftMissing) return a.index - b.index;
+            const comparison = typeof left === 'string'
+                ? left.localeCompare(right, undefined, { numeric: true, sensitivity: 'base' })
+                : left - right;
+            return (investmentSort.ascending ? comparison : -comparison) || a.index - b.index;
+        });
+    }
+    investmentSortKeys.forEach(key => {
+        const header = document.getElementById(`investment-sort-${key}`);
+        if (key === investmentSort.key) header.setAttribute('aria-sort', investmentSort.ascending ? 'ascending' : 'descending');
+        else header.removeAttribute('aria-sort');
+    });
+    document.getElementById('investmentSortField').value = investmentSort.key;
+    const direction = document.getElementById('investmentSortDirection');
+    direction.disabled = !investmentSort.key;
+    direction.textContent = investmentSort.ascending ? 'Ascending ↑' : 'Descending ↓';
+    rows.forEach(({ p, index, quote, crowdlending, value, pnl, portfolioPercent, returnPercent }) => {
+        const tr = document.createElement('tr');
+        const settings = investmentSettings[p.key] || {};
         const cells = [
             { key: 'name', label: 'Name / ticker', text: p.name || p.ticker },
             { key: 'type', label: 'Type', text: p.type },
@@ -266,7 +333,7 @@ function renderInvestments() {
                 refresh.setAttribute('aria-label', `Refresh price for ${p.name || p.ticker}`);
                 refresh.title = crowdlending ? 'Crowdlending values are entered manually'
                     : investmentBusy ? 'Another price refresh is in progress' : `Refresh price for ${p.name || p.ticker}`;
-                refresh.disabled = investmentBusy || crowdlending;
+                refresh.disabled = investmentBusy || portfolioTransactionSaving || !investmentLoaded || crowdlending;
                 if (investmentRefreshingKey === p.key) {
                     refresh.classList.add('is-refreshing');
                     refresh.setAttribute('aria-busy', 'true');
@@ -359,6 +426,147 @@ function renderInvestments() {
     });
 }
 
+function renderPortfolioTransactions() {
+    document.getElementById('portfolioOverview').hidden = portfolioTransactionsVisible;
+    document.getElementById('portfolioTransactions').hidden = !portfolioTransactionsVisible;
+    const toggle = document.getElementById('portfolioViewToggle');
+    toggle.textContent = portfolioTransactionsVisible ? 'Show overview' : 'Show transactions';
+    toggle.setAttribute('aria-pressed', String(portfolioTransactionsVisible));
+    document.getElementById('investmentAdd').hidden = portfolioTransactionsVisible;
+    const add = document.getElementById('portfolioTransactionAdd');
+    add.hidden = !portfolioTransactionsVisible;
+    add.disabled = !investmentLoaded || investmentBusy || portfolioTransactionSaving || !investmentItems.length;
+    document.getElementById('portfolioTransactionSubmit').disabled = !investmentLoaded || investmentBusy || portfolioTransactionSaving;
+    document.getElementById('portfolioTransactionCancel').disabled = portfolioTransactionSaving;
+
+    const search = (document.getElementById('portfolioTransactionSearch').value || '').trim().toLowerCase();
+    const rows = investmentTransactions.filter(row => (row.ticker || '').toLowerCase().includes(search))
+        .sort((a, b) => String(b.transaction_date || '').localeCompare(String(a.transaction_date || ''))
+            || String(b.id).localeCompare(String(a.id)));
+    const pages = Math.max(1, Math.ceil(rows.length / portfolioTransactionPageSize));
+    portfolioTransactionPage = Math.min(portfolioTransactionPage, pages);
+    document.getElementById('portfolioTransactionPage').textContent = `Page ${portfolioTransactionPage} of ${pages}`;
+    document.getElementById('portfolioTransactionPrevious').disabled = portfolioTransactionPage <= 1;
+    document.getElementById('portfolioTransactionNext').disabled = portfolioTransactionPage >= pages;
+    document.getElementById('portfolioTransactionStatus').textContent = investmentLoaded
+        ? `${rows.length} transaction${rows.length === 1 ? '' : 's'}${search ? ' matching ticker' : ''}.` : '';
+    const body = document.getElementById('portfolioTransactionBody');
+    body.replaceChildren();
+    const fields = ['transaction_date', 'action', 'ticker', 'name', 'platform', 'type', 'quantity',
+        'price_per_unit', 'exchange_rate', 'commission', 'fees', 'currency', 'total_cost', 'local_value', 'local_currency'];
+    rows.slice((portfolioTransactionPage - 1) * portfolioTransactionPageSize, portfolioTransactionPage * portfolioTransactionPageSize).forEach(row => {
+        const tr = document.createElement('tr');
+        fields.forEach(field => {
+            const td = document.createElement('td');
+            td.textContent = row[field] || '—';
+            tr.append(td);
+        });
+        body.append(tr);
+    });
+}
+
+document.getElementById('portfolioViewToggle').addEventListener('click', () => {
+    portfolioTransactionsVisible = !portfolioTransactionsVisible;
+    renderPortfolioTransactions();
+});
+document.getElementById('portfolioTransactionSearch').addEventListener('input', () => {
+    portfolioTransactionPage = 1;
+    renderPortfolioTransactions();
+});
+document.getElementById('portfolioTransactionPrevious').addEventListener('click', () => {
+    if (portfolioTransactionPage > 1) portfolioTransactionPage--;
+    renderPortfolioTransactions();
+});
+document.getElementById('portfolioTransactionNext').addEventListener('click', () => {
+    portfolioTransactionPage++;
+    renderPortfolioTransactions();
+});
+document.getElementById('portfolioTransactionAdd').addEventListener('click', () => {
+    if (!investmentLoaded || investmentBusy || portfolioTransactionSaving || !investmentItems.length) return;
+    const select = document.getElementById('portfolioTransactionItem');
+    select.replaceChildren();
+    investmentItems.forEach(item => {
+        const option = document.createElement('option');
+        option.value = item.id;
+        option.textContent = `${item.ticker} · ${item.platform} · ${item.name}${item.is_in_scope ? '' : ' (out of scope)'}`;
+        select.append(option);
+    });
+    document.getElementById('portfolioTransactionFormStatus').textContent = '';
+    const dialog = document.getElementById('portfolioTransactionDialog');
+    if (!dialog.open) dialog.showModal();
+});
+document.getElementById('portfolioTransactionCancel').addEventListener('click', () => {
+    if (!portfolioTransactionSaving) document.getElementById('portfolioTransactionDialog').close();
+});
+document.getElementById('portfolioTransactionDialog').addEventListener('cancel', event => {
+    if (portfolioTransactionSaving) event.preventDefault();
+});
+document.getElementById('portfolioTransactionForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    if (portfolioTransactionSaving || investmentBusy || !investmentLoaded || !activeAuthUserId) return;
+    const form = event.currentTarget;
+    const status = document.getElementById('portfolioTransactionFormStatus');
+    const fields = {
+        portfolio_item_id: 'portfolioTransactionItem', transaction_date: 'portfolioTransactionDate',
+        action: 'portfolioTransactionAction', quantity: 'portfolioTransactionQuantity',
+        price_per_unit: 'portfolioTransactionPrice', exchange_rate: 'portfolioTransactionRate',
+        commission: 'portfolioTransactionCommission', fees: 'portfolioTransactionFees',
+        currency: 'portfolioTransactionCurrency', total_cost: 'portfolioTransactionTotal',
+        local_value: 'portfolioTransactionLocalValue', local_currency: 'portfolioTransactionLocalCurrency'
+    };
+    const transaction = Object.fromEntries(Object.entries(fields).map(([field, id]) => [field, (document.getElementById(id).value || '').trim()]));
+    try {
+        if (!form.checkValidity() || !investmentItems.some(item => item.id === transaction.portfolio_item_id) || !transaction.transaction_date || !transaction.action) {
+            throw new Error('Choose an item and enter a valid date and action.');
+        }
+        const action = transaction.action.toLowerCase();
+        if (['buy', 'sell'].includes(action) && !transaction.quantity) throw new Error('Quantity is required for buys and sells.');
+        if (['buy', 'sell', 'dividend', 'dividend tax'].includes(action) && !transaction.total_cost) throw new Error('Total cost is required for this action.');
+        for (const field of ['quantity', 'price_per_unit', 'exchange_rate', 'commission', 'fees', 'total_cost', 'local_value']) {
+            const value = InvestmentMath.number(transaction[field], field.replace(/_/g, ' '), 'entry');
+            if (field === 'quantity' && ['buy', 'sell'].includes(action) && value < 0) throw new Error('Quantity must be non-negative.');
+        }
+    } catch (error) {
+        status.textContent = error.message;
+        return;
+    }
+
+    const generation = investmentGeneration;
+    portfolioTransactionSaving = true;
+    status.textContent = '';
+    renderInvestments();
+    try {
+        const { error } = await supabaseClient.rpc('add_portfolio_transaction', { p_transaction: transaction });
+        if (error) throw new Error(error.message);
+        if (generation !== investmentGeneration) return;
+        form.reset();
+        document.getElementById('portfolioTransactionDialog').close();
+        portfolioTransactionPage = 1;
+        investmentLoaded = false;
+        investmentPositions = [];
+        investmentItems = [];
+        investmentTransactions = [];
+        investmentQuotes.clear();
+        renderInvestments();
+        await openInvestments();
+    } catch (error) {
+        if (generation !== investmentGeneration) return;
+        investmentLoaded = false;
+        investmentPositions = [];
+        investmentItems = [];
+        investmentTransactions = [];
+        investmentQuotes.clear();
+        status.textContent = `Unable to save transaction: ${error.message}. Close this dialog and reload the portfolio before retrying; the save may have completed.`;
+        document.getElementById('investmentStatus').textContent = 'Reload the portfolio before continuing; the transaction save may have completed.';
+        document.getElementById('investmentRetry').hidden = false;
+    } finally {
+        if (generation === investmentGeneration) {
+            portfolioTransactionSaving = false;
+            renderInvestments();
+        }
+    }
+});
+
 async function openInvestments() {
     if (!activeAuthUserId || investmentLoaded || investmentLoading) return;
     const generation = investmentGeneration;
@@ -377,10 +585,22 @@ async function openInvestments() {
                 if (data.length < pageSize) return rows;
             }
         }
-        const items = await readRows('portfolio_items', 'id, ticker, platform, name, type, is_in_scope, current_value_dkk');
-        const transactions = await readRows('portfolio_transactions', 'id, portfolio_item_id, action, quantity, fees, total_cost');
+        const itemColumns = 'id, ticker, platform, name, type, is_in_scope, current_value_dkk, valuation_version';
+        const transactionColumns = 'id, portfolio_item_id, transaction_date, action, platform, type, ticker, name, quantity, price_per_unit, exchange_rate, commission, fees, currency, total_cost, local_value, local_currency';
+        let items, transactions;
+        for (let attempt = 0; attempt < 3; attempt++) {
+            const before = await readRows('portfolio_items', itemColumns);
+            transactions = await readRows('portfolio_transactions', transactionColumns);
+            items = await readRows('portfolio_items', itemColumns);
+            const versions = new Map(before.map(item => [item.id, item.valuation_version]));
+            if (before.length === items.length && items.every(item => versions.has(item.id)
+                && versions.get(item.id) === item.valuation_version)) break;
+            if (attempt === 2) throw new Error('Portfolio changed while loading; please retry.');
+        }
         if (generation !== investmentGeneration || !activeAuthUserId) return;
         investmentPositions = InvestmentMath.fromStored(items, transactions);
+        investmentItems = items;
+        investmentTransactions = transactions;
         investmentQuotes.clear();
         investmentLoaded = true;
         document.getElementById('investmentStatus').textContent = '';
@@ -396,11 +616,33 @@ async function openInvestments() {
 }
 
 document.getElementById('investmentRetry').addEventListener('click', openInvestments);
+document.getElementById('investmentSortField').addEventListener('change', event => {
+    investmentSort = { key: event.currentTarget.value, ascending: true };
+    renderInvestments();
+});
+document.getElementById('investmentSortDirection').addEventListener('click', () => {
+    if (investmentSort.key) sortInvestments(investmentSort.key);
+});
 
 async function saveInvestmentValue(position, value, generation) {
-    const { error } = await supabaseClient.from('portfolio_items').update({ current_value_dkk: value }).eq('id', position.id).select('id').single();
-    if (error) throw new Error(error.message);
-    if (generation === investmentGeneration) position.currentValue = value;
+    const item = investmentItems.find(entry => entry.id === position.id);
+    let update = supabaseClient.from('portfolio_items').update({ current_value_dkk: value }).eq('id', position.id);
+    if (position.type.toLowerCase() !== 'crowdlending') update = update.eq('valuation_version', item.valuation_version);
+    const { error } = await update.select('id').single();
+    if (error) {
+        if (error.code === 'PGRST116' && generation === investmentGeneration) {
+            position.currentValue = null;
+            item.current_value_dkk = null;
+            investmentLoaded = false;
+            document.getElementById('investmentRetry').hidden = false;
+            throw new Error('The portfolio changed; reload it before refreshing prices');
+        }
+        throw new Error(error.message);
+    }
+    if (generation === investmentGeneration) {
+        position.currentValue = value;
+        item.current_value_dkk = value;
+    }
 }
 
 document.getElementById('investmentAdd').addEventListener('click', () => {
@@ -425,9 +667,10 @@ document.getElementById('investmentForm').addEventListener('submit', async event
         if ([item.ticker, item.name, item.type, item.platform].some(value => !value)) throw new Error('All item fields are required.');
         submit.disabled = true;
         const { data, error } = await supabaseClient.from('portfolio_items').insert(item)
-            .select('id, ticker, platform, name, type, is_in_scope, current_value_dkk').single();
+            .select('id, ticker, platform, name, type, is_in_scope, current_value_dkk, valuation_version').single();
         if (error) throw new Error(error.message);
         if (generation !== investmentGeneration) return;
+        investmentItems.push(data);
         investmentPositions.push(...InvestmentMath.fromStored([data], []));
         form.reset();
         document.getElementById('investmentDialog').close();
@@ -465,7 +708,7 @@ async function investmentRequest(path, params) {
 }
 
 async function refreshInvestment(p) {
-    if (investmentBusy || p.type.toLowerCase() === 'crowdlending') return;
+    if (investmentBusy || portfolioTransactionSaving || !investmentLoaded || p.type.toLowerCase() === 'crowdlending') return;
     investmentBusy = true;
     investmentRefreshingKey = p.key;
     const generation = investmentGeneration;

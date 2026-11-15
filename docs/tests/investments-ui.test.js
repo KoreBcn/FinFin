@@ -21,10 +21,12 @@ class Element {
     append(...children) { this.children.push(...children); }
     replaceChildren(...children) { this.text = ''; this.children = children; }
     setAttribute(name, value) { this.attributes[name] = value; }
+    removeAttribute(name) { delete this.attributes[name]; }
     addEventListener(name, callback) { this.listeners[name] = callback; }
     showModal() { this.open = true; }
     close() { this.open = false; }
     reset() {}
+    checkValidity() { return true; }
 }
 
 function find(element, predicate) {
@@ -102,14 +104,31 @@ function setupPortfolio(clock = null) {
     };
     const database = {
         items: [{ id: 'item-1', ticker: 'CPH:NOVO-B', platform: 'Broker', name: 'Example',
-            type: 'Shares', market_symbol: null, is_in_scope: true, current_value_dkk: 180 }],
+            type: 'Shares', market_symbol: null, is_in_scope: true, current_value_dkk: 180, valuation_version: 0 }],
         transactions: [{ id: 'tx-1', portfolio_item_id: 'item-1', action: 'Buy',
             quantity: '2', fees: '', total_cost: '-100' }],
         failLoad: false, failSave: false, marketError: null, historyError: null, marketRequests: []
     };
     ['investmentTicker', 'investmentName', 'investmentType', 'investmentPlatform']
         .forEach(id => document.getElementById(id));
+    ['Item', 'Date', 'Action', 'Quantity', 'Price', 'Rate', 'Commission', 'Fees',
+        'Currency', 'Total', 'LocalValue', 'LocalCurrency']
+        .forEach(field => document.getElementById(`portfolioTransaction${field}`));
     const supabaseClient = {
+        async rpc(name, { p_transaction: transaction }) {
+            assert.equal(name, 'add_portfolio_transaction');
+            if (database.waitTransaction) await database.waitTransaction;
+            if (database.failTransaction) return { error: { message: 'transaction failed' } };
+            const item = database.items.find(entry => entry.id === transaction.portfolio_item_id);
+            database.transactions.push({ id: `tx-${database.transactions.length + 1}`, ...transaction,
+                ticker: item.ticker, name: item.name, platform: item.platform, type: item.type });
+            if (['buy', 'sell'].includes(transaction.action.toLowerCase()) && item.type.toLowerCase() !== 'crowdlending') {
+                item.current_value_dkk = null;
+            }
+            item.valuation_version = (item.valuation_version || 0) + 1;
+            if (database.failLoadAfterTransaction) database.failLoad = true;
+            return { error: null };
+        },
         functions: {
             async invoke(name, options) {
                 assert.equal(name, 'market-data');
@@ -131,25 +150,31 @@ function setupPortfolio(clock = null) {
             }
         },
         from(table) {
-            let operation = 'read', payload, id;
+            let operation = 'read', payload, id, valuationVersion;
             return {
                 select() { return this; },
                 order() { return this; },
                 range() {
                     if (database.failLoad) return Promise.resolve({ error: { message: 'load failed' } });
-                    return Promise.resolve({ data: table === 'portfolio_items' ? database.items : database.transactions, error: null });
+                    if (database.onRead) database.onRead(table);
+                    return Promise.resolve({ data: (table === 'portfolio_items' ? database.items : database.transactions).map(row =>
+                        table === 'portfolio_items' ? { valuation_version: 0, ...row } : { ...row }), error: null });
                 },
                 insert(value) { operation = 'insert'; payload = value; return this; },
                 update(value) { operation = 'update'; payload = value; return this; },
-                eq(_column, value) { id = value; return this; },
+                eq(column, value) { if (column === 'id') id = value; else if (column === 'valuation_version') valuationVersion = value; return this; },
                 single() {
                     if (database.failSave) return Promise.resolve({ error: { message: 'save failed' } });
                     if (operation === 'insert') {
-                        const item = { id: 'item-2', is_in_scope: true, current_value_dkk: null, ...payload };
+                        const item = { id: 'item-2', is_in_scope: true, current_value_dkk: null, valuation_version: 0, ...payload };
                         database.items.push(item);
                         return Promise.resolve({ data: item, error: null });
                     }
-                    Object.assign(database.items.find(item => item.id === id), payload);
+                    const item = database.items.find(entry => entry.id === id);
+                    if (valuationVersion !== undefined && (item.valuation_version || 0) !== valuationVersion) {
+                        return Promise.resolve({ error: { code: 'PGRST116', message: 'No rows' } });
+                    }
+                    Object.assign(item, payload);
                     return Promise.resolve({ data: { id }, error: null });
                 }
             };
@@ -239,6 +264,67 @@ test('scales allocation colors across valued positions and leaves unknown values
     const equalCells = elements.get('investmentTableBody').children.slice(0, 3)
         .map(row => find(row, e => e.dataset.label === 'Portfolio %'));
     assert.deepEqual(equalCells.map(cell => cell.style['--investment-heat']), ['60', '60', '60']);
+});
+
+test('sorts each portfolio column using its underlying values and keeps missing values last', async () => {
+    const { context, elements } = setupPortfolio();
+    vm.runInContext(`
+        investmentPositions = [
+            {key:'a', ticker:'A', name:'Zebra', type:'Shares', quantity:10, quantityUnknown:false, currentValue:1000, bought:-500, sold:0, fees:0, dividends:0, other:[]},
+            {key:'b', ticker:'B', name:'Alpha', type:'ETF', quantity:2, quantityUnknown:false, currentValue:100, bought:-200, sold:0, fees:0, dividends:0, other:[]},
+            {key:'c', ticker:'C', name:'Beta', type:'Crypto', quantity:5, quantityUnknown:false, currentValue:500, bought:-1000, sold:0, fees:0, dividends:0, other:[]},
+            {key:'d', ticker:'D', name:'Delta', type:'Fund', quantity:0, quantityUnknown:true, currentValue:null, bought:0, sold:0, fees:0, dividends:0, other:[]}
+        ];
+        investmentQuotes.set('a', {price:9, currency:'DKK', today:5});
+        investmentQuotes.set('b', {price:100, currency:'USD', today:-4});
+        investmentQuotes.set('c', {price:20, currency:'EUR', today:1});
+        renderInvestments();
+    `, context);
+    const order = () => elements.get('investmentTableBody').children.map(row =>
+        find(row, e => e.dataset.label === 'Name / ticker').children[0].children[0].textContent);
+    for (const [key, expected] of [
+        ['name', ['Alpha', 'Beta', 'Delta', 'Zebra']],
+        ['type', ['Beta', 'Alpha', 'Delta', 'Zebra']],
+        ['qty', ['Alpha', 'Beta', 'Zebra', 'Delta']],
+        ['price', ['Zebra', 'Beta', 'Alpha', 'Delta']],
+        ['value', ['Alpha', 'Beta', 'Zebra', 'Delta']],
+        ['portfolio', ['Alpha', 'Beta', 'Zebra', 'Delta']],
+        ['today', ['Alpha', 'Beta', 'Zebra', 'Delta']],
+        ['pnl', ['Beta', 'Alpha', 'Zebra', 'Delta']],
+        ['return', ['Alpha', 'Beta', 'Zebra', 'Delta']]
+    ]) {
+        vm.runInContext(`sortInvestments('${key}')`, context);
+        assert.deepEqual(order(), expected, key);
+        assert.equal(elements.get(`investment-sort-${key}`).attributes['aria-sort'], 'ascending');
+    }
+    vm.runInContext(`sortInvestments('value'); sortInvestments('value')`, context);
+    assert.deepEqual(order(), ['Zebra', 'Beta', 'Alpha', 'Delta']);
+    assert.equal(elements.get('investment-sort-value').attributes['aria-sort'], 'descending');
+    assert.equal(elements.get('investment-sort-return').attributes['aria-sort'], undefined);
+    vm.runInContext('investmentPositions[1].currentValue = 2000; renderInvestments()', context);
+    assert.deepEqual(order(), ['Alpha', 'Zebra', 'Beta', 'Delta']);
+});
+
+test('mobile sorting controls select, reverse, and reset the order', async () => {
+    const { context, elements, database } = setupPortfolio();
+    database.items.push({ id: 'item-2', ticker: 'AAPL', platform: 'Broker', name: 'Alpha',
+        type: 'Shares', is_in_scope: true, current_value_dkk: null });
+    await vm.runInContext('openInvestments()', context);
+    const field = elements.get('investmentSortField');
+    const direction = elements.get('investmentSortDirection');
+    const order = () => elements.get('investmentTableBody').children.map(row =>
+        find(row, e => e.dataset.label === 'Name / ticker').children[0].children[0].textContent);
+    field.value = 'name';
+    field.listeners.change({ currentTarget: field });
+    assert.deepEqual(order(), ['Alpha', 'Example']);
+    assert.equal(direction.disabled, false);
+    direction.listeners.click();
+    assert.deepEqual(order(), ['Example', 'Alpha']);
+    assert.match(direction.textContent, /Descending/);
+    field.value = '';
+    field.listeners.change({ currentTarget: field });
+    assert.deepEqual(order(), ['Example', 'Alpha']);
+    assert.equal(direction.disabled, true);
 });
 
 test('distinguishes no valuations from zero values and negative PnL', async () => {
@@ -382,4 +468,146 @@ test('formats editable crowdlending values and validates grouped input without l
     await input().listeners.change();
     assert.equal(database.items[0].current_value_dkk, null);
     assert.equal(elements.get('investmentStatus').textContent, '');
+});
+
+function fillPortfolioTransaction(elements, values = {}) {
+    const defaults = {
+        Item: 'item-1', Date: '2026-03-01', Action: 'Buy', Quantity: '1',
+        Price: '', Rate: '', Commission: '', Fees: '-2', Currency: 'DKK',
+        Total: '-100', LocalValue: '', LocalCurrency: ''
+    };
+    for (const [field, value] of Object.entries({ ...defaults, ...values })) {
+        elements.get(`portfolioTransaction${field}`).value = value;
+    }
+}
+
+function submitPortfolioTransaction(elements) {
+    const form = elements.get('portfolioTransactionForm');
+    return form.listeners.submit({ preventDefault() {}, currentTarget: form });
+}
+
+test('switches views and searches and pages all transactions, including out-of-scope items', async () => {
+    const { context, elements, database } = setupPortfolio();
+    database.items.push({ id: 'outside', ticker: 'OTHER', platform: 'Broker', name: 'Outside', type: 'Shares',
+        is_in_scope: false, current_value_dkk: null });
+    for (let i = 0; i < 12; i++) {
+        database.transactions.push({ id: `other-${i}`, portfolio_item_id: 'outside', ticker: 'OTHER',
+            transaction_date: `2026-01-${String(i + 1).padStart(2, '0')}`, action: 'Buy', quantity: '1', fees: '', total_cost: '-5' });
+    }
+    await vm.runInContext('openInvestments()', context);
+    elements.get('portfolioViewToggle').listeners.click();
+    assert.equal(elements.get('portfolioOverview').hidden, true);
+    assert.equal(elements.get('portfolioTransactions').hidden, false);
+    assert.equal(elements.get('portfolioTransactionBody').children.length, 10);
+    assert.equal(elements.get('portfolioTransactionPage').textContent, 'Page 1 of 2');
+    elements.get('portfolioTransactionNext').listeners.click();
+    assert.equal(elements.get('portfolioTransactionBody').children.length, 3);
+    elements.get('portfolioTransactionSearch').value = 'oth';
+    elements.get('portfolioTransactionSearch').listeners.input();
+    assert.equal(elements.get('portfolioTransactionPage').textContent, 'Page 1 of 2');
+    assert.match(elements.get('portfolioTransactionStatus').textContent, /12 transactions matching ticker/);
+    elements.get('portfolioTransactionAdd').listeners.click();
+    assert.match(elements.get('portfolioTransactionItem').textContent, /OTHER.*out of scope/);
+    elements.get('portfolioViewToggle').listeners.click();
+    assert.equal(elements.get('portfolioOverview').hidden, false);
+});
+
+test('validates and saves a buy, reloads the overview, and retains crowdlending valuations', async () => {
+    const { context, elements, database } = setupPortfolio();
+    database.items.push({ id: 'crowd', ticker: 'CROWD', platform: 'Broker', name: 'Crowd', type: 'Crowdlending',
+        is_in_scope: true, current_value_dkk: 500, valuation_version: 0 });
+    await vm.runInContext('openInvestments()', context);
+    fillPortfolioTransaction(elements, { Quantity: '-1' });
+    await submitPortfolioTransaction(elements);
+    assert.match(elements.get('portfolioTransactionFormStatus').textContent, /non-negative/);
+    assert.equal(database.transactions.length, 1);
+    fillPortfolioTransaction(elements, { Total: '' });
+    await submitPortfolioTransaction(elements);
+    assert.match(elements.get('portfolioTransactionFormStatus').textContent, /Total cost is required/);
+    fillPortfolioTransaction(elements, { Quantity: 'oops' });
+    await submitPortfolioTransaction(elements);
+    assert.match(elements.get('portfolioTransactionFormStatus').textContent, /Invalid quantity/);
+    fillPortfolioTransaction(elements, { Quantity: '1,5' });
+    await submitPortfolioTransaction(elements);
+    assert.equal(database.items[0].current_value_dkk, null);
+    assert.equal(database.items[0].valuation_version, 1);
+    assert.equal(database.transactions[1].ticker, 'CPH:NOVO-B');
+    assert.equal(find(elements.get('investmentTableBody').children[0], e => e.dataset.label === 'Qty').textContent, '3.50');
+    assert.equal(elements.get('investmentPortfolioSize').textContent, '500.00 DKK');
+    fillPortfolioTransaction(elements, { Item: 'crowd', Action: 'Sell' });
+    await submitPortfolioTransaction(elements);
+    assert.equal(database.items[1].current_value_dkk, 500);
+});
+
+test('blocks a stale price save after another client adds a trade', async () => {
+    const { context, elements, database } = setupPortfolio();
+    await vm.runInContext('openInvestments()', context);
+    database.items[0].valuation_version = 1;
+    database.items[0].current_value_dkk = null;
+    await refreshButton(elements.get('investmentTableBody').children[0]).listeners.click();
+    assert.equal(database.items[0].current_value_dkk, null);
+    assert.equal(elements.get('investmentPortfolioSize').textContent, '—');
+    assert.match(elements.get('investmentTableBody').textContent, /portfolio changed/);
+    assert.equal(elements.get('investmentRetry').hidden, false);
+});
+
+test('retries loading when a trade is inserted between item and transaction reads', async () => {
+    const { context, elements, database } = setupPortfolio();
+    let injected = false;
+    database.onRead = table => {
+        if (table !== 'portfolio_transactions' || injected) return;
+        injected = true;
+        database.items[0].current_value_dkk = null;
+        database.items[0].valuation_version = 1;
+        database.transactions.push({ id: 'new-trade', portfolio_item_id: 'item-1', action: 'Buy',
+            quantity: '1', fees: '', total_cost: '-50' });
+    };
+    await vm.runInContext('openInvestments()', context);
+    const row = elements.get('investmentTableBody').children[0];
+    assert.equal(find(row, e => e.dataset.label === 'Qty').textContent, '3.00');
+    assert.equal(find(row, e => e.dataset.label === 'Current value DKK').textContent, '—');
+    await refreshButton(row).listeners.click();
+    assert.equal(database.items[0].current_value_dkk, 300);
+});
+
+test('requires a reload after an uncertain transaction save', async () => {
+    const { context, elements, database } = setupPortfolio();
+    await vm.runInContext('openInvestments()', context);
+    fillPortfolioTransaction(elements);
+    database.failTransaction = true;
+    await submitPortfolioTransaction(elements);
+    assert.match(elements.get('portfolioTransactionFormStatus').textContent, /save may have completed/);
+    assert.equal(elements.get('investmentRetry').hidden, false);
+    assert.equal(elements.get('investmentTableBody').children.length, 0);
+    database.failTransaction = false;
+    await elements.get('investmentRetry').listeners.click();
+    assert.equal(elements.get('investmentTableBody').children.length, 1);
+});
+
+test('does not show stale valuations if reloading after a successful transaction fails', async () => {
+    const { context, elements, database } = setupPortfolio();
+    await vm.runInContext('openInvestments()', context);
+    fillPortfolioTransaction(elements);
+    database.failLoadAfterTransaction = true;
+    await submitPortfolioTransaction(elements);
+    assert.equal(database.items[0].current_value_dkk, null);
+    assert.equal(elements.get('investmentPortfolioSize').textContent, '—');
+    assert.match(elements.get('investmentStatus').textContent, /load failed/);
+    assert.equal(elements.get('investmentRetry').hidden, false);
+});
+
+test('ignores a transaction response after sign-out', async () => {
+    const { context, elements, database } = setupPortfolio();
+    await vm.runInContext('openInvestments()', context);
+    elements.get('portfolioTransactionAdd').listeners.click();
+    fillPortfolioTransaction(elements);
+    let resolve;
+    database.waitTransaction = new Promise(done => { resolve = done; });
+    const pending = submitPortfolioTransaction(elements);
+    vm.runInContext('activeAuthUserId = null; clearInvestments()', context);
+    resolve();
+    await pending;
+    assert.equal(elements.get('investmentTableBody').children.length, 0);
+    assert.equal(elements.get('portfolioTransactionBody').children.length, 0);
+    assert.equal(elements.get('portfolioTransactionDialog').open, false);
 });

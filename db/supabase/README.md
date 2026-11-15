@@ -94,8 +94,17 @@ mortgage entry is required before House totals can be calculated.
 Run `portfolio.sql` in the Supabase SQL Editor. It creates shared
 `portfolio_items` and `portfolio_transactions` tables. Authenticated users
 can read both tables, create and update items, and are not isolated from each
-other. Anonymous access is revoked. Transactions are read-only from the app;
-the SQL Editor can be used to add or correct them.
+other. Anonymous access is revoked. Run the updated `portfolio.sql` again when
+upgrading an existing installation. The app adds transactions through an
+authenticated database function; direct transaction writes remain unavailable
+to authenticated users. The SQL Editor can be used to correct them.
+
+The function copies the selected item's ticker, platform, name and type into
+each new transaction. An insert trigger clears saved values for priced items
+after a buy or sell, but leaves manually entered crowdlending values intact.
+Price refreshes use a valuation version to reject a stale value if a trade was
+inserted while the refresh was running. Other clients that write valuations
+must use the same version check to avoid overwriting an invalidation.
 
 To migrate the investment CSV, generate a private SQL file locally:
 
