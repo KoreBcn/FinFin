@@ -136,8 +136,14 @@ function switchTab(tab) {
     document.getElementById('tabDashboard').style.display    = tab === 'dashboard'    ? 'flex' : 'none';
     document.getElementById('tabTransactions').style.display = tab === 'transactions' ? 'flex' : 'none';
     document.getElementById('tabHighlights').style.display   = tab === 'highlights'   ? 'flex' : 'none';
+    document.getElementById('tabInvestments').style.display  = tab === 'investments'  ? 'flex' : 'none';
     if (tab === 'transactions') renderTransactionsTab();
     if (tab === 'highlights')   renderHighlightsTab();
+    if (tab === 'investments') {
+        renderInvestments();
+        if (investmentSubtab === 'house') openHouse();
+        else openInvestments();
+    }
 }
 
 function toggleTabMenu() {
@@ -275,6 +281,8 @@ async function applyAuthSession(session) {
     if (userId === activeAuthUserId) return;
 
     activeAuthUserId = userId;
+    clearInvestments();
+    clearHouse();
     if (!user) {
         document.body.classList.remove('is-authenticated');
         document.getElementById('signedInEmail').textContent = '';
@@ -285,6 +293,7 @@ async function applyAuthSession(session) {
     document.getElementById('signedInEmail').textContent = user.email || '';
     document.body.classList.add('is-authenticated');
     await loadData();
+    if (activeAuthUserId === userId) await openInvestments();
 }
 
 async function initializeSupabaseAuth() {
@@ -446,6 +455,9 @@ function bootstrapApp() {
     document.getElementById('tabDashboard').style.display    = 'flex';
     document.getElementById('tabTransactions').style.display = 'none';
     document.getElementById('tabHighlights').style.display   = 'none';
+    document.getElementById('tabInvestments').style.display  = 'none';
+    activeTab = 'dashboard';
+    document.querySelectorAll('.tab-btn').forEach(button => button.classList.toggle('active', button.getAttribute('onclick') === "switchTab('dashboard')"));
     document.getElementById('tabSwitcher').style.display     = 'flex';
     applyGlobalFilters();
 }

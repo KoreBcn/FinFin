@@ -2,7 +2,7 @@ name: Import bank transactions
 
 on:
   schedule:
-    - cron: "20 5 * * *"
+    - cron: "20 5 * * 1-5"
   workflow_dispatch:
 
 permissions:

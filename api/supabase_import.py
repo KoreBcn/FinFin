@@ -37,7 +37,7 @@ def load_supabase_config(config_path: str = CONFIG_PATH) -> dict:
 
 def get_fetch_start_date(initial_start_date: date, last_successful_date: date) -> date:
     """Re-fetch a short overlap, but never reach before the configured start date."""
-    return max(initial_start_date, last_successful_date - timedelta(days=2))
+    return max(initial_start_date, last_successful_date - timedelta(days=7))
 
 
 def build_supabase_transaction(

@@ -86,7 +86,11 @@ class SupabaseImportTests(unittest.TestCase):
 
         self.assertEqual(
             get_fetch_start_date(floor, date(2026, 11, 12)),
-            date(2026, 11, 10),
+            date(2026, 11, 5),
+        )
+        self.assertEqual(
+            get_fetch_start_date(floor, date(2026, 11, 5)),
+            floor,
         )
         self.assertEqual(
             get_fetch_start_date(floor, date(2026, 10, 31)),

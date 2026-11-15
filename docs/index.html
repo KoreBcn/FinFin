@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Home Finance Dashboard</title>
-    <link rel="stylesheet" href="styles.css?v=19">
+    <link rel="stylesheet" href="styles.css?v=32">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 </head>
@@ -46,6 +46,9 @@
                 </button>
                 <button class="tab-btn" onclick="switchTab('transactions')">
                     📋 Transactions
+                </button>
+                <button class="tab-btn" onclick="switchTab('investments')">
+                    📈 Investments
                 </button>
                 <button id="signOutButton" class="nav-link nav-btn sign-out-btn" type="button">Sign out</button>
             </div>
@@ -356,6 +359,138 @@
         <div id="highlightsContent"></div>
     </div>
 
+    <div id="tabInvestments" class="tab-panel" style="display:none">
+        <div class="investment-subtabs" role="tablist" aria-label="Investments sections">
+            <button type="button" id="investmentPortfolioTab" class="investment-subtab active" role="tab" aria-selected="true" aria-controls="investmentPortfolio" onclick="switchInvestmentSubtab('portfolio')">Portfolio</button>
+            <button type="button" id="investmentHouseTab" class="investment-subtab" role="tab" aria-selected="false" aria-controls="investmentHouse" onclick="switchInvestmentSubtab('house')">House</button>
+        </div>
+        <div id="investmentPortfolio" role="tabpanel" aria-labelledby="investmentPortfolioTab">
+        <section class="investments-card">
+            <div class="investments-heading">
+                <h2>Investments</h2>
+                <button id="investmentAdd" class="btn-primary investment-add" type="button" aria-label="Add portfolio item" title="Add portfolio item">+</button>
+            </div>
+            <p id="investmentStatus" class="investment-status" role="status" aria-live="polite"></p>
+            <button id="investmentRetry" class="btn-secondary" type="button" hidden>Retry portfolio load</button>
+            <div id="investmentSummary" class="investment-summary"></div>
+            <div class="tx-table-wrap investment-table-wrap">
+                <table class="tx-table investment-table">
+                    <colgroup>
+                        <col class="investment-col-name"><col class="investment-col-type"><col class="investment-col-qty">
+                        <col class="investment-col-price"><col class="investment-col-value"><col class="investment-col-percent">
+                        <col class="investment-col-percent"><col class="investment-col-pnl"><col class="investment-col-percent">
+                    </colgroup>
+                    <thead><tr>
+                        <th>Name / ticker</th><th>Type</th><th>Qty</th>
+                        <th>Price</th><th>Current value DKK</th><th>Portfolio %</th>
+                        <th>Today %</th><th>Net P/L DKK</th><th>Return %</th>
+                    </tr></thead>
+                    <tbody id="investmentTableBody"></tbody>
+                </table>
+            </div>
+            <p class="investment-note">Net P/L = current value + buy and sell cash flows + fees + dividends. This is not a tax-lot or realized-gain calculation. Portfolio percentages use only positions with known values. Other transaction actions are flagged for review.</p>
+            <dialog id="investmentDialog" class="modal house-dialog" aria-labelledby="investmentDialogTitle">
+                <div class="modal-header"><h2 id="investmentDialogTitle">Add portfolio item</h2></div>
+                <form id="investmentForm" class="house-form">
+                    <label>Ticker<input id="investmentTicker" type="text" required></label>
+                    <label>Name<input id="investmentName" type="text" required></label>
+                    <label>Type<input id="investmentType" type="text" required></label>
+                    <label>Platform<input id="investmentPlatform" type="text" required></label>
+                    <label>Market symbol (optional)<input id="investmentMarketSymbol" type="text" placeholder="AAPL or NOVO.B|XCSE"></label>
+                    <p id="investmentFormStatus" class="investment-note" role="status" aria-live="polite"></p>
+                    <div class="modal-actions">
+                        <button id="investmentCancel" class="btn-secondary" type="button">Cancel</button>
+                        <button id="investmentSubmit" class="btn-primary" type="submit">Add item</button>
+                    </div>
+                </form>
+            </dialog>
+        </section>
+        </div>
+        <section id="investmentHouse" class="house-layout" role="tabpanel" aria-labelledby="investmentHouseTab" hidden>
+            <div class="house-panel house-installments-panel">
+                <div class="house-panel-heading">
+                    <div class="house-panel-title">
+                        <button id="houseViewToggle" class="btn-secondary house-view-toggle" type="button" aria-controls="houseHistory houseTableView">Show installments</button>
+                        <h2>Installments</h2>
+                    </div>
+                    <button id="houseAddInstallment" class="btn-primary house-add" type="button" aria-label="Add installment" title="Add installment" hidden>+</button>
+                </div>
+                <p id="houseLoadStatus" class="house-note" role="status" aria-live="polite"></p>
+                <button id="houseRetryConfig" class="btn-secondary" type="button" hidden>Retry configuration</button>
+                <p id="houseActionStatus" class="house-note" role="status" aria-live="polite"></p>
+                <section id="houseHistory" class="house-history" aria-labelledby="houseHistoryTitle">
+                    <h3 id="houseHistoryTitle">Equity, debt &amp; interest over time</h3>
+                    <p class="house-note">Month-end estimates use current house and mortgage values. Select Interest to see cumulative costs as positive amounts; refunds reduce the total.</p>
+                    <p id="houseHistoryStatus" class="house-note" role="status" aria-live="polite"></p>
+                    <div id="houseHistoryChartWrap" class="house-history-chart" hidden>
+                        <canvas id="houseHistoryChart" role="img" aria-label="Monthly equity, debt and cumulative interest in DKK"></canvas>
+                    </div>
+                </section>
+                <div id="houseTableView" class="house-table-view" hidden>
+                    <div class="house-table-wrap">
+                        <table class="house-table">
+                            <thead><tr><th>Date</th><th>Concept</th><th>Amount DKK</th><th></th></tr></thead>
+                            <tbody id="houseInstallmentsBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="house-pagination" aria-label="Installment pages">
+                        <button id="housePreviousPage" class="page-btn" type="button">Previous</button>
+                        <span id="housePageStatus" aria-live="polite"></span>
+                        <button id="houseNextPage" class="page-btn" type="button">Next</button>
+                    </div>
+                </div>
+                <dialog id="houseInstallmentDialog" class="modal house-dialog" aria-labelledby="houseDialogTitle">
+                    <div class="modal-header">
+                        <h2 id="houseDialogTitle">Add installment</h2>
+                        <button id="houseCloseDialog" type="button" class="modal-close" aria-label="Close installment dialog">×</button>
+                    </div>
+                    <form id="houseInstallmentForm" class="house-form">
+                        <label>Date<input id="houseInstallmentDate" type="date" required autofocus></label>
+                        <label>Amount DKK<input id="houseInstallmentAmount" type="number" step="0.01" required placeholder="0.00"></label>
+                        <p id="houseFormStatus" class="house-note" role="status" aria-live="polite"></p>
+                        <div class="modal-actions">
+                            <button id="houseCancelDialog" class="btn-secondary" type="button">Cancel</button>
+                            <button id="houseSubmitInstallment" class="btn-primary" type="submit">Add installment</button>
+                        </div>
+                    </form>
+                </dialog>
+            </div>
+            <div class="house-panel house-visual-panel">
+                <div class="house-interest-kpi">
+                    <span>Total interest</span><strong id="houseInterestTotal">—</strong>
+                </div>
+                <div class="house-values">
+                    <div class="house-value-label">Mortgage value <output id="houseMortgage" class="house-mortgage-value"></output></div>
+                    <label class="house-value-label" for="houseValue">House value <span>DKK</span>
+                        <input id="houseValue" class="house-value-input" type="text" inputmode="numeric" autocomplete="off" value="6,100,000">
+                    </label>
+                </div>
+                <div class="house-diagram-wrap" tabindex="0" aria-describedby="houseAmounts">
+                    <svg id="houseDiagram" class="house-diagram" viewBox="0 0 300 310" role="img" aria-label="House debt and equity">
+                        <defs><clipPath id="houseClip"><path d="M10 80 L150 0 L290 80 V300 H10 Z"></path></clipPath></defs>
+                        <g clip-path="url(#houseClip)">
+                            <rect x="10" y="0" width="280" height="300" class="house-debt-fill"></rect>
+                            <rect id="houseEquityFill" x="10" y="300" width="280" height="0" class="house-equity-fill"></rect>
+                        </g>
+                        <path d="M10 80 L150 0 L290 80 V300 H10 Z" class="house-outline"></path>
+                        <text id="houseDebtPercent" class="house-percent" x="150" text-anchor="middle" dominant-baseline="middle"></text>
+                        <text id="houseEquityPercent" class="house-percent" x="150" text-anchor="middle" dominant-baseline="middle"></text>
+                    </svg>
+                    <div id="houseAmounts" class="house-tooltip" role="tooltip">
+                        <div>Debt: <strong id="houseDebt">—</strong></div>
+                        <div>Equity: <strong id="houseEquity">—</strong></div>
+                    </div>
+                </div>
+                <div class="house-legend">
+                    <div><span class="house-swatch house-debt-fill"></span><span>Debt</span></div>
+                    <div><span class="house-swatch house-equity-fill"></span><span>Equity</span></div>
+                </div>
+                <p id="houseValueStatus" class="house-note" role="status" aria-live="polite"></p>
+                <p class="house-note">Equity includes principal payments, manual adjustments and the change in house value. Bank interest transactions are excluded. Debt is the house value minus equity; this is an estimate, not the actual mortgage balance.</p>
+            </div>
+        </section>
+    </div>
+
 </main>
 
 <datalist id="expenseOptions"></datalist>
@@ -370,6 +505,8 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-config.js"></script>
-<script src="app.js?v=23"></script>
+<script src="investments.js?v=10"></script>
+<script src="house.js?v=12"></script>
+<script src="app.js?v=26"></script>
 </body>
 </html>

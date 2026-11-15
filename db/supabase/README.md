@@ -42,6 +42,86 @@ The app loads data from Supabase after sign-in. Updates, inserts, deletes, and
 duplicates also go directly to `public.transactions`; the local Flask CSV API
 is no longer used by the browser.
 
+## House installments
+
+Run `house_installments.sql` in the Supabase SQL Editor to create or upgrade the
+shared installments table. The upgrade assigns existing entries `Bank installment`
+or `Interest / Adjustment` based on their amount. Authenticated users can read,
+insert, and delete entries; anonymous access is revoked. Each entry has an entry
+date, signed DKK amount, concept, entry type, and database-generated insertion
+timestamp. Existing entries are assigned type `regular` on upgrade. Positive
+regular amounts represent payments; negative amounts represent interest or
+other adjustments. Bank transactions remain in `transactions` and are not
+copied into this table.
+
+The initial payment is no longer hardcoded. To add it or another entry with a
+custom concept, run an insert once in the SQL Editor, changing the values as
+needed. Avoid inserting the same entry twice:
+
+```sql
+INSERT INTO public.house_installments (entry_date, amount, concept, entry_type)
+VALUES ('2026-01-01', 800000, 'Initial payment', 'initial_payment');
+```
+
+If the initial payment already exists, update its `entry_type` to
+`initial_payment` instead of inserting it again. Insert loan and setup costs
+with type `mortgage_component`. The House view sums the absolute values of
+these two types for the mortgage value. Components do not count as direct equity
+payments or interest, but the initial payment counts as equity. At least one
+mortgage entry is required before House totals can be calculated.
+
+## Portfolio
+
+Run `portfolio.sql` in the Supabase SQL Editor. It creates shared
+`portfolio_items` and `portfolio_transactions` tables. Authenticated users
+can read both tables, create and update items, and are not isolated from each
+other. Anonymous access is revoked. Transactions are read-only from the app;
+the SQL Editor can be used to add or correct them.
+
+To migrate the investment CSV, generate a private SQL file locally:
+
+```powershell
+python db\supabase\generate_portfolio_seed.py "C:\path\to\transactions.csv" "C:\path\to\private-portfolio-seed.sql"
+```
+
+Run the generated SQL in the Supabase SQL Editor after `portfolio.sql`. The
+seed creates one item per ticker/platform pair and preserves every source row,
+including invalid quantity text. Its transaction IDs are deterministic and
+re-running the same seed does not duplicate rows or overwrite existing item
+settings. It is a one-off snapshot: editing the source CSV and importing it
+again can create additional rows. The generated SQL contains financial data;
+keep it private and do not commit it.
+
+Items with positive known net buy/sell quantity and crowdlending items are
+initially in scope. Closed or uncertain items are stored out of scope. Change
+`is_in_scope` in `portfolio_items` to show or hide an item. Twelve Data provides
+prices, not owned quantities: the app computes quantities and cash flows from
+transactions and stores the latest successfully calculated DKK value on the
+item. Out-of-scope items are excluded from display, refresh, and totals.
+
+### Price refresh
+
+Each item's refresh icon calls the authenticated `market-data` Edge Function
+for that item. Add `TWELVE_DATA_API_KEY` in the Supabase Dashboard under
+**Edge Functions → Secrets**. Enter the key there; do not put it in source
+code, browser configuration, or chat.
+
+Install the Supabase CLI and authenticate, then deploy from the repository root.
+Run `supabase init` only if `supabase\config.toml` does not already exist:
+
+```powershell
+supabase init
+supabase login
+supabase link --project-ref <your-project-ref>
+supabase functions deploy market-data --use-api
+```
+
+Keep the function's default JWT verification enabled. The function additionally
+requires an authenticated user and only forwards the supported quote, exchange
+rate and daily history requests. Once deployed, signed-in users can refresh
+prices from GitHub Pages or the local app. Each request uses Twelve Data credits;
+the browser paces its requests, but this is not a server-side rate limit.
+
 ## Import new Enable Banking transactions
 
 Run `schema.sql` first if the base `transactions` table has not been created.
@@ -94,8 +174,8 @@ This importer does not perform interactive bank consent. If access is revoked,
 complete the bank's authorization process separately and update the account
 UID secret as needed.
 
-The `Import bank transactions` workflow runs daily at 05:20 UTC and is also
-available for manual runs from the Actions tab. It has read-only repository
+The `Import bank transactions` workflow runs Monday through Friday at 05:20 UTC
+and is also available for manual runs from the Actions tab. It has read-only repository
 permissions, serializes runs, and exposes credentials only to the import step.
 The static Pages workflow uploads only `docs/`, not the rest of the repository.
 
@@ -105,7 +185,7 @@ through environment variables; Supabase values can come from the ignored local
 config file above or environment variables. The script processes transactions
 in memory and does not create raw CSVs, categorized CSVs, or a session file.
 
-It fetches from the stored watermark with a two-day overlap, stages categorized
+It fetches from the stored watermark with a seven-day overlap, stages categorized
 rows, and calls a database function that inserts only missing `(source_system,
 source_entry_reference)` values. A unique index and `ON CONFLICT DO NOTHING`
 make retries safe; existing transaction content is never updated by this
