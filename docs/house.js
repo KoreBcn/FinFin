@@ -277,17 +277,13 @@ async function loadHouseConfig() {
     houseConfigError = '';
     renderHouse();
     try {
-        const response = await fetch('/api/investments/house-config', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}'
-        });
-        if (!response.headers.get('content-type')?.includes('application/json')) {
-            throw new Error('House requires the local Flask server.');
-        }
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || `House configuration error (${response.status}).`);
+        const { data, error } = await supabaseClient.from('house_config')
+            .select('installment_concept, interest_concept').eq('id', true).maybeSingle();
+        if (error) throw new Error(error.message);
+        if (!data) throw new Error('Set up the House configuration in Supabase.');
         if (typeof data.installment_concept !== 'string' || !data.installment_concept.trim()
             || typeof data.interest_concept !== 'string' || !data.interest_concept.trim()) {
-            throw new Error('The local House configuration must include installment and interest concepts.');
+            throw new Error('The House configuration must include installment and interest concepts.');
         }
         const installment = data.installment_concept.trim();
         const interest = data.interest_concept.trim();
@@ -396,7 +392,7 @@ function renderHouse() {
             ready = false;
             status.textContent = error.message;
         }
-    } else status.textContent = houseConfigError || 'Loading the local transaction reference…';
+    } else status.textContent = houseConfigError || 'Loading the transaction references…';
     if (houseEntriesError) status.textContent = houseEntriesError;
     else if (!houseEntriesLoaded && !houseConfigError) status.textContent = 'Loading saved installments…';
     const mortgageEntries = houseStoredInstallments.filter(item => item.entryType === 'mortgage_component' || item.entryType === 'initial_payment');

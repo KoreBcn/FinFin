@@ -34,4 +34,22 @@ CREATE POLICY house_installments_authenticated_access
     USING (true)
     WITH CHECK (true);
 
+CREATE TABLE IF NOT EXISTS public.house_config (
+    id boolean PRIMARY KEY DEFAULT true CHECK (id),
+    installment_concept text NOT NULL CHECK (length(btrim(installment_concept)) > 0),
+    interest_concept text NOT NULL CHECK (length(btrim(interest_concept)) > 0),
+    CHECK (position(lower(btrim(interest_concept)) in lower(btrim(installment_concept))) = 0)
+);
+
+ALTER TABLE public.house_config ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.house_config FROM PUBLIC, anon, authenticated;
+GRANT SELECT ON public.house_config TO authenticated;
+
+DROP POLICY IF EXISTS house_config_authenticated_read ON public.house_config;
+CREATE POLICY house_config_authenticated_read
+    ON public.house_config
+    FOR SELECT
+    TO authenticated
+    USING (true);
+
 COMMIT;

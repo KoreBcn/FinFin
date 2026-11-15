@@ -45,7 +45,26 @@ is no longer used by the browser.
 ## House installments
 
 Run `house_installments.sql` in the Supabase SQL Editor to create or upgrade the
-shared installments table. The upgrade assigns existing entries `Bank installment`
+shared installments and House configuration tables. Then insert the matching
+references in the SQL Editor, replacing the placeholders with the values from
+the local `house-config.json`. Do not commit the completed SQL or publish the
+references on GitHub Pages:
+
+```sql
+INSERT INTO public.house_config (id, installment_concept, interest_concept)
+VALUES (true, 'your exact payment description', 'text in your interest description')
+ON CONFLICT (id) DO UPDATE SET
+    installment_concept = EXCLUDED.installment_concept,
+    interest_concept = EXCLUDED.interest_concept;
+```
+
+The references are shared with all authenticated Supabase users, as are the
+House installments; anonymous users cannot read them. Authenticated users can
+only read the configuration, not modify it through the app. Payment descriptions
+match exactly and interest descriptions match by substring; the interest
+reference must not be contained in the payment reference.
+
+The upgrade assigns existing entries `Bank installment`
 or `Interest / Adjustment` based on their amount. Authenticated users can read,
 insert, and delete entries; anonymous access is revoked. Each entry has an entry
 date, signed DKK amount, concept, entry type, and database-generated insertion

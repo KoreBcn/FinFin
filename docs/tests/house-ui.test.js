@@ -4,7 +4,9 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
-function setup(fetch, initialRows = [], { withMortgage = true } = {}) {
+function setup(configRequest = async () => ({
+    data: { installment_concept: 'reference', interest_concept: 'interest' }, error: null
+}), initialRows = [], { withMortgage = true } = {}) {
     class Element {
         constructor() {
             this.children = [];
@@ -53,6 +55,20 @@ function setup(fetch, initialRows = [], { withMortgage = true } = {}) {
     const database = { rows, nextId: 1, loadError: null, saveError: null, deleteError: null };
     const supabaseClient = {
         from(table) {
+            if (table === 'house_config') {
+                return {
+                    select(columns) {
+                        assert.equal(columns, 'installment_concept, interest_concept');
+                        return this;
+                    },
+                    eq(field, value) {
+                        assert.equal(field, 'id');
+                        assert.equal(value, true);
+                        return this;
+                    },
+                    maybeSingle: configRequest
+                };
+            }
             assert.equal(table, 'house_installments');
             let operation = 'read';
             let payload;
@@ -103,7 +119,7 @@ function setup(fetch, initialRows = [], { withMortgage = true } = {}) {
         observe(element) { this.target = element; }
     }
     const context = vm.createContext({
-        document, fetch, supabaseClient, activeAuthUserId: 'test', Chart, ResizeObserver, charts: {}, openInvestments() {},
+        document, supabaseClient, activeAuthUserId: 'test', Chart, ResizeObserver, charts: {}, openInvestments() {},
         chartGridColor: () => '#e2e8f0',
         rawData: [{ Comments: 'reference', PlannedReal: 'Real', Amount: -50000, Date: '01/01/26', DateSortKey: 20260101 }],
         investmentFormat: (value, decimals = 2) => value.toLocaleString('en-GB', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })
@@ -122,10 +138,7 @@ test('tracks the house illustration width for the compact chart layout', () => {
 });
 
 test('saves and deletes signed installments, retaining them after House reset', async () => {
-    const { context, elements, database } = setup(async () => ({
-        ok: true, headers: { get: () => 'application/json' },
-        json: async () => ({ installment_concept: 'reference', interest_concept: 'interest' })
-    }), [{ id: 'initial', entry_date: '2026-01-01', amount: 800000, concept: 'Initial payment' }]);
+    const { context, elements, database } = setup(undefined, [{ id: 'initial', entry_date: '2026-01-01', amount: 800000, concept: 'Initial payment' }]);
     await vm.runInContext('openHouse()', context);
     assert.equal(elements.get('houseEquity').textContent, '850,000');
     assert.equal(elements.get('houseInstallmentsBody').children[1].children[2].textContent, '800,000.00');
@@ -182,10 +195,7 @@ test('saves and deletes signed installments, retaining them after House reset', 
 });
 
 test('updates monthly history for saves, value changes and resets', async () => {
-    const { context, elements } = setup(async () => ({
-        ok: true, headers: { get: () => 'application/json' },
-        json: async () => ({ installment_concept: 'reference', interest_concept: 'interest' })
-    }), [{ id: 'initial', entry_date: '2026-01-01', amount: 800000, concept: 'Initial payment' }]);
+    const { context, elements } = setup(undefined, [{ id: 'initial', entry_date: '2026-01-01', amount: 800000, concept: 'Initial payment' }]);
     await vm.runInContext('openHouse()', context);
     const toggle = elements.get('houseViewToggle');
     assert.equal(toggle.textContent, 'Show installments');
@@ -253,10 +263,7 @@ test('updates monthly history for saves, value changes and resets', async () => 
 });
 
 test('reports when the chart library is unavailable', async () => {
-    const { context, elements } = setup(async () => ({
-        ok: true, headers: { get: () => 'application/json' },
-        json: async () => ({ installment_concept: 'reference', interest_concept: 'interest' })
-    }));
+    const { context, elements } = setup(undefined);
     vm.runInContext('Chart = undefined', context);
     await vm.runInContext('openHouse()', context);
     assert.match(elements.get('houseHistoryStatus').textContent, /Chart unavailable/);
@@ -266,10 +273,7 @@ test('reports when the chart library is unavailable', async () => {
 });
 
 test('reports invalid history dates without hiding current totals', async () => {
-    const { context, elements } = setup(async () => ({
-        ok: true, headers: { get: () => 'application/json' },
-        json: async () => ({ installment_concept: 'reference', interest_concept: 'interest' })
-    }));
+    const { context, elements } = setup(undefined);
     vm.runInContext('rawData[0].DateSortKey = 0', context);
     await vm.runInContext('openHouse()', context);
     assert.match(elements.get('houseHistoryStatus').textContent, /invalid date/);
@@ -278,10 +282,7 @@ test('reports invalid history dates without hiding current totals', async () => 
 });
 
 test('handles no installments without a hardcoded initial payment', async () => {
-    const { context, elements } = setup(async () => ({
-        ok: true, headers: { get: () => 'application/json' },
-        json: async () => ({ installment_concept: 'reference', interest_concept: 'interest' })
-    }), [], { withMortgage: false });
+    const { context, elements } = setup(undefined, [], { withMortgage: false });
     vm.runInContext('rawData = []', context);
     await vm.runInContext('openHouse()', context);
     assert.equal(elements.get('houseInstallmentsBody').children.length, 0);
@@ -298,10 +299,7 @@ test('aggregates mortgage components without treating them as equity payments or
         { id: 'fees', entry_date: '2026-01-30', amount: -50000.50, concept: 'Fees', entry_type: 'mortgage_component' },
         { id: 'interest', entry_date: '2026-02-01', amount: -30, concept: 'Interest', entry_type: 'regular' }
     ];
-    const { context, elements } = setup(async () => ({
-        ok: true, headers: { get: () => 'application/json' },
-        json: async () => ({ installment_concept: 'reference', interest_concept: 'interest' })
-    }), rows, { withMortgage: false });
+    const { context, elements } = setup(undefined, rows, { withMortgage: false });
     await vm.runInContext('openHouse()', context);
     assert.equal(elements.get('houseMortgage').textContent, '6,100,000.00');
     assert.equal(elements.get('houseEquity').textContent, '849,970');
@@ -318,20 +316,14 @@ test('aggregates mortgage components without treating them as equity payments or
 });
 
 test('reports invalid saved concepts instead of inventing a label', async () => {
-    const { context, elements } = setup(async () => ({
-        ok: true, headers: { get: () => 'application/json' },
-        json: async () => ({ installment_concept: 'reference', interest_concept: 'interest' })
-    }), [{ id: 'invalid', entry_date: '2026-01-01', amount: 100, concept: null }]);
+    const { context, elements } = setup(undefined, [{ id: 'invalid', entry_date: '2026-01-01', amount: 100, concept: null }]);
     await vm.runInContext('openHouse()', context);
     assert.match(elements.get('houseLoadStatus').textContent, /invalid data/);
     assert.equal(elements.get('houseEquity').textContent, '—');
 });
 
 test('formats whole house values while retaining validation and precision of calculations', async () => {
-    const { context, elements } = setup(async () => ({
-        ok: true, headers: { get: () => 'application/json' },
-        json: async () => ({ installment_concept: 'reference', interest_concept: 'interest' })
-    }), [{ id: 'initial', entry_date: '2026-01-01', amount: 800000, concept: 'Initial payment' }]);
+    const { context, elements } = setup(undefined, [{ id: 'initial', entry_date: '2026-01-01', amount: 800000, concept: 'Initial payment' }]);
     await vm.runInContext('openHouse()', context);
     const input = elements.get('houseValue');
     assert.equal(elements.get('houseMortgage').textContent, '6,100,000.00');
@@ -363,10 +355,7 @@ test('paginates combined entries without changing equity', async () => {
             id: `row-${i}`, entry_date: `2026-02-${String(i + 1).padStart(2, '0')}`, amount: 1000, concept: 'Payment'
         }))
     ];
-    const { context, elements } = setup(async () => ({
-        ok: true, headers: { get: () => 'application/json' },
-        json: async () => ({ installment_concept: 'reference', interest_concept: 'interest' })
-    }), rows);
+    const { context, elements } = setup(undefined, rows);
     await vm.runInContext('openHouse()', context);
     elements.get('houseViewToggle').listeners.click();
     assert.equal(elements.get('houseInstallmentsBody').children.length, 10);
@@ -393,10 +382,7 @@ test('combines bank interest and saved negative adjustments in the KPI on every 
             id: `row-${i}`, entry_date: `2026-02-${String(i + 3).padStart(2, '0')}`, amount: 100, concept: 'Payment'
         }))
     ];
-    const { context, elements } = setup(async () => ({
-        ok: true, headers: { get: () => 'application/json' },
-        json: async () => ({ installment_concept: 'reference', interest_concept: 'interest' })
-    }), rows);
+    const { context, elements } = setup(undefined, rows);
     vm.runInContext(`rawData.push(
         { Comments: 'reference', PlannedReal: 'Real', Amount: 5000, Date: '02/01/26', DateSortKey: 20260102 },
         { Comments: 'bank interest fee', PlannedReal: 'Real', Amount: -100, Date: '03/01/26', DateSortKey: 20260103 },
@@ -429,10 +415,7 @@ test('combines bank interest and saved negative adjustments in the KPI on every 
 });
 
 test('reports load and save failures instead of showing incomplete totals', async () => {
-    const { context, elements, database } = setup(async () => ({
-        ok: true, headers: { get: () => 'application/json' },
-        json: async () => ({ installment_concept: 'reference', interest_concept: 'interest' })
-    }));
+    const { context, elements, database } = setup(undefined);
     database.loadError = 'load failed';
     await vm.runInContext('openHouse()', context);
     assert.match(elements.get('houseLoadStatus').textContent, /load failed/);
@@ -454,15 +437,35 @@ test('reports load and save failures instead of showing incomplete totals', asyn
     assert.equal(elements.get('houseEquity').textContent, '—');
 });
 
+test('reports configuration errors and retries without showing incomplete totals', async () => {
+    let response = { data: null, error: { message: 'configuration unavailable' } };
+    const { context, elements } = setup(async () => response);
+    await vm.runInContext('openHouse()', context);
+    assert.match(elements.get('houseLoadStatus').textContent, /configuration unavailable/);
+    assert.equal(elements.get('houseEquity').textContent, '—');
+    assert.equal(elements.get('houseRetryConfig').hidden, false);
+
+    response = { data: null, error: null };
+    await vm.runInContext('openHouse()', context);
+    assert.match(elements.get('houseLoadStatus').textContent, /Set up the House configuration/);
+
+    response = { data: { installment_concept: 'reference', interest_concept: 'REFERENCE' }, error: null };
+    await vm.runInContext('openHouse()', context);
+    assert.match(elements.get('houseLoadStatus').textContent, /must not overlap/);
+
+    response = { data: { installment_concept: ' reference ', interest_concept: ' interest ' }, error: null };
+    await vm.runInContext('openHouse()', context);
+    assert.equal(elements.get('houseLoadStatus').textContent, '');
+    assert.equal(elements.get('houseEquity').textContent, '50,000');
+    assert.equal(elements.get('houseRetryConfig').hidden, true);
+});
+
 test('ignores a delayed configuration response after reset', async () => {
-    let resolveFetch;
-    const { context } = setup(() => new Promise(resolve => { resolveFetch = resolve; }));
+    let resolveConfig;
+    const { context } = setup(() => new Promise(resolve => { resolveConfig = resolve; }));
     const pending = vm.runInContext('openHouse()', context);
     vm.runInContext('clearHouse()', context);
-    resolveFetch({
-        ok: true, headers: { get: () => 'application/json' },
-        json: async () => ({ installment_concept: 'reference', interest_concept: 'interest' })
-    });
+    resolveConfig({ data: { installment_concept: 'reference', interest_concept: 'interest' }, error: null });
     await pending;
     assert.equal(vm.runInContext('houseConcept', context), null);
 });
