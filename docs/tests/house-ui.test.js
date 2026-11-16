@@ -123,9 +123,10 @@ function setup(configRequest = async () => ({
     const context = vm.createContext({
         document, supabaseClient, activeAuthUserId: 'test', Chart, ResizeObserver, charts: {}, openInvestments() {},
         chartGridColor: () => '#e2e8f0',
-        rawData: [{ Comments: 'reference', PlannedReal: 'Real', Amount: -50000, Date: '01/01/26', DateSortKey: 20260101 }],
+        rawData: [{ Comments: 'reference', PlannedReal: 'Real', Amount: -50000, Date: '2026-01-01', DateSortKey: 20260101 }],
         investmentFormat: (value, decimals = 2) => value.toLocaleString('en-GB', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })
     });
+    vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'date-utils.js'), 'utf8'), context);
     vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'house.js'), 'utf8'), context);
     return { context, elements, database, resizeObserver };
 }
@@ -155,7 +156,7 @@ test('saves and deletes signed installments, retaining them after House reset', 
     assert.equal(elements.get('houseEquity').textContent, '850,000');
     assert.equal(elements.get('houseInstallmentsBody').children[1].children[2].textContent, '800,000.00');
     assert.equal(elements.get('houseInstallmentsBody').children[1].children[1].textContent, 'Initial payment');
-    assert.equal(elements.get('houseInstallmentsBody').children[1].children[0].textContent, '01/01/2026');
+    assert.equal(elements.get('houseInstallmentsBody').children[1].children[0].textContent, '2026-01-01');
     assert.equal(elements.get('houseInstallmentsBody').children[1].children[2].className, 'house-amount-positive');
     assert.equal(elements.get('houseDebtPercent').textContent, '86.07%');
     assert.equal(elements.get('houseEquityPercent').textContent, '13.93%');
@@ -204,6 +205,21 @@ test('saves and deletes signed installments, retaining them after House reset', 
     await vm.runInContext('deleteHouseInstallment("saved-1")', context);
     assert.equal(elements.get('houseEquity').textContent, '850,000');
     assert.equal(database.rows.length, 2);
+});
+
+test('rejects invalid installment dates and saves a valid leap day unchanged', async () => {
+    const { context, elements, database } = setup();
+    await vm.runInContext('openHouse()', context);
+    const form = elements.get('houseInstallmentForm');
+    elements.get('houseInstallmentAmount').value = '100';
+    elements.get('houseInstallmentDate').value = '2023-02-29';
+    await form.listeners.submit({ preventDefault() {}, currentTarget: form });
+    assert.match(elements.get('houseFormStatus').textContent, /YYYY-MM-DD/);
+    assert.equal(database.rows.length, 1);
+    elements.get('houseInstallmentDate').value = '2024-02-29';
+    await form.listeners.submit({ preventDefault() {}, currentTarget: form });
+    assert.equal(database.rows[1].entry_date, '2024-02-29');
+    assert.ok(elements.get('houseInstallmentsBody').children.some(row => row.children[0].textContent === '2024-02-29'));
 });
 
 test('updates monthly history for saves, value changes and resets', async () => {
@@ -379,7 +395,7 @@ test('paginates combined entries without changing equity', async () => {
     await vm.runInContext('openHouse()', context);
     elements.get('houseInstallmentsButton').listeners.click();
     assert.equal(elements.get('houseInstallmentsBody').children.length, 10);
-    assert.equal(elements.get('houseInstallmentsBody').children[0].children[0].textContent, '18/02/2026');
+    assert.equal(elements.get('houseInstallmentsBody').children[0].children[0].textContent, '2026-02-18');
     assert.equal(elements.get('housePageStatus').textContent, 'Page 1 of 3');
     const equity = elements.get('houseEquity').textContent;
     elements.get('houseNextPage').listeners.click();
@@ -387,7 +403,7 @@ test('paginates combined entries without changing equity', async () => {
     assert.equal(elements.get('houseEquity').textContent, equity);
     elements.get('houseNextPage').listeners.click();
     assert.equal(elements.get('houseInstallmentsBody').children.length, 1);
-    assert.equal(elements.get('houseInstallmentsBody').children[0].children[0].textContent, '01/01/1900');
+    assert.equal(elements.get('houseInstallmentsBody').children[0].children[0].textContent, '1900-01-01');
     assert.equal(elements.get('housePageStatus').textContent, 'Page 3 of 3');
     await vm.runInContext('deleteHouseInstallment("row-17")', context);
     assert.equal(elements.get('housePageStatus').textContent, 'Page 2 of 2');
@@ -404,10 +420,10 @@ test('combines bank interest and saved negative adjustments in the KPI on every 
     ];
     const { context, elements } = setup(undefined, rows);
     vm.runInContext(`rawData.push(
-        { Comments: 'reference', PlannedReal: 'Real', Amount: 5000, Date: '02/01/26', DateSortKey: 20260102 },
-        { Comments: 'bank interest fee', PlannedReal: 'Real', Amount: -100, Date: '03/01/26', DateSortKey: 20260103 },
-        { Comments: 'interest refund', PlannedReal: 'Real', Amount: 20, Date: '04/01/26', DateSortKey: 20260104 },
-        { Comments: 'interest planned', PlannedReal: 'Planned', Amount: -200, Date: '05/01/26', DateSortKey: 20260105 }
+        { Comments: 'reference', PlannedReal: 'Real', Amount: 5000, Date: '2026-01-02', DateSortKey: 20260102 },
+        { Comments: 'bank interest fee', PlannedReal: 'Real', Amount: -100, Date: '2026-01-03', DateSortKey: 20260103 },
+        { Comments: 'interest refund', PlannedReal: 'Real', Amount: 20, Date: '2026-01-04', DateSortKey: 20260104 },
+        { Comments: 'interest planned', PlannedReal: 'Planned', Amount: -200, Date: '2026-01-05', DateSortKey: 20260105 }
     )`, context);
     await vm.runInContext('openHouse()', context);
     assert.equal(elements.get('houseInterestTotal').textContent, '-110.00 DKK');

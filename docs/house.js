@@ -307,7 +307,7 @@ async function loadHouseConfig() {
 function storedHouseInstallment(row) {
     const amount = Number(row.amount);
     if (typeof row.id !== 'string' || typeof row.entry_date !== 'string'
-        || !/^\d{4}-\d{2}-\d{2}$/.test(row.entry_date)
+        || !isValidIsoDate(row.entry_date)
         || typeof row.concept !== 'string'
         || !['regular', 'mortgage_component', 'initial_payment'].includes(row.entry_type)
         || !Number.isFinite(amount) || amount === 0) {
@@ -316,7 +316,7 @@ function storedHouseInstallment(row) {
     const [year, month, day] = row.entry_date.split('-');
     return {
         id: row.id, source: row.concept, amount, entryType: row.entry_type,
-        date: `${day}/${month}/${year}`, sortKey: Number(`${year}${month}${day}`)
+        date: row.entry_date, sortKey: Number(`${year}${month}${day}`)
     };
 }
 
@@ -559,8 +559,8 @@ if (typeof document !== 'undefined') {
         const date = document.getElementById('houseInstallmentDate').value;
         const amountInput = document.getElementById('houseInstallmentAmount');
         const amount = amountInput.value === '' ? NaN : Number(amountInput.value);
-        if (!form.checkValidity() || !Number.isFinite(amount) || amount === 0) {
-            document.getElementById('houseFormStatus').textContent = 'Enter a valid date and a non-zero installment amount.';
+        if (!form.checkValidity() || !isValidIsoDate(date) || !Number.isFinite(amount) || amount === 0) {
+            document.getElementById('houseFormStatus').textContent = 'Enter a valid date in YYYY-MM-DD format and a non-zero installment amount.';
             return;
         }
         const generation = houseGeneration;

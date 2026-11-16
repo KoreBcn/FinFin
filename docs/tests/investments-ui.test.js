@@ -51,6 +51,7 @@ test('renders compact positions, signed metrics and accessible details', () => {
         createElement: tag => new Element(tag)
     };
     const context = vm.createContext({ document, activeAuthUserId: null });
+    vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'date-utils.js'), 'utf8'), context);
     vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'investment-math.js'), 'utf8'), context);
     vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'investments.js'), 'utf8'), context);
     vm.runInContext(`
@@ -228,6 +229,7 @@ function setupPortfolio(clock = null) {
         localStorage: { getItem() { return null; }, setItem() {} },
         AbortController, Date: TestDate, setTimeout: timer, clearTimeout, confirm: () => database.confirmDelete !== false
     });
+    vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'date-utils.js'), 'utf8'), context);
     vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'investment-math.js'), 'utf8'), context);
     vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'investments.js'), 'utf8'), context);
     return { context, elements, database };
@@ -693,10 +695,13 @@ test('persists and restores a refreshed price, currency and quote time', async (
     assert.equal(database.items[0].market_currency, 'USD');
     assert.equal(database.items[0].market_price_at, '2026-01-01T12:00:00.000Z');
     assert.equal(database.items[0].current_value_dkk, 1500);
+    const refreshedPrice = find(elements.get('investmentTableBody').children[0], e => e.dataset.label === 'Price');
+    assert.match(refreshedPrice.textContent, /\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/);
     vm.runInContext('clearInvestments()', context);
     await vm.runInContext('openInvestments()', context);
     const price = find(elements.get('investmentTableBody').children[0], e => e.dataset.label === 'Price');
     assert.match(price.textContent, /100\.00 USD/);
+    assert.match(price.textContent, /\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/);
     assert.equal(elements.get('investmentPortfolioSize').textContent, '1,500.00 DKK');
 });
 
@@ -1022,6 +1027,10 @@ test('validates and saves a buy, reloads the overview, and retains crowdlending 
     database.items.push({ id: 'crowd', ticker: 'CROWD', platform: 'Broker', name: 'Crowd', type: 'Crowdlending',
         is_in_scope: true, current_value_dkk: 500, valuation_version: 0 });
     await vm.runInContext('openInvestments()', context);
+    fillPortfolioTransaction(elements, { Date: '2026-02-29' });
+    await submitPortfolioTransaction(elements);
+    assert.match(elements.get('portfolioTransactionFormStatus').textContent, /YYYY-MM-DD/);
+    assert.equal(database.transactions.length, 1);
     fillPortfolioTransaction(elements, { Quantity: '-1' });
     await submitPortfolioTransaction(elements);
     assert.match(elements.get('portfolioTransactionFormStatus').textContent, /non-negative/);
@@ -1037,6 +1046,7 @@ test('validates and saves a buy, reloads the overview, and retains crowdlending 
     assert.equal(database.items[0].current_value_dkk, null);
     assert.equal(database.items[0].valuation_version, 1);
     assert.equal(database.transactions[1].ticker, 'CPH:NOVO-B');
+    assert.equal(database.transactions[1].transaction_date, '2026-03-01');
     assert.equal(find(elements.get('investmentTableBody').children[0], e => e.dataset.label === 'Qty').textContent, '3.50');
     assert.equal(elements.get('investmentPortfolioSize').textContent, '500.00 DKK');
     fillPortfolioTransaction(elements, { Item: 'crowd', Action: 'Sell' });

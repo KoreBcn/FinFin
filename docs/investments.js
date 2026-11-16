@@ -677,8 +677,8 @@ document.getElementById('portfolioTransactionForm').addEventListener('submit', a
     const status = document.getElementById('portfolioTransactionFormStatus');
     const transaction = Object.fromEntries(Object.entries(portfolioTransactionFields).map(([field, id]) => [field, (document.getElementById(id).value || '').trim()]));
     try {
-        if (!form.checkValidity() || !investmentItems.some(item => item.id === transaction.portfolio_item_id) || !transaction.transaction_date || !transaction.action) {
-            throw new Error('Choose an item and enter a valid date and action.');
+        if (!form.checkValidity() || !investmentItems.some(item => item.id === transaction.portfolio_item_id) || !isValidIsoDate(transaction.transaction_date) || !transaction.action) {
+            throw new Error('Choose an item and enter a valid date in YYYY-MM-DD format and an action.');
         }
         const action = transaction.action.toLowerCase();
         if (['buy', 'sell'].includes(action) && !transaction.quantity) throw new Error('Quantity is required for buys and sells.');
@@ -788,7 +788,7 @@ async function openInvestments() {
                 const key = JSON.stringify([item.platform, item.ticker]);
                 investmentQuotes.set(key, {
                     price: Number(item.market_price), currency: item.market_currency,
-                    datetime: item.market_price_at ? new Date(item.market_price_at).toLocaleString() : '',
+                    datetime: item.market_price_at ? formatLocalDateTime(new Date(item.market_price_at), true) : '',
                     rate: null
                 });
             }
@@ -1004,7 +1004,7 @@ async function refreshInvestment(p) {
         if (!Number.isFinite(price) || price <= 0 || typeof currency !== 'string' || !/^[A-Z]{3}$/.test(currency)) throw new Error('Quote is missing a valid price or currency.');
         if (data.last_quote_at != null && (!Number.isFinite(data.last_quote_at) || data.last_quote_at <= 0)) throw new Error('Quote has an invalid timestamp.');
         const at = data.last_quote_at == null ? null : new Date(data.last_quote_at * 1000).toISOString();
-        const quote = { price, currency, at, datetime: at ? new Date(at).toLocaleString() : '', today: data.percent_change == null ? null : Number(data.percent_change), rate: null };
+        const quote = { price, currency, at, datetime: at ? formatLocalDateTime(new Date(at), true) : '', today: data.percent_change == null ? null : Number(data.percent_change), rate: null };
         let rate = 1;
         let conversionError = null;
         if (!p.quantityUnknown && currency !== 'DKK') {

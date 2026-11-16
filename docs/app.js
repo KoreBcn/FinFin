@@ -113,20 +113,6 @@ function parseDateSortKey(raw) {
     if (ymd) return parseInt(ymd[1]) * 10000 + parseInt(ymd[2]) * 100 + parseInt(ymd[3]);
     return 0;
 }
-function parseDateFromString(raw) {
-    if (!raw) return null;
-    const dmy = raw.match(/^(\d{2})\/(\d{2})\/(\d{2,4})$/);
-    if (dmy) {
-        let y = parseInt(dmy[3]);
-        if (y < 100) y += 2000;
-        return new Date(y, parseInt(dmy[2]) - 1, parseInt(dmy[1]));
-    }
-    const ymd = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-    if (ymd) return new Date(parseInt(ymd[1]), parseInt(ymd[2]) - 1, parseInt(ymd[3]));
-    return null;
-}
-
-
 // =====================================================
 //  TAB SWITCHING
 // =====================================================
@@ -184,16 +170,7 @@ document.addEventListener('click', event => {
 //  API HELPERS
 // =====================================================
 function rowToSupabaseData(row) {
-    const dateMatch = (row.Date || '').match(/^(\d{2})\/(\d{2})\/(\d{2,4})$/);
-    if (!dateMatch) throw new Error(`Invalid transaction date: ${row.Date || '(empty)'}`);
-    let year = parseInt(dateMatch[3], 10);
-    if (year < 100) year += 2000;
-    const month = parseInt(dateMatch[2], 10);
-    const day = parseInt(dateMatch[1], 10);
-    const date = new Date(year, month - 1, day);
-    if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
-        throw new Error(`Invalid transaction date: ${row.Date}`);
-    }
+    if (!isValidIsoDate(row.Date)) throw new Error(`Invalid transaction date (use YYYY-MM-DD): ${row.Date || '(empty)'}`);
 
     const amount = Number(row.Amount);
     if (!Number.isFinite(amount)) throw new Error(`Invalid transaction amount: ${row.Amount}`);
@@ -203,7 +180,7 @@ function rowToSupabaseData(row) {
         expense: row.Expense,
         transaction_status: row.PlannedReal === 'Planned' ? 'Planned' : 'REA',
         category: row.Type,
-        transaction_date: `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
+        transaction_date: row.Date,
         amount,
         comments: row.Comments || null,
         account: row.Account || '',
@@ -216,11 +193,8 @@ function rowToSupabaseData(row) {
 }
 
 function supabaseDataToRow(d) {
-    const dateMatch = (d.transaction_date || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
-    if (!dateMatch) throw new Error(`Invalid date returned by Supabase: ${d.transaction_date}`);
-    const year = parseInt(dateMatch[1], 10);
-    const month = parseInt(dateMatch[2], 10);
-    const day = parseInt(dateMatch[3], 10);
+    if (!isValidIsoDate(d.transaction_date)) throw new Error(`Invalid date returned by Supabase: ${d.transaction_date}`);
+    const [year, month] = d.transaction_date.split('-').map(Number);
     const amount = Number(d.amount);
     const typeField = d.category || '';
     let account = d.account || '';
@@ -232,7 +206,7 @@ function supabaseDataToRow(d) {
         Expense:     d.expense || '',
         PlannedReal: (d.transaction_status || '').toLowerCase().startsWith('plan') ? 'Planned' : 'Real',
         Type:        typeField,
-        Date:        `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${String(year).slice(-2)}`,
+        Date:        d.transaction_date,
         DateSortKey: parseDateSortKey(d.transaction_date),
         Month:       month,
         Year:        year,
@@ -304,7 +278,7 @@ async function refreshTransactionInsertDate() {
         }
         const date = new Date(data.inserted_at);
         if (typeof data.inserted_at !== 'string' || !Number.isFinite(date.getTime())) throw new Error('Invalid insert date');
-        label.textContent = `Latest transaction insert: ${date.toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })}`;
+        label.textContent = `Latest transaction insert: ${formatLocalDateTime(date)}`;
     } catch (error) {
         if (request === transactionInsertRequest && userId === activeAuthUserId) {
             label.textContent = `Latest transaction insert unavailable: ${error.message}`;
@@ -1319,26 +1293,10 @@ function markDrawerRowDirty(row) {
     updateDrawerSaveButton();
 }
 
-function dateInputValue(date) {
-    const parsed = parseDateFromString(date);
-    if (!parsed || isNaN(parsed)) return '';
-    const pad = value => String(value).padStart(2, '0');
-    return `${parsed.getFullYear()}-${pad(parsed.getMonth() + 1)}-${pad(parsed.getDate())}`;
-}
-
 function updateDrawerRowDate(row, value) {
-    const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-    if (!match) return false;
-    const year = parseInt(match[1], 10);
-    const month = parseInt(match[2], 10);
-    const day = parseInt(match[3], 10);
-    const parsed = new Date(year, month - 1, day);
-    if (parsed.getFullYear() !== year || parsed.getMonth() !== month - 1 || parsed.getDate() !== day) {
-        return false;
-    }
-
-    const pad = number => String(number).padStart(2, '0');
-    row.Date = `${pad(day)}/${pad(month)}/${String(year).slice(-2)}`;
+    if (!isValidIsoDate(value)) return false;
+    const [year, month] = value.split('-').map(Number);
+    row.Date = value;
     row.DateSortKey = parseDateSortKey(row.Date);
     row.Month = month;
     row.Year = year;
@@ -1418,11 +1376,16 @@ function renderDrawerTable() {
             const tdDate = document.createElement('td');
             const inpDate = document.createElement('input');
             inpDate.className = 'tx-date-input drawer-date-input';
-            inpDate.type = 'date';
-            inpDate.value = dateInputValue(row.Date);
-            inpDate.setAttribute('aria-label', 'Transaction date');
+            inpDate.type = 'text';
+            inpDate.value = row.Date;
+            inpDate.placeholder = 'YYYY-MM-DD';
+            inpDate.setAttribute('aria-label', 'Transaction date (YYYY-MM-DD)');
             inpDate.addEventListener('change', () => {
-                if (!updateDrawerRowDate(row, inpDate.value)) return;
+                if (!updateDrawerRowDate(row, inpDate.value.trim())) {
+                    inpDate.value = row.Date;
+                    showToast('❌ Enter a valid date in YYYY-MM-DD format', 'error');
+                    return;
+                }
                 markDrawerRowDirty(row);
                 applyGlobalFilters();
                 renderDashboard();
@@ -1715,7 +1678,7 @@ function renderTransactionsTab() {
         const acctOptsHtml = accountOptionsHtml(acctVal);
 
         tr.innerHTML = `
-            <td><input class="tx-date-input" value="${escHtml(r.Date)}" data-idx="${i}" placeholder="DD/MM/YY"></td>
+            <td><input class="tx-date-input" value="${escHtml(r.Date)}" data-idx="${i}" placeholder="YYYY-MM-DD" aria-label="Transaction date (YYYY-MM-DD)"></td>
             <td><select class="tx-acct-select tx-acct-${acctVal}" data-idx="${i}">
                 ${acctOptsHtml}
             </select></td>
@@ -1864,12 +1827,10 @@ function renderTransactionsTab() {
             const idx = parseInt(e.target.dataset.idx, 10);
             if (!isNaN(idx) && rawData[idx]) {
                 const val = e.target.value.trim();
-                rawData[idx].Date        = val;
-                rawData[idx].DateSortKey = parseDateSortKey(val);
-                const d = parseDateFromString(val);
-                if (d && !isNaN(d)) {
-                    rawData[idx].Month = d.getMonth() + 1;
-                    rawData[idx].Year  = d.getFullYear();
+                if (!updateDrawerRowDate(rawData[idx], val)) {
+                    e.target.value = rawData[idx].Date;
+                    showToast('❌ Enter a valid date in YYYY-MM-DD format', 'error');
+                    return;
                 }
                 applyGlobalFilters();
             }
@@ -1927,8 +1888,7 @@ function changeTransactionsPage(page) {
 
 function addTransaction() {
     const today = new Date();
-    const pad = n => String(n).padStart(2, '0');
-    const dateStr = `${pad(today.getDate())}/${pad(today.getMonth() + 1)}/${String(today.getFullYear()).slice(-2)}`;
+    const dateStr = formatLocalDate(today);
     const newRow = {
         Expense:     'Misc',
         PlannedReal: 'Real',

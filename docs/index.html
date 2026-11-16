@@ -75,8 +75,8 @@
                     <input id="txType" type="text" list="typeOptions" required placeholder="e.g. 🏠 House">
                 </div>
                 <div class="form-group">
-                    <label>Date (DD/MM/YY)</label>
-                    <input id="txDate" type="text" required placeholder="30/04/26" pattern="\d{2}/\d{2}/\d{2,4}">
+                    <label>Date (YYYY-MM-DD)</label>
+                    <input id="txDate" type="text" required placeholder="YYYY-MM-DD" pattern="\d{4}-\d{2}-\d{2}">
                 </div>
                 <div class="form-group">
                     <label>Amount (negative = expense)</label>
@@ -480,7 +480,7 @@
                 <div class="modal-header"><h2 id="portfolioTransactionDialogTitle">Add portfolio transaction</h2></div>
                 <form id="portfolioTransactionForm" class="house-form portfolio-transaction-form">
                     <label>Portfolio item<select id="portfolioTransactionItem" required></select></label>
-                    <label>Date<input id="portfolioTransactionDate" type="date" required></label>
+                    <label>Date (YYYY-MM-DD)<input id="portfolioTransactionDate" type="text" placeholder="YYYY-MM-DD" pattern="\d{4}-\d{2}-\d{2}" required></label>
                     <label>Action<input id="portfolioTransactionAction" type="text" list="portfolioTransactionActions" required></label>
                     <datalist id="portfolioTransactionActions"><option value="Buy"><option value="Sell"><option value="Dividend"><option value="Dividend Tax"></datalist>
                     <label>Quantity<input id="portfolioTransactionQuantity" type="text" inputmode="decimal"></label>
@@ -567,7 +567,7 @@
                         <button id="houseCloseDialog" type="button" class="modal-close" aria-label="Close installment dialog">×</button>
                     </div>
                     <form id="houseInstallmentForm" class="house-form">
-                        <label>Date<input id="houseInstallmentDate" type="date" required autofocus></label>
+                        <label>Date (YYYY-MM-DD)<input id="houseInstallmentDate" type="text" placeholder="YYYY-MM-DD" pattern="\d{4}-\d{2}-\d{2}" required autofocus></label>
                         <label>Amount DKK<input id="houseInstallmentAmount" type="number" step="0.01" required placeholder="0.00"></label>
                         <p id="houseFormStatus" class="house-note" role="status" aria-live="polite"></p>
                         <div class="modal-actions">
@@ -627,9 +627,10 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-config.js"></script>
+<script src="date-utils.js?v=1"></script>
 <script src="investment-math.js?v=1"></script>
-<script src="investments.js?v=29"></script>
-<script src="house.js?v=15"></script>
-<script src="app.js?v=28"></script>
+<script src="investments.js?v=30"></script>
+<script src="house.js?v=16"></script>
+<script src="app.js?v=29"></script>
 </body>
 </html>

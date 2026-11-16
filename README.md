@@ -1,4 +1,7 @@
 
+Dates are displayed and entered as `YYYY-MM-DD` throughout the app. Enter
+dates as text in this format; timestamps use the browser's local time.
+
 ## Bank transaction import
 
 The GitHub Actions workflow imports transactions on weekdays and can also be

@@ -5,3 +5,4 @@
 - Keep controls accessible and usable on desktop and mobile.
 - The filter pane should always be right underneath the subtab
 - All add / remove / edit buttons should be following a minimalistic aproach with a sign or icon.
+- Display and accept dates in YYYY-MM-DD format; keep storage formats appropriate for the backend.
