@@ -139,6 +139,16 @@ test('tracks the house illustration width for the compact chart layout', () => {
     assert.equal(elements.get('houseHistoryChartWrap').style['--house-diagram-width'], '258px');
 });
 
+test('switches to analytics and loads portfolio data without opening House', () => {
+    const { context, elements } = setup();
+    vm.runInContext("let portfolioOpens = 0; openInvestments = () => { portfolioOpens++; }; switchInvestmentSubtab('analytics')", context);
+    assert.equal(elements.get('investmentAnalytics').hidden, false);
+    assert.equal(elements.get('investmentPortfolio').hidden, true);
+    assert.equal(elements.get('investmentHouse').hidden, true);
+    assert.equal(elements.get('investmentAnalyticsTab')['aria-selected'], 'true');
+    assert.equal(vm.runInContext('portfolioOpens', context), 1);
+});
+
 test('saves and deletes signed installments, retaining them after House reset', async () => {
     const { context, elements, database } = setup(undefined, [{ id: 'initial', entry_date: '2026-01-01', amount: 800000, concept: 'Initial payment' }]);
     await vm.runInContext('openHouse()', context);

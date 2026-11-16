@@ -1,8 +1,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 
-global.document = { getElementById: () => ({ addEventListener() {} }) };
-const investments = require('../investments.js');
+const investments = require('../investment-math.js');
 
 const item = (id, inScope = true) => ({
     id, ticker: id, platform: 'Broker', name: 'Acme', type: 'Shares',

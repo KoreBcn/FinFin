@@ -51,6 +51,7 @@ test('renders compact positions, signed metrics and accessible details', () => {
         createElement: tag => new Element(tag)
     };
     const context = vm.createContext({ document, activeAuthUserId: null });
+    vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'investment-math.js'), 'utf8'), context);
     vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'investments.js'), 'utf8'), context);
     vm.runInContext(`
         investmentPositions = [{
@@ -227,6 +228,7 @@ function setupPortfolio(clock = null) {
         localStorage: { getItem() { return null; }, setItem() {} },
         AbortController, Date: TestDate, setTimeout: timer, clearTimeout, confirm: () => database.confirmDelete !== false
     });
+    vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'investment-math.js'), 'utf8'), context);
     vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'investments.js'), 'utf8'), context);
     return { context, elements, database };
 }
@@ -277,6 +279,77 @@ test('totals valued positions and explains excluded positions', async () => {
     assert.equal(elements.get('investmentCoverage').textContent, '2 of 3 in-scope positions valued; totals exclude the remainder.');
 });
 
+test('aggregates open and closed positions by platform including excluded KPI platforms', async () => {
+    const { context, elements, database } = setupPortfolio();
+    database.items.push(
+        { id: 'closed', ticker: 'CLOSED', platform: 'broker', name: 'Closed', type: 'Shares',
+            is_in_scope: false, current_value_dkk: 999 },
+        { id: 'missing', ticker: 'MISSING', platform: 'Broker', name: 'Missing', type: 'Shares',
+            is_in_scope: true, current_value_dkk: null },
+        { id: 'kucoin', ticker: 'COIN', platform: 'KuCoin', name: 'Coin', type: 'Crypto',
+            is_in_scope: true, current_value_dkk: 80 }
+    );
+    database.transactions.push(
+        { id: 'closed-buy', portfolio_item_id: 'closed', action: 'Buy', quantity: '1', fees: '', total_cost: '-100' },
+        { id: 'closed-sell', portfolio_item_id: 'closed', action: 'Sell', quantity: '1', fees: '', total_cost: '200' },
+        { id: 'coin-buy', portfolio_item_id: 'kucoin', action: 'Buy', quantity: '1', fees: '', total_cost: '-50' }
+    );
+    await vm.runInContext('openInvestments()', context);
+    const rows = elements.get('analyticsTableBody').children;
+    assert.equal(rows.length, 2);
+    assert.deepEqual(rows[0].children.map(cell => cell.textContent), ['Broker', '180.00 *', '69.23% *', '180.00 *']);
+    assert.deepEqual(rows[1].children.map(cell => cell.textContent), ['KuCoin', '80.00', '30.77%', '30.00']);
+    assert.match(elements.get('analyticsCoverage').textContent, /1 position has an unavailable value or P\/L/);
+    assert.equal(elements.get('investmentPortfolioPnl').textContent, '180.00 DKK');
+    assert.equal(elements.get('analyticsRankingControls').hidden, true);
+    elements.get('investmentClosedToggle').listeners.click();
+    assert.deepEqual(elements.get('analyticsTableBody').children[0].children.map(cell => cell.textContent),
+        ['Broker', '180.00 *', '69.23% *', '180.00 *']);
+});
+
+test('ranks the top and worst ten known positions and excludes unvalued positions', async () => {
+    const { context, elements, database } = setupPortfolio();
+    for (let i = 0; i < 12; i++) {
+        database.items.push({ id: `rank-${i}`, ticker: `R${i}`, platform: 'Broker', name: `Rank ${i}`,
+            type: 'Shares', is_in_scope: true, current_value_dkk: 100 });
+        database.transactions.push({ id: `rank-tx-${i}`, portfolio_item_id: `rank-${i}`, action: 'Buy',
+            quantity: '1', fees: '', total_cost: `-${100 + i}` });
+    }
+    database.items.push({ id: 'unknown', ticker: 'UNKNOWN', platform: 'Broker', name: 'Unknown',
+        type: 'Shares', is_in_scope: true, current_value_dkk: null });
+    await vm.runInContext('openInvestments()', context);
+    elements.get('analyticsPerformersButton').listeners.click();
+    assert.equal(elements.get('analyticsRankingControls').hidden, false);
+    assert.equal(elements.get('analyticsPerformersButton').attributes['aria-pressed'], 'true');
+    let rows = elements.get('analyticsTableBody').children;
+    assert.equal(rows.length, 10);
+    assert.match(rows[0].textContent, /Example/);
+    assert.doesNotMatch(elements.get('analyticsTableBody').textContent, /Unknown/);
+    assert.match(elements.get('analyticsCoverage').textContent, /excluded from performer rankings/);
+    elements.get('analyticsWorstButton').listeners.click();
+    rows = elements.get('analyticsTableBody').children;
+    assert.equal(rows.length, 10);
+    assert.match(rows[0].textContent, /Rank 11/);
+    assert.equal(rows[0].children[3].textContent, '-11.00');
+    assert.equal(rows[0].children[3].classes.has('investment-negative'), true);
+    assert.equal(elements.get('analyticsWorstButton').attributes['aria-pressed'], 'true');
+    elements.get('analyticsPlatformButton').listeners.click();
+    assert.equal(elements.get('analyticsRankingControls').hidden, true);
+});
+
+test('shows portfolio load failures and allows retry from analytics', async () => {
+    const { context, elements, database } = setupPortfolio();
+    database.failLoad = true;
+    await vm.runInContext('openInvestments()', context);
+    assert.match(elements.get('analyticsStatus').textContent, /Unable to load portfolio/);
+    assert.equal(elements.get('analyticsRetry').hidden, false);
+    database.failLoad = false;
+    await elements.get('analyticsRetry').listeners.click();
+    assert.equal(elements.get('analyticsStatus').textContent, '');
+    assert.equal(elements.get('analyticsRetry').hidden, true);
+    assert.equal(elements.get('analyticsTableBody').children.length, 1);
+});
+
 test('includes hidden positions in total P/L at zero current value without showing them', async () => {
     const { context, elements, database } = setupPortfolio();
     database.items.push(
@@ -297,7 +370,8 @@ test('includes hidden positions in total P/L at zero current value without showi
     assert.equal(elements.get('investmentPortfolioPnl').textContent, '140.00 DKK');
     const toggle = elements.get('investmentClosedToggle');
     toggle.listeners.click();
-    assert.equal(toggle.textContent, 'Hide closed positions');
+    assert.equal(toggle.attributes['aria-label'], 'Hide closed positions');
+    assert.equal(toggle.title, 'Hide closed positions');
     assert.equal(toggle.attributes['aria-expanded'], 'true');
     const rows = elements.get('investmentTableBody').children;
     assert.equal(rows.length, 3);
@@ -311,7 +385,8 @@ test('includes hidden positions in total P/L at zero current value without showi
     assert.equal(elements.get('investmentPortfolioSize').textContent, '180.00 DKK');
     assert.equal(elements.get('investmentPortfolioPnl').textContent, '140.00 DKK');
     toggle.listeners.click();
-    assert.equal(toggle.textContent, 'Show closed positions');
+    assert.equal(toggle.attributes['aria-label'], 'Show closed positions');
+    assert.equal(toggle.title, 'Show closed positions');
     assert.equal(elements.get('investmentTableBody').children.length, 1);
     database.items[0].is_in_scope = false;
     vm.runInContext('clearInvestments()', context);
@@ -785,7 +860,7 @@ test('switches views and searches and pages all transactions, including out-of-s
         is_in_scope: false, current_value_dkk: null });
     for (let i = 0; i < 12; i++) {
         database.transactions.push({ id: `other-${i}`, portfolio_item_id: 'outside', ticker: 'OTHER',
-            transaction_date: `2026-01-${String(i + 1).padStart(2, '0')}`, action: 'Buy', quantity: '1', fees: '', total_cost: '-5' });
+            name: 'Outside Company', transaction_date: `2026-01-${String(i + 1).padStart(2, '0')}`, action: 'Buy', quantity: '1', fees: '', total_cost: '-5' });
     }
     await vm.runInContext('openInvestments()', context);
     elements.get('portfolioTransactionsButton').listeners.click();
@@ -798,15 +873,64 @@ test('switches views and searches and pages all transactions, including out-of-s
     assert.equal(elements.get('portfolioTransactionPage').textContent, 'Page 1 of 2');
     elements.get('portfolioTransactionNext').listeners.click();
     assert.equal(elements.get('portfolioTransactionBody').children.length, 3);
-    elements.get('portfolioTransactionSearch').value = 'oth';
-    elements.get('portfolioTransactionSearch').listeners.input();
+    elements.get('portfolioSearch').value = 'oth';
+    elements.get('portfolioSearch').listeners.input();
     assert.equal(elements.get('portfolioTransactionPage').textContent, 'Page 1 of 2');
-    assert.match(elements.get('portfolioTransactionStatus').textContent, /12 transactions matching ticker/);
+    assert.match(elements.get('portfolioTransactionStatus').textContent, /12 transactions matching ticker or name/);
+    elements.get('portfolioSearch').value = ' CoMPany ';
+    elements.get('portfolioSearch').listeners.input();
+    assert.equal(elements.get('portfolioTransactionBody').children.length, 10);
+    assert.match(elements.get('portfolioTransactionStatus').textContent, /12 transactions matching ticker or name/);
+    elements.get('portfolioSearch').value = 'no match';
+    elements.get('portfolioSearch').listeners.input();
+    assert.equal(elements.get('portfolioTransactionBody').children.length, 0);
     elements.get('portfolioTransactionAdd').listeners.click();
     assert.match(elements.get('portfolioTransactionItem').textContent, /OTHER.*out of scope/);
     elements.get('portfolioOverviewButton').listeners.click();
     assert.equal(elements.get('portfolioOverview').hidden, false);
     assert.equal(elements.get('investmentClosedToggle').hidden, false);
+});
+
+test('shares the portfolio search between views without changing totals or closed-position visibility', async () => {
+    const { context, elements, database } = setupPortfolio();
+    Object.assign(database.transactions[0], { ticker: 'CPH:NOVO-B', name: 'Example' });
+    database.items.push(
+        { id: 'open', ticker: 'ABC', platform: 'Broker', name: 'Another Company', type: 'Shares',
+            is_in_scope: true, current_value_dkk: 200 },
+        { id: 'closed', ticker: 'CLOSED', platform: 'Broker', name: 'Closed Company', type: 'Shares',
+            is_in_scope: false, current_value_dkk: null }
+    );
+    database.transactions.push(
+        { id: 'open-tx', portfolio_item_id: 'open', ticker: 'ABC', name: 'Another Company',
+            action: 'Buy', quantity: '1', fees: '', total_cost: '-100' },
+        { id: 'closed-tx', portfolio_item_id: 'closed', ticker: 'CLOSED', name: 'Closed Company',
+            action: 'Buy', quantity: '1', fees: '', total_cost: '-50' }
+    );
+    await vm.runInContext('openInvestments()', context);
+    const search = elements.get('portfolioSearch');
+    const overview = elements.get('investmentTableBody');
+    search.value = ' COMPANY ';
+    search.listeners.input();
+    assert.equal(overview.children.length, 1);
+    assert.match(overview.textContent, /ABC/);
+    assert.equal(elements.get('investmentPortfolioSize').textContent, '380.00 DKK');
+    assert.equal(elements.get('investmentPortfolioPnl').textContent, '130.00 DKK');
+    elements.get('investmentClosedToggle').listeners.click();
+    assert.equal(overview.children.length, 2);
+    elements.get('portfolioTransactionsButton').listeners.click();
+    assert.equal(elements.get('portfolioTransactionBody').children.length, 2);
+    search.value = 'novo';
+    search.listeners.input();
+    assert.equal(elements.get('portfolioTransactionBody').children.length, 1);
+    elements.get('portfolioOverviewButton').listeners.click();
+    assert.equal(overview.children.length, 1);
+    assert.match(overview.textContent, /CPH:NOVO-B/);
+    search.value = '';
+    search.listeners.input();
+    assert.equal(overview.children.length, 3);
+    search.value = 'company';
+    vm.runInContext('clearInvestments()', context);
+    assert.equal(search.value, '');
 });
 
 test('shows ticker details with overview badges and colors actions and signed amounts', async () => {

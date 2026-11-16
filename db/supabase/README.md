@@ -189,6 +189,40 @@ app preserves the last saved value on failure.
 The unused legacy local Flask `/api/investments/market-data` endpoint still
 uses Twelve Data and its local key file; the app does not call it.
 
+### Scheduled portfolio refresh
+
+The `Refresh portfolio prices` GitHub Actions workflow runs at 00:00
+Europe/Copenhagen on weekdays, including daylight-saving changes, and supports
+manual runs. GitHub may delay scheduled runs, and the workflow must exist on
+the default branch for the schedule to run. Use it only with the necessary
+permission from Yahoo.
+
+In **Settings → Secrets and variables → Actions**, configure the existing
+`SUPABASE_URL` repository variable and add:
+
+| Kind | Name | Value |
+| --- | --- | --- |
+| Variable | `SUPABASE_ANON_KEY` | Supabase project anon/publishable key |
+| Secret | `SUPABASE_REFRESH_EMAIL` | Email for a dedicated Supabase Auth user |
+| Secret | `SUPABASE_REFRESH_PASSWORD` | Password for that user |
+
+The user must be able to sign in with email and password without interactive MFA
+and must have the portfolio access required by the existing RLS policies and
+the `market-data` Edge Function. Do not use a service-role key for this workflow
+or commit the account password. Run the workflow manually after configuring it
+and inspect the Actions log; a failed item makes the job fail.
+
+The workflow requests only in-scope, non-crowdlending quotes and any necessary
+DKK exchange rates through the existing Edge Function. The function uses a
+browser-like user agent, but requests originate from Supabase, not a browser.
+The workflow spaces requests at least eight seconds apart and caches duplicate
+quotes and currency rates within the run; concurrent browser refreshes are not
+coordinated. The provider can still rate-limit requests. A rate-limit response
+stops the run; other item failures are reported while remaining items continue.
+Historical price changes are not persisted and are not requested by the workflow.
+Optimistic valuation-version checks prevent stale quantity-based values from
+overwriting changes made while it runs.
+
 ## Import new Enable Banking transactions
 
 Run `schema.sql` first if the base `transactions` table has not been created.

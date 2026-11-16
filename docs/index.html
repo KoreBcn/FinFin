@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Home Finance Dashboard</title>
-    <link rel="stylesheet" href="styles.css?v=44">
+    <title>A &amp; C Finances</title>
+    <link rel="stylesheet" href="styles.css?v=51">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 </head>
@@ -13,7 +13,7 @@
 <section id="authGate" class="auth-gate">
     <form id="loginForm" class="auth-card">
         <div class="logo-icon">💰</div>
-        <h1>FinanceHome</h1>
+        <h1>A &amp; C Finances</h1>
         <p>Sign in with your Supabase account to continue.</p>
         <label for="loginEmail">Email</label>
         <input id="loginEmail" type="email" autocomplete="username" required>
@@ -29,7 +29,7 @@
     <div class="header-content">
         <div class="logo">
             <span class="logo-icon">💰</span>
-            <h1>FinanceHome</h1>
+            <h1>A &amp; C Finances</h1>
         </div>
         <nav>
             <button class="mobile-menu-btn" id="tabMenuToggle" type="button"
@@ -198,10 +198,13 @@
     </div>
 
     <div id="tabHome" class="tab-panel" style="display:none">
-        <div class="investment-subtabs" role="tablist" aria-label="Home sections">
-            <button type="button" id="homeDashboardTab" class="investment-subtab active" role="tab" aria-selected="true" aria-controls="tabDashboard" onclick="switchHomeSubtab('dashboard')">Dashboard</button>
-            <button type="button" id="homeHighlightsTab" class="investment-subtab" role="tab" aria-selected="false" aria-controls="tabHighlights" onclick="switchHomeSubtab('highlights')">Highlights</button>
-            <button type="button" id="homeTransactionsTab" class="investment-subtab" role="tab" aria-selected="false" aria-controls="tabTransactions" onclick="switchHomeSubtab('transactions')">Transactions</button>
+        <div class="home-subtab-bar">
+            <div class="investment-subtabs" role="tablist" aria-label="Home sections">
+                <button type="button" id="homeDashboardTab" class="investment-subtab active" role="tab" aria-selected="true" aria-controls="tabDashboard" onclick="switchHomeSubtab('dashboard')">Dashboard</button>
+                <button type="button" id="homeHighlightsTab" class="investment-subtab" role="tab" aria-selected="false" aria-controls="tabHighlights" onclick="switchHomeSubtab('highlights')">Highlights</button>
+                <button type="button" id="homeTransactionsTab" class="investment-subtab" role="tab" aria-selected="false" aria-controls="tabTransactions" onclick="switchHomeSubtab('transactions')">Transactions</button>
+            </div>
+            <span id="transactionInsertDate" class="transaction-insert-date" role="status" aria-live="polite">Latest transaction insert: &mdash;</span>
         </div>
     <!-- ═══════════════════════════════════════════
          DASHBOARD TAB
@@ -369,16 +372,26 @@
     <div id="tabInvestments" class="tab-panel" style="display:none">
         <div class="investment-subtabs" role="tablist" aria-label="Investments sections">
             <button type="button" id="investmentPortfolioTab" class="investment-subtab active" role="tab" aria-selected="true" aria-controls="investmentPortfolio" onclick="switchInvestmentSubtab('portfolio')">Portfolio</button>
+            <button type="button" id="investmentAnalyticsTab" class="investment-subtab" role="tab" aria-selected="false" aria-controls="investmentAnalytics" onclick="switchInvestmentSubtab('analytics')">Analytics</button>
             <button type="button" id="investmentHouseTab" class="investment-subtab" role="tab" aria-selected="false" aria-controls="investmentHouse" onclick="switchInvestmentSubtab('house')">House</button>
         </div>
-        <div id="investmentPortfolio" role="tabpanel" aria-labelledby="investmentPortfolioTab">
+        <div id="investmentPortfolio" class="tab-panel" role="tabpanel" aria-labelledby="investmentPortfolioTab">
+        <section class="filters-bar portfolio-filters" aria-label="Portfolio filters">
+            <input id="portfolioSearch" class="portfolio-search" type="search" placeholder="Search ticker or name" aria-label="Search ticker or name">
+        </section>
         <section class="investments-card">
             <div class="investments-heading">
                 <h2>Investments</h2>
                 <div class="portfolio-heading-actions">
-                    <button id="investmentClosedToggle" class="btn-secondary investment-closed-toggle" type="button" aria-controls="investmentTableBody" aria-expanded="false">Show closed positions</button>
-                    <button id="investmentAdd" class="btn-primary investment-add" type="button" aria-label="Add portfolio item" title="Add portfolio item">+</button>
-                    <button id="portfolioTransactionAdd" class="btn-primary investment-add" type="button" aria-label="Add portfolio transaction" title="Add portfolio transaction" hidden>+</button>
+                    <button id="investmentClosedToggle" class="btn-secondary investment-closed-toggle" type="button" aria-controls="investmentTableBody" aria-expanded="false" aria-label="Show closed positions" title="Show closed positions">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z" />
+                            <circle cx="12" cy="12" r="3" />
+                            <path class="closed-eye-slash" d="M4 4 20 20" />
+                        </svg>
+                    </button>
+                    <button id="investmentAdd" class="btn-primary investment-add" type="button" aria-label="Add portfolio item" title="Add portfolio item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg></button>
+                    <button id="portfolioTransactionAdd" class="btn-primary investment-add" type="button" aria-label="Add portfolio transaction" title="Add portfolio transaction" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg></button>
                     <div class="portfolio-view-buttons" role="group" aria-label="Portfolio view">
                         <button id="portfolioOverviewButton" class="btn-secondary" type="button" aria-controls="portfolioOverview" aria-pressed="true">Overview</button>
                         <button id="portfolioTransactionsButton" class="btn-secondary" type="button" aria-controls="portfolioTransactions" aria-pressed="false">Transactions</button>
@@ -436,9 +449,6 @@
             <p class="investment-note">Net P/L = current value + buy and sell cash flows + fees + dividends. Total P/L excludes OPS Capital and KuCoin positions and includes other closed positions with zero current value, whether shown or hidden. This is not a tax-lot calculation. Portfolio percentages use only in-scope positions with known values; text colors range from green for the smallest allocation to red for the largest. Other transaction actions do not change quantity or cash flows; their fees still count.</p>
             </div>
             <div id="portfolioTransactions" hidden>
-                <label class="portfolio-transaction-search">Search ticker
-                    <input id="portfolioTransactionSearch" type="search" placeholder="Search ticker">
-                </label>
                 <p id="portfolioTransactionStatus" class="investment-note" role="status" aria-live="polite"></p>
                 <div class="tx-table-wrap portfolio-transaction-table-wrap">
                     <table class="tx-table portfolio-transaction-table">
@@ -492,12 +502,35 @@
             </dialog>
         </section>
         </div>
+        <div id="investmentAnalytics" class="tab-panel" role="tabpanel" aria-labelledby="investmentAnalyticsTab" hidden>
+            <section class="filters-bar analytics-filters" aria-label="Analytics filters">
+                <div class="portfolio-view-buttons" role="group" aria-label="Analytics aggregation">
+                    <button id="analyticsPlatformButton" class="btn-secondary" type="button" aria-pressed="true">Platform</button>
+                    <button id="analyticsPerformersButton" class="btn-secondary" type="button" aria-pressed="false">Performers</button>
+                </div>
+                <div id="analyticsRankingControls" class="portfolio-view-buttons" role="group" aria-label="Performer ranking" hidden>
+                    <button id="analyticsTopButton" class="btn-secondary" type="button" aria-pressed="true">Top 10</button>
+                    <button id="analyticsWorstButton" class="btn-secondary" type="button" aria-pressed="false">Worst 10</button>
+                </div>
+            </section>
+            <section class="investments-card" aria-labelledby="analyticsTitle">
+                <h2 id="analyticsTitle">Performance by platform</h2>
+                <p id="analyticsStatus" class="investment-note" role="status" aria-live="polite"></p>
+                <button id="analyticsRetry" class="btn-secondary" type="button" hidden>Retry portfolio load</button>
+                <p id="analyticsCoverage" class="investment-note" role="status"></p>
+                <table class="analytics-table">
+                    <thead><tr><th id="analyticsNameHeading" scope="col">Platform</th><th scope="col">Value DKK</th><th scope="col">Portfolio %</th><th scope="col">Net P/L DKK</th></tr></thead>
+                    <tbody id="analyticsTableBody"></tbody>
+                </table>
+                <p class="investment-note">Includes all platforms. Out-of-scope positions are treated as closed with zero current value; check that they are actually closed. Portfolio percentages use known in-scope values. Net P/L includes cash flows, fees and dividends. * indicates a partial platform total.</p>
+            </section>
+        </div>
         <section id="investmentHouse" class="house-layout" role="tabpanel" aria-labelledby="investmentHouseTab" hidden>
             <div class="house-panel house-installments-panel">
                 <div class="house-panel-heading">
                     <h2>Installments</h2>
                     <div class="portfolio-heading-actions">
-                        <button id="houseAddInstallment" class="btn-primary house-add" type="button" aria-label="Add installment" title="Add installment" hidden>+</button>
+                        <button id="houseAddInstallment" class="btn-primary house-add" type="button" aria-label="Add installment" title="Add installment" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg></button>
                         <div class="portfolio-view-buttons" role="group" aria-label="Installments view">
                             <button id="houseInstallmentsButton" class="btn-secondary" type="button" aria-controls="houseTableView" aria-pressed="false">Installments</button>
                             <button id="houseGraphButton" class="btn-secondary" type="button" aria-controls="houseHistory" aria-pressed="true">Graph</button>
@@ -588,15 +621,15 @@
 <div id="toast" class="toast"></div>
 
 <footer>
-    <p>FinanceHome &mdash; Personal Finance Tracker</p>
-    <span id="transactionInsertDate" class="transaction-insert-date" role="status" aria-live="polite">Latest transaction insert: &mdash;</span>
+    <p>A &amp; C Finances &mdash; Personal Finance Tracker</p>
 </footer>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-config.js"></script>
-<script src="investments.js?v=25"></script>
-<script src="house.js?v=14"></script>
+<script src="investment-math.js?v=1"></script>
+<script src="investments.js?v=29"></script>
+<script src="house.js?v=15"></script>
 <script src="app.js?v=28"></script>
 </body>
 </html>

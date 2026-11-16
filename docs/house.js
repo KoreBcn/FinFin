@@ -124,7 +124,7 @@ let houseHistoryDatasetVisibility = [true, true, false];
 
 function switchInvestmentSubtab(tab) {
     investmentSubtab = tab;
-    for (const [name, suffix] of [['portfolio', 'Portfolio'], ['house', 'House']]) {
+    for (const [name, suffix] of [['portfolio', 'Portfolio'], ['analytics', 'Analytics'], ['house', 'House']]) {
         const selected = name === tab;
         const button = document.getElementById(`investment${suffix}Tab`);
         button.classList.toggle('active', selected);
