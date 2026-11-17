@@ -77,13 +77,13 @@ def build_seed(csv_path: Path) -> tuple[str, int, int]:
     statements = ["-- Generated locally; contains private financial data.", "BEGIN;"]
     for (ticker, platform), group in groups.items():
         row = group["row"]
-        in_scope = row["Type"].lower() == "crowdlending" or (
+        is_closed = not (row["Type"].lower() == "crowdlending" or (
             not group["unknown"] and group["quantity"] > 0
-        )
+        ))
         values = [ticker, platform, row["Name"], row["Type"]]
         statements.append(
-            "INSERT INTO public.portfolio_items (ticker, platform, name, type, is_in_scope) VALUES ("
-            + ", ".join(map(sql_text, values)) + f", {str(in_scope).lower()}) "
+            "INSERT INTO public.portfolio_items (ticker, platform, name, type, is_closed) VALUES ("
+            + ", ".join(map(sql_text, values)) + f", {str(is_closed).lower()}) "
             + "ON CONFLICT (ticker, platform) DO NOTHING;"
         )
     columns = (

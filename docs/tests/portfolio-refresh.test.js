@@ -4,7 +4,7 @@ const { refreshPortfolio } = require('../../scripts/refresh-portfolio.js');
 
 const config = { url: 'https://project.example', anonKey: 'anon', email: 'account@example.test', password: 'password' };
 const item = (id, ticker, extra = {}) => ({
-    id, ticker, platform: 'Broker', name: ticker, type: 'Shares', is_in_scope: true,
+    id, ticker, platform: 'Broker', name: ticker, type: 'Shares', is_closed: false, is_in_scope: true,
     current_value_dkk: 75, valuation_version: 0, market_price: null, market_currency: null, market_price_at: null, ...extra
 });
 const transaction = (id, quantity = '2') => ({
@@ -50,7 +50,7 @@ function fixture(items, transactions) {
 
 test('refreshes eligible positions with shared math, cached quotes and FX, and paced requests', async () => {
     const items = [item('one', 'DANISH'), item('two', 'US'), item('three', 'US'),
-        item('manual', 'MANUAL', { type: 'Crowdlending' }), item('closed', 'OLD', { is_in_scope: false })];
+        item('manual', 'MANUAL', { type: 'Crowdlending' }), item('closed', 'OLD', { is_closed: true, is_in_scope: true })];
     const db = fixture(items, [transaction('one', '2,5'), transaction('two', '3'), transaction('three', '1')]);
     const result = await refreshPortfolio(config, db.options);
     assert.deepEqual(result, { refreshed: 3, eligible: 3, failures: [] });
@@ -60,7 +60,7 @@ test('refreshes eligible positions with shared math, cached quotes and FX, and p
     ]);
     assert.equal(db.saves[0].fields.market_price_at, '2023-11-14T22:13:20.000Z');
     assert.equal(db.saves[0].params.get('valuation_version'), 'eq.0');
-    assert.equal(db.saves[0].params.get('is_in_scope'), 'eq.true');
+    assert.equal(db.saves[0].params.get('is_closed'), 'eq.false');
     assert.deepEqual(db.calls.filter(call => call.url.pathname === '/functions/v1/market-data')
         .map(call => JSON.parse(call.options.body)), [
         { path: 'quote', params: { symbol: 'DANISH' } },

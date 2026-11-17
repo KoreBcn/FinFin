@@ -18,7 +18,7 @@ const InvestmentMath = (() => {
                 || typeof item.platform !== 'string' || !item.platform.trim()
                 || typeof item.name !== 'string' || !item.name.trim()
                 || typeof item.type !== 'string' || !item.type.trim()
-                || typeof item.is_in_scope !== 'boolean'
+                || typeof item.is_closed !== 'boolean' || typeof item.is_in_scope !== 'boolean'
                 || (item.current_value_dkk != null && !Number.isFinite(Number(item.current_value_dkk)))
                 || (item.market_price != null && (!Number.isFinite(Number(item.market_price)) || Number(item.market_price) <= 0))
                 || ((item.market_price == null) !== (item.market_currency == null))
@@ -29,7 +29,7 @@ const InvestmentMath = (() => {
             positions.set(item.id, {
                 id: item.id, key: JSON.stringify([item.platform, item.ticker]),
                 ticker: item.ticker, platform: item.platform, name: item.name, type: item.type,
-                isInScope: item.is_in_scope,
+                isClosed: item.is_closed, isInScope: item.is_in_scope,
                 currentValue: item.current_value_dkk == null ? null : Number(item.current_value_dkk),
                 quantity: 0, quantityUnknown: false, tradeCount: 0,
                 bought: 0, sold: 0, fees: 0, dividends: 0, other: new Set()

@@ -121,7 +121,7 @@ function setup(configRequest = async () => ({
         observe(element) { this.target = element; }
     }
     const context = vm.createContext({
-        document, supabaseClient, activeAuthUserId: 'test', Chart, ResizeObserver, charts: {}, openInvestments() {},
+        document, supabaseClient, activeAuthUserId: 'test', Chart, ResizeObserver, charts: {}, openInvestments() {}, renderPortfolioTransactions() {}, portfolioTransactionsVisible: false,
         chartGridColor: () => '#e2e8f0',
         rawData: [{ Comments: 'reference', PlannedReal: 'Real', Amount: -50000, Date: '2026-01-01', DateSortKey: 20260101 }],
         investmentFormat: (value, decimals = 2) => value.toLocaleString('en-GB', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })
@@ -148,6 +148,15 @@ test('switches to analytics and loads portfolio data without opening House', () 
     assert.equal(elements.get('investmentHouse').hidden, true);
     assert.equal(elements.get('investmentAnalyticsTab')['aria-selected'], 'true');
     assert.equal(vm.runInContext('portfolioOpens', context), 1);
+});
+
+test('shows the shared portfolio panel for the Transactions subtab', () => {
+    const { context, elements } = setup();
+    vm.runInContext("let renders = 0; renderPortfolioTransactions = () => { renders++; }; switchInvestmentSubtab('transactions')", context);
+    assert.equal(elements.get('investmentPortfolio').hidden, false);
+    assert.equal(elements.get('investmentAnalytics').hidden, true);
+    assert.equal(elements.get('investmentTransactionsTab')['aria-selected'], 'true');
+    assert.equal(vm.runInContext('portfolioTransactionsVisible && renders', context), 1);
 });
 
 test('saves and deletes signed installments, retaining them after House reset', async () => {

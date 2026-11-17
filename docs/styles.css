@@ -385,6 +385,8 @@ main {
 .house-form { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem; }
 .house-form label { font-size: 0.8rem; color: var(--text-light); }
 .house-form input { display: block; margin-top: 0.3rem; }
+.house-form label.checkbox-label { display: flex; align-items: center; gap: 0.5rem; }
+.house-form label.checkbox-label input { display: inline-block; width: auto; margin: 0; }
 .house-remove { border: 0; background: transparent; color: var(--danger); cursor: pointer; font-size: 1.1rem; }
 .house-visual-panel { display: flex; flex-direction: column; align-items: center; }
 .house-interest-kpi { display: flex; justify-content: space-between; gap: 0.75rem; width: 100%; margin-bottom: 1rem; padding: 0.7rem; border: 1px solid var(--border); border-radius: var(--radius-sm); }
@@ -429,7 +431,12 @@ main {
     min-width: 0; padding: 0.45rem; color: var(--text); background: var(--input-bg);
     border: 1px solid var(--border); border-radius: var(--radius-sm); font: inherit;
 }
-.portfolio-search { font-size: 0.85rem; }
+.portfolio-search-wrap { position: relative; width: 100%; max-width: 28rem; min-width: 0; }
+.portfolio-search { width: 100%; padding-left: 2rem; font-size: 0.85rem; }
+.portfolio-search-icon {
+    position: absolute; top: 50%; left: 0.65rem; width: 1rem; height: 1rem;
+    color: var(--text-light); pointer-events: none; transform: translateY(-50%);
+}
 .portfolio-transaction-form select { display: block; width: 100%; margin-top: 0.3rem; }
 .tx-table-wrap.portfolio-transaction-table-wrap { overflow: visible; max-height: none; }
 #portfolioTransactions .tx-table-wrap table.portfolio-transaction-table { min-width: 0; table-layout: fixed; }
@@ -1731,4 +1738,40 @@ body.is-authenticated .auth-gate { display: none; }
     .drawer-summary { gap: 0.5rem 1rem; }
     .modal-actions { flex-wrap: wrap; }
     .modal-actions button { flex: 1; }
+}
+/* ===== SIDEBAR NAVIGATION (wide screens) ===== */
+@media (min-width: 1025px) {
+    body.is-authenticated #appShell {
+        display: grid;
+        grid-template-columns: 15rem minmax(0, 1fr);
+        grid-template-rows: 1fr auto;
+        max-width: calc(15rem + 1400px);
+        margin: 0 auto;
+    }
+    body.is-authenticated #appShell > header {
+        grid-column: 1; grid-row: 1 / span 2;
+        position: sticky; top: 0; height: 100vh; height: 100dvh; align-self: start;
+    }
+    body.is-authenticated #appShell > main { grid-column: 2; grid-row: 1; width: 100%; }
+    body.is-authenticated #appShell > footer { grid-column: 2; grid-row: 2; }
+    .header-content {
+        max-width: none; height: 100%; padding: 1.5rem 1rem;
+        display: flex; flex-direction: column; align-items: stretch; gap: 1.5rem;
+    }
+    .logo h1 { font-size: 1.2rem; }
+    body.is-authenticated #appShell > header { background: #001b9b; }
+    .logo h1 { color: white; }
+    .tab-btn { color: #dbeafe; }
+    .tab-btn:hover { background: rgba(255,255,255,0.12); }
+    .tab-btn.active { background: rgba(255,255,255,0.2); box-shadow: none; }
+    .signed-in-email, .sign-out-btn { color: #dbeafe; }
+    nav { justify-self: stretch; flex: 1; align-items: flex-start; }
+    .tab-switcher { flex-direction: column; width: 100%; padding: 0; background: transparent; gap: 0.25rem; }
+    .tab-btn { position: relative; width: 100%; padding: 0.7rem 0.85rem; text-align: left; }
+    .tab-btn.active::before {
+        content: ""; position: absolute; top: 0.6rem; bottom: 0.6rem; left: 0;
+        width: 3px; border-radius: 4px; background: white;
+    }
+    .account-controls { flex-direction: row; align-items: center; gap: 0.4rem; }
+    .signed-in-email { max-width: 9rem; }
 }

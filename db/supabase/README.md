@@ -130,16 +130,19 @@ again can create additional rows. The generated SQL contains financial data;
 keep it private and do not commit it.
 
 Items with positive known net buy/sell quantity and crowdlending items are
-initially in scope. Closed or uncertain items are stored out of scope. Change
-`is_in_scope` in `portfolio_items` to change whether an item is treated as open.
-The Overview button can show or hide out-of-scope items. Yahoo Finance provides
+initially open (`is_closed = false`). Closed or uncertain items are stored closed. Change
+`is_closed` in `portfolio_items` to change whether an item is treated as open.
+`is_in_scope` (editable in the item dialog, default true) decides whether an item counts
+toward total P/L. If you have an older database, run the migration block in `portfolio.sql`:
+it renames the old `is_in_scope` to `is_closed` (inverting it) and sets the new `is_in_scope`
+to false for OPS Capital, KuCoin and Ethereum.
+The Overview button can show or hide closed items. Yahoo Finance provides
 prices, not owned quantities: the app computes quantities and cash flows from
 transactions and stores the latest successfully calculated DKK value on the
 item. The latest market price, currency and quote time are saved on the item and
-restored on load. A trade invalidates the DKK value, not the price. Out-of-scope items are excluded from price refresh and portfolio
+restored on load. A trade invalidates the DKK value, not the price. Closed items are excluded from price refresh and portfolio
 size, but their cash flows and fees contribute to total P/L with a current value
-of zero, except for positions on the OPS Capital and KuCoin platforms, which are excluded
-from total P/L whether in scope or not. Ensure out-of-scope items are actually closed. Item edits increment the
+of zero, unless the item is not in scope. Ensure closed items are actually closed. Item edits increment the
 valuation version; ticker changes and all type changes clear the saved quote,
 and ticker changes for priced items and all type changes also clear the saved
 value so stale price refreshes cannot overwrite it.
@@ -212,7 +215,7 @@ the `market-data` Edge Function. Do not use a service-role key for this workflow
 or commit the account password. Run the workflow manually after configuring it
 and inspect the Actions log; a failed item makes the job fail.
 
-The workflow requests only in-scope, non-crowdlending quotes and any necessary
+The workflow requests only open, non-crowdlending quotes and any necessary
 DKK exchange rates through the existing Edge Function. The function uses a
 browser-like user agent, but requests originate from Supabase, not a browser.
 The workflow spaces requests at least eight seconds apart and caches duplicate

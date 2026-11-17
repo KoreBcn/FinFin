@@ -2,7 +2,7 @@
 
 const { fromStored } = require('../docs/investment-math.js');
 
-const itemColumns = 'id,ticker,platform,name,type,is_in_scope,current_value_dkk,valuation_version,market_price,market_currency,market_price_at';
+const itemColumns = 'id,ticker,platform,name,type,is_closed,is_in_scope,current_value_dkk,valuation_version,market_price,market_currency,market_price_at';
 const transactionColumns = 'id,portfolio_item_id,action,quantity,fees,total_cost';
 
 async function refreshPortfolio(config, {
@@ -75,7 +75,7 @@ async function refreshPortfolio(config, {
         if (attempt === 2) throw new Error('Portfolio changed while loading; retry the workflow.');
     }
     const positions = fromStored(items, transactions).filter(position =>
-        position.isInScope && position.type.toLowerCase() !== 'crowdlending');
+        position.isClosed === false && position.type.toLowerCase() !== 'crowdlending');
     const versions = new Map(items.map(item => [item.id, item.valuation_version]));
     const quotes = new Map();
     const rates = new Map();
@@ -135,7 +135,7 @@ async function refreshPortfolio(config, {
             }
             const query = new URLSearchParams({
                 id: `eq.${position.id}`, valuation_version: `eq.${versions.get(position.id)}`,
-                is_in_scope: 'eq.true', ticker: `eq.${position.ticker}`, type: `eq.${position.type}`, select: 'id'
+                is_closed: 'eq.false', ticker: `eq.${position.ticker}`, type: `eq.${position.type}`, select: 'id'
             });
             try {
                 const saved = await request(`/rest/v1/portfolio_items?${query}`, {

@@ -107,12 +107,12 @@ function setupPortfolio(clock = null) {
     };
     const database = {
         items: [{ id: 'item-1', ticker: 'CPH:NOVO-B', platform: 'Broker', name: 'Example',
-            type: 'Shares', market_symbol: null, is_in_scope: true, current_value_dkk: 180, valuation_version: 0 }],
+            type: 'Shares', market_symbol: null, is_closed: false, is_in_scope: true, current_value_dkk: 180, valuation_version: 0 }],
         transactions: [{ id: 'tx-1', portfolio_item_id: 'item-1', action: 'Buy',
             quantity: '2', fees: '', total_cost: '-100' }],
         failLoad: false, failSave: false, marketError: null, historyError: null, marketRequests: []
     };
-    ['investmentTicker', 'investmentName', 'investmentType', 'investmentPlatform']
+    ['investmentTicker', 'investmentName', 'investmentType', 'investmentPlatform', 'investmentInScope']
         .forEach(id => document.getElementById(id));
     ['Item', 'Date', 'Action', 'Quantity', 'Price', 'Rate', 'Commission', 'Fees',
         'Currency', 'Total', 'LocalValue', 'LocalCurrency']
@@ -200,7 +200,7 @@ function setupPortfolio(clock = null) {
                 single() {
                     if (database.failSave) return Promise.resolve({ error: { message: 'save failed' } });
                     if (operation === 'insert') {
-                        const item = { id: 'item-2', is_in_scope: true, current_value_dkk: null, valuation_version: 0, ...payload };
+                        const item = { id: 'item-2', is_closed: false, is_in_scope: true, current_value_dkk: null, valuation_version: 0, ...payload };
                         database.items.push(item);
                         return Promise.resolve({ data: item, error: null });
                     }
@@ -249,7 +249,9 @@ test('loads stored positions, adds an item with unknown quantity, and persists s
     elements.get('investmentName').value = 'New';
     elements.get('investmentType').value = 'Shares';
     elements.get('investmentPlatform').value = 'Broker';
+    elements.get('investmentInScope').checked = false;
     await elements.get('investmentForm').listeners.submit({ preventDefault() {}, currentTarget: elements.get('investmentForm') });
+    assert.equal(database.items[1].is_in_scope, false);
     const newRow = elements.get('investmentTableBody').children[1];
     assert.equal(find(newRow, e => e.dataset.label === 'Qty').textContent, '—');
     assert.equal(find(newRow, e => e.dataset.label === 'Current value DKK').textContent, '—');
@@ -263,11 +265,11 @@ test('totals valued positions and explains excluded positions', async () => {
     const { context, elements, database } = setupPortfolio();
     database.items.push(
         { id: 'item-2', ticker: 'SECOND', platform: 'Broker', name: 'Second',
-            type: 'Shares', market_symbol: 'SECOND', is_in_scope: true, current_value_dkk: 100 },
+            type: 'Shares', market_symbol: 'SECOND', is_closed: false, is_in_scope: true, current_value_dkk: 100 },
         { id: 'unknown', ticker: 'UNKNOWN', platform: 'Broker', name: 'Unknown',
-            type: 'Shares', market_symbol: 'UNKNOWN', is_in_scope: true, current_value_dkk: 500 },
+            type: 'Shares', market_symbol: 'UNKNOWN', is_closed: false, is_in_scope: true, current_value_dkk: 500 },
         { id: 'excluded', ticker: 'EXCLUDED', platform: 'Broker', name: 'Excluded',
-            type: 'Shares', market_symbol: 'EXCLUDED', is_in_scope: false, current_value_dkk: 1000 }
+            type: 'Shares', market_symbol: 'EXCLUDED', is_closed: true, is_in_scope: true, current_value_dkk: 1000 }
     );
     database.transactions.push(
         { id: 'buy', portfolio_item_id: 'item-2', action: 'Buy', quantity: '2', fees: '-5', total_cost: '-140' },
@@ -278,18 +280,18 @@ test('totals valued positions and explains excluded positions', async () => {
     assert.equal(elements.get('investmentPortfolioSize').textContent, '280.00 DKK');
     assert.equal(elements.get('investmentPortfolioPnl').textContent, '58.00 DKK');
     assert.match(elements.get('investmentPortfolioPnl').className, /investment-positive/);
-    assert.equal(elements.get('investmentCoverage').textContent, '2 of 3 in-scope positions valued; totals exclude the remainder.');
+    assert.equal(elements.get('investmentCoverage').textContent, '2 of 3 open positions valued; totals exclude the remainder.');
 });
 
 test('aggregates open and closed positions by platform including excluded KPI platforms', async () => {
     const { context, elements, database } = setupPortfolio();
     database.items.push(
         { id: 'closed', ticker: 'CLOSED', platform: 'broker', name: 'Closed', type: 'Shares',
-            is_in_scope: false, current_value_dkk: 999 },
+            is_closed: true, is_in_scope: true, current_value_dkk: 999 },
         { id: 'missing', ticker: 'MISSING', platform: 'Broker', name: 'Missing', type: 'Shares',
-            is_in_scope: true, current_value_dkk: null },
+            is_closed: false, is_in_scope: true, current_value_dkk: null },
         { id: 'kucoin', ticker: 'COIN', platform: 'KuCoin', name: 'Coin', type: 'Crypto',
-            is_in_scope: true, current_value_dkk: 80 }
+            is_closed: false, is_in_scope: false, current_value_dkk: 80 }
     );
     database.transactions.push(
         { id: 'closed-buy', portfolio_item_id: 'closed', action: 'Buy', quantity: '1', fees: '', total_cost: '-100' },
@@ -313,12 +315,12 @@ test('ranks the top and worst ten known positions and excludes unvalued position
     const { context, elements, database } = setupPortfolio();
     for (let i = 0; i < 12; i++) {
         database.items.push({ id: `rank-${i}`, ticker: `R${i}`, platform: 'Broker', name: `Rank ${i}`,
-            type: 'Shares', is_in_scope: true, current_value_dkk: 100 });
+            type: 'Shares', is_closed: false, is_in_scope: true, current_value_dkk: 100 });
         database.transactions.push({ id: `rank-tx-${i}`, portfolio_item_id: `rank-${i}`, action: 'Buy',
             quantity: '1', fees: '', total_cost: `-${100 + i}` });
     }
     database.items.push({ id: 'unknown', ticker: 'UNKNOWN', platform: 'Broker', name: 'Unknown',
-        type: 'Shares', is_in_scope: true, current_value_dkk: null });
+        type: 'Shares', is_closed: false, is_in_scope: true, current_value_dkk: null });
     await vm.runInContext('openInvestments()', context);
     elements.get('analyticsPerformersButton').listeners.click();
     assert.equal(elements.get('analyticsRankingControls').hidden, false);
@@ -356,9 +358,9 @@ test('includes hidden positions in total P/L at zero current value without showi
     const { context, elements, database } = setupPortfolio();
     database.items.push(
         { id: 'closed', ticker: 'CLOSED', platform: 'Broker', name: 'Closed', type: 'Shares',
-            is_in_scope: false, current_value_dkk: 999 },
+            is_closed: true, is_in_scope: true, current_value_dkk: 999 },
         { id: 'uncertain', ticker: 'UNCERTAIN', platform: 'Broker', name: 'Uncertain', type: 'Shares',
-            is_in_scope: false, current_value_dkk: null }
+            is_closed: true, is_in_scope: true, current_value_dkk: null }
     );
     database.transactions.push(
         { id: 'closed-buy', portfolio_item_id: 'closed', action: 'Buy', quantity: '2', fees: '-10', total_cost: '-200' },
@@ -390,7 +392,7 @@ test('includes hidden positions in total P/L at zero current value without showi
     assert.equal(toggle.attributes['aria-label'], 'Show closed positions');
     assert.equal(toggle.title, 'Show closed positions');
     assert.equal(elements.get('investmentTableBody').children.length, 1);
-    database.items[0].is_in_scope = false;
+    database.items[0].is_closed = true;
     vm.runInContext('clearInvestments()', context);
     await vm.runInContext('openInvestments()', context);
     assert.equal(elements.get('investmentTableBody').children.length, 0);
@@ -398,16 +400,16 @@ test('includes hidden positions in total P/L at zero current value without showi
     assert.equal(elements.get('investmentPortfolioPnl').textContent, '-40.00 DKK');
 });
 
-test('excludes OPS Capital from total P/L without changing individual positions or portfolio size', async () => {
+test('excludes out-of-scope positions from total P/L without changing individual positions or portfolio size', async () => {
     const { context, elements, database } = setupPortfolio();
-    database.items[0].platform = ' ops CAPITAL ';
+    database.items[0].is_in_scope = false;
     database.items.push(
         { id: 'ops-closed', ticker: 'OPS', platform: 'OPS Capital', name: 'Closed OPS', type: 'Shares',
-            is_in_scope: false, current_value_dkk: 999 },
+            is_closed: true, is_in_scope: false, current_value_dkk: 999 },
         { id: 'other', ticker: 'OTHER', platform: 'OPS Capital Partners', name: 'Other', type: 'Shares',
-            is_in_scope: true, current_value_dkk: 100 },
+            is_closed: false, is_in_scope: true, current_value_dkk: 100 },
         { id: 'other-closed', ticker: 'CLOSED', platform: 'Broker', name: 'Closed Other', type: 'Shares',
-            is_in_scope: false, current_value_dkk: null }
+            is_closed: true, is_in_scope: true, current_value_dkk: null }
     );
     database.transactions.push(
         { id: 'ops-sell', portfolio_item_id: 'ops-closed', action: 'Sell', quantity: '1', fees: '', total_cost: '200' },
@@ -426,22 +428,22 @@ test('excludes OPS Capital from total P/L without changing individual positions 
     assert.equal(find(elements.get('investmentTableBody').children[2], e => e.dataset.label === 'Net P/L DKK').textContent, '200.00');
 });
 
-test('shows no total P/L when OPS Capital is the only contributing platform', async () => {
+test('shows no total P/L when every contributing position is out of scope', async () => {
     const { context, elements, database } = setupPortfolio();
-    database.items[0].platform = 'OPS Capital';
+    database.items[0].is_in_scope = false;
     await vm.runInContext('openInvestments()', context);
     assert.equal(elements.get('investmentPortfolioSize').textContent, '180.00 DKK');
     assert.equal(elements.get('investmentPortfolioPnl').textContent, '—');
 });
 
-test('excludes open and closed KuCoin positions from total P/L only', async () => {
+test('excludes open and closed out-of-scope positions from total P/L only', async () => {
     const { context, elements, database } = setupPortfolio();
-    database.items[0].platform = ' kuCOIN ';
+    database.items[0].is_in_scope = false;
     database.items.push(
         { id: 'closed', ticker: 'CLOSED', platform: 'KuCoin', name: 'Closed', type: 'Crypto',
-            is_in_scope: false, current_value_dkk: 999 },
+            is_closed: true, is_in_scope: false, current_value_dkk: 999 },
         { id: 'other', ticker: 'OTHER', platform: 'KuCoin Pro', name: 'Other', type: 'Crypto',
-            is_in_scope: true, current_value_dkk: 100 }
+            is_closed: false, is_in_scope: true, current_value_dkk: 100 }
     );
     database.transactions.push(
         { id: 'closed-sell', portfolio_item_id: 'closed', action: 'Sell', quantity: '1', fees: '', total_cost: '200' },
@@ -458,9 +460,20 @@ test('excludes open and closed KuCoin positions from total P/L only', async () =
     assert.equal(find(elements.get('investmentTableBody').children[2], e => e.dataset.label === 'Net P/L DKK').textContent, '200.00');
 });
 
-test('displays closed crowdlending values as zero without allowing manual changes', async () => {
+test('treats an out-of-scope Ethereum position like any other out-of-scope item', async () => {
     const { context, elements, database } = setupPortfolio();
     database.items[0].is_in_scope = false;
+    database.items.push({ id: 'other', ticker: 'OTHER', platform: 'Ethereum Pro', name: 'Other', type: 'Crypto',
+        is_closed: false, is_in_scope: true, current_value_dkk: 100 });
+    database.transactions.push({ id: 'other-buy', portfolio_item_id: 'other', action: 'Buy', quantity: '1', fees: '', total_cost: '-30' });
+    await vm.runInContext('openInvestments()', context);
+    assert.equal(elements.get('investmentPortfolioSize').textContent, '280.00 DKK');
+    assert.equal(elements.get('investmentPortfolioPnl').textContent, '70.00 DKK');
+});
+
+test('displays closed crowdlending values as zero without allowing manual changes', async () => {
+    const { context, elements, database } = setupPortfolio();
+    database.items[0].is_closed = true;
     database.items[0].type = 'Crowdlending';
     await vm.runInContext('openInvestments()', context);
     elements.get('investmentClosedToggle').listeners.click();
@@ -548,7 +561,7 @@ test('scales allocation colors across valued positions and leaves unknown values
     const { context, elements, database } = setupPortfolio();
     for (const [id, value] of [['low', 100], ['middle', 140], ['unknown', null]]) {
         database.items.push({ id, ticker: id, platform: 'Broker', name: id, type: 'Shares',
-            market_symbol: null, is_in_scope: true, current_value_dkk: value });
+            market_symbol: null, is_closed: false, is_in_scope: true, current_value_dkk: value });
         database.transactions.push({ id: `tx-${id}`, portfolio_item_id: id, action: 'Buy',
             quantity: '1', fees: '', total_cost: '-10' });
     }
@@ -607,7 +620,7 @@ test('sorts each portfolio column using its underlying values and keeps missing 
 test('mobile sorting controls select, reverse, and reset the order', async () => {
     const { context, elements, database } = setupPortfolio();
     database.items.push({ id: 'item-2', ticker: 'AAPL', platform: 'Broker', name: 'Alpha',
-        type: 'Shares', is_in_scope: true, current_value_dkk: null });
+        type: 'Shares', is_closed: false, is_in_scope: true, current_value_dkk: null });
     await vm.runInContext('openInvestments()', context);
     const field = elements.get('investmentSortField');
     const direction = elements.get('investmentSortDirection');
@@ -632,7 +645,7 @@ test('distinguishes no valuations from zero values and negative PnL', async () =
     await vm.runInContext('openInvestments()', context);
     assert.equal(elements.get('investmentPortfolioSize').textContent, '—');
     assert.equal(elements.get('investmentPortfolioPnl').textContent, '—');
-    assert.match(elements.get('investmentCoverage').textContent, /0 of 1 in-scope positions valued/);
+    assert.match(elements.get('investmentCoverage').textContent, /0 of 1 open positions valued/);
 
     vm.runInContext('investmentPositions[0].currentValue = 0; renderInvestments()', context);
     assert.equal(elements.get('investmentPortfolioSize').textContent, '0.00 DKK');
@@ -649,7 +662,7 @@ test('refreshes only the selected item and paces requests across items', async (
     const clock = { now: 10000, delays: [] };
     const { context, elements, database } = setupPortfolio(clock);
     database.items.push({ id: 'item-2', ticker: 'SECOND', platform: 'Broker', name: 'Second',
-        type: 'Shares', market_symbol: 'SECOND', is_in_scope: true, current_value_dkk: 80 });
+        type: 'Shares', market_symbol: 'SECOND', is_closed: false, is_in_scope: true, current_value_dkk: 80 });
     database.transactions.push({ id: 'tx-2', portfolio_item_id: 'item-2', action: 'Buy',
         quantity: '3', fees: '', total_cost: '-90' });
     await vm.runInContext('openInvestments()', context);
@@ -666,7 +679,7 @@ test('disables refresh for crowdlending but allows any stored ticker', async () 
     const { context, elements, database } = setupPortfolio();
     database.items[0].type = 'Crowdlending';
     database.items.push({ id: 'item-2', ticker: 'UNKNOWN', platform: 'Broker', name: 'Unknown',
-        type: 'Shares', market_symbol: null, is_in_scope: true, current_value_dkk: null });
+        type: 'Shares', market_symbol: null, is_closed: false, is_in_scope: true, current_value_dkk: null });
     await vm.runInContext('openInvestments()', context);
     const buttons = elements.get('investmentTableBody').children.map(refreshButton);
     assert.equal(buttons[0].disabled, true);
@@ -859,21 +872,24 @@ function submitPortfolioTransaction(elements) {
     return form.listeners.submit({ preventDefault() {}, currentTarget: form });
 }
 
-test('switches views and searches and pages all transactions, including out-of-scope items', async () => {
+// The Portfolio and Transactions subtabs (house.js) set this flag and re-render.
+function showPortfolioView(context, transactions) {
+    vm.runInContext(`portfolioTransactionsVisible = ${transactions}; renderPortfolioTransactions()`, context);
+}
+
+test('switches views and searches and pages all transactions, including closed items', async () => {
     const { context, elements, database } = setupPortfolio();
     database.items.push({ id: 'outside', ticker: 'OTHER', platform: 'Broker', name: 'Outside', type: 'Shares',
-        is_in_scope: false, current_value_dkk: null });
+        is_closed: true, is_in_scope: true, current_value_dkk: null });
     for (let i = 0; i < 12; i++) {
         database.transactions.push({ id: `other-${i}`, portfolio_item_id: 'outside', ticker: 'OTHER',
             name: 'Outside Company', transaction_date: `2026-01-${String(i + 1).padStart(2, '0')}`, action: 'Buy', quantity: '1', fees: '', total_cost: '-5' });
     }
     await vm.runInContext('openInvestments()', context);
-    elements.get('portfolioTransactionsButton').listeners.click();
+    showPortfolioView(context, true);
     assert.equal(elements.get('portfolioOverview').hidden, true);
     assert.equal(elements.get('portfolioTransactions').hidden, false);
     assert.equal(elements.get('investmentClosedToggle').hidden, true);
-    assert.equal(elements.get('portfolioTransactionsButton').attributes['aria-pressed'], 'true');
-    assert.equal(elements.get('portfolioOverviewButton').attributes['aria-pressed'], 'false');
     assert.equal(elements.get('portfolioTransactionBody').children.length, 10);
     assert.equal(elements.get('portfolioTransactionPage').textContent, 'Page 1 of 2');
     elements.get('portfolioTransactionNext').listeners.click();
@@ -890,8 +906,8 @@ test('switches views and searches and pages all transactions, including out-of-s
     elements.get('portfolioSearch').listeners.input();
     assert.equal(elements.get('portfolioTransactionBody').children.length, 0);
     elements.get('portfolioTransactionAdd').listeners.click();
-    assert.match(elements.get('portfolioTransactionItem').textContent, /OTHER.*out of scope/);
-    elements.get('portfolioOverviewButton').listeners.click();
+    assert.match(elements.get('portfolioTransactionItem').textContent, /OTHER.*closed/);
+    showPortfolioView(context, false);
     assert.equal(elements.get('portfolioOverview').hidden, false);
     assert.equal(elements.get('investmentClosedToggle').hidden, false);
 });
@@ -901,9 +917,9 @@ test('shares the portfolio search between views without changing totals or close
     Object.assign(database.transactions[0], { ticker: 'CPH:NOVO-B', name: 'Example' });
     database.items.push(
         { id: 'open', ticker: 'ABC', platform: 'Broker', name: 'Another Company', type: 'Shares',
-            is_in_scope: true, current_value_dkk: 200 },
+            is_closed: false, is_in_scope: true, current_value_dkk: 200 },
         { id: 'closed', ticker: 'CLOSED', platform: 'Broker', name: 'Closed Company', type: 'Shares',
-            is_in_scope: false, current_value_dkk: null }
+            is_closed: true, is_in_scope: true, current_value_dkk: null }
     );
     database.transactions.push(
         { id: 'open-tx', portfolio_item_id: 'open', ticker: 'ABC', name: 'Another Company',
@@ -922,12 +938,12 @@ test('shares the portfolio search between views without changing totals or close
     assert.equal(elements.get('investmentPortfolioPnl').textContent, '130.00 DKK');
     elements.get('investmentClosedToggle').listeners.click();
     assert.equal(overview.children.length, 2);
-    elements.get('portfolioTransactionsButton').listeners.click();
+    showPortfolioView(context, true);
     assert.equal(elements.get('portfolioTransactionBody').children.length, 2);
     search.value = 'novo';
     search.listeners.input();
     assert.equal(elements.get('portfolioTransactionBody').children.length, 1);
-    elements.get('portfolioOverviewButton').listeners.click();
+    showPortfolioView(context, false);
     assert.equal(overview.children.length, 1);
     assert.match(overview.textContent, /CPH:NOVO-B/);
     search.value = '';
@@ -972,7 +988,7 @@ test('edits, duplicates and deletes transactions and reloads affected valuations
     Object.assign(database.transactions[0], { transaction_date: '2026-03-01', ticker: 'OLD-TICKER',
         name: 'Old name', type: 'Shares', platform: 'Broker' });
     database.items.push({ id: 'item-2', ticker: 'NEW', name: 'New', type: 'Shares',
-        platform: 'Broker', is_in_scope: true, current_value_dkk: 300, valuation_version: 0 });
+        platform: 'Broker', is_closed: false, is_in_scope: true, current_value_dkk: 300, valuation_version: 0 });
     await vm.runInContext('openInvestments()', context);
     const button = title => find(elements.get('portfolioTransactionBody').children[0], e => e.title === title);
     button('Edit transaction').listeners.click();
@@ -1025,7 +1041,7 @@ test('explains how to restore a missing transaction function without clearing th
 test('validates and saves a buy, reloads the overview, and retains crowdlending valuations', async () => {
     const { context, elements, database } = setupPortfolio();
     database.items.push({ id: 'crowd', ticker: 'CROWD', platform: 'Broker', name: 'Crowd', type: 'Crowdlending',
-        is_in_scope: true, current_value_dkk: 500, valuation_version: 0 });
+        is_closed: false, is_in_scope: true, current_value_dkk: 500, valuation_version: 0 });
     await vm.runInContext('openInvestments()', context);
     fillPortfolioTransaction(elements, { Date: '2026-02-29' });
     await submitPortfolioTransaction(elements);

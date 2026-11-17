@@ -7,11 +7,29 @@ CREATE TABLE IF NOT EXISTS public.portfolio_items (
     name text NOT NULL CHECK (length(trim(name)) > 0),
     type text NOT NULL CHECK (length(trim(type)) > 0),
     market_symbol text,
+    is_closed boolean NOT NULL DEFAULT false,
     is_in_scope boolean NOT NULL DEFAULT true,
     current_value_dkk numeric,
     inserted_at timestamptz NOT NULL DEFAULT now(),
     UNIQUE (ticker, platform)
 );
+
+-- One-off migration: the old is_in_scope (true = open) becomes the inverted is_closed;
+-- the new is_in_scope decides whether an item counts toward total P/L.
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public'
+               AND table_name = 'portfolio_items' AND column_name = 'is_in_scope')
+       AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public'
+               AND table_name = 'portfolio_items' AND column_name = 'is_closed') THEN
+        ALTER TABLE public.portfolio_items RENAME COLUMN is_in_scope TO is_closed;
+        UPDATE public.portfolio_items SET is_closed = NOT is_closed;
+        ALTER TABLE public.portfolio_items ALTER COLUMN is_closed SET DEFAULT false;
+        ALTER TABLE public.portfolio_items ADD COLUMN is_in_scope boolean NOT NULL DEFAULT true;
+        UPDATE public.portfolio_items SET is_in_scope = false
+            WHERE lower(trim(platform)) IN ('ops capital', 'kucoin', 'ethereum');
+    END IF;
+END $$;
 
 CREATE TABLE IF NOT EXISTS public.portfolio_transactions (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

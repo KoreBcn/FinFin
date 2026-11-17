@@ -5,7 +5,7 @@ const investments = require('../investment-math.js');
 
 const item = (id, inScope = true) => ({
     id, ticker: id, platform: 'Broker', name: 'Acme', type: 'Shares',
-    is_in_scope: inScope, current_value_dkk: null
+    is_closed: !inScope, is_in_scope: true, current_value_dkk: null
 });
 const transaction = (id, action, quantity, total_cost, fees = '') => ({
     portfolio_item_id: id, action, quantity, total_cost, fees
@@ -17,7 +17,7 @@ test('aggregates stored trades without flagging other actions', () => {
         transaction('ABC', 'Sell', '0,5', '300,0', '-1,0'),
         transaction('ABC', 'Dividend', '', '20,0'),
         transaction('ABC', 'Recieve', '1,0', '0'),
-        transaction('ABC', 'SPLIT INDLÆG VP', '3', '100', '-2')
+        transaction('ABC', 'SPLIT INDLÃ†G VP', '3', '100', '-2')
     ]);
     assert.equal(position.quantity, 2);
     assert.equal(position.bought, -1000.25);
@@ -36,7 +36,7 @@ test('aggregates both visible and hidden items while keeping invalid quantities 
     assert.equal(positions[0].quantityUnknown, true);
     assert.equal(positions[1].quantityUnknown, true);
     assert.match(positions[1].other[0], /invalid or missing/);
-    assert.equal(positions[2].isInScope, false);
+    assert.equal(positions[2].isClosed, true);
     assert.equal(positions[2].quantity, 2);
 });
 

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>A &amp; C Finances</title>
-    <link rel="stylesheet" href="styles.css?v=51">
+    <link rel="stylesheet" href="styles.css?v=57">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 </head>
@@ -372,12 +372,18 @@
     <div id="tabInvestments" class="tab-panel" style="display:none">
         <div class="investment-subtabs" role="tablist" aria-label="Investments sections">
             <button type="button" id="investmentPortfolioTab" class="investment-subtab active" role="tab" aria-selected="true" aria-controls="investmentPortfolio" onclick="switchInvestmentSubtab('portfolio')">Portfolio</button>
-            <button type="button" id="investmentAnalyticsTab" class="investment-subtab" role="tab" aria-selected="false" aria-controls="investmentAnalytics" onclick="switchInvestmentSubtab('analytics')">Analytics</button>
+                        <button type="button" id="investmentTransactionsTab" class="investment-subtab" role="tab" aria-selected="false" aria-controls="investmentPortfolio" onclick="switchInvestmentSubtab('transactions')">Transactions</button>            <button type="button" id="investmentAnalyticsTab" class="investment-subtab" role="tab" aria-selected="false" aria-controls="investmentAnalytics" onclick="switchInvestmentSubtab('analytics')">Analytics</button>
             <button type="button" id="investmentHouseTab" class="investment-subtab" role="tab" aria-selected="false" aria-controls="investmentHouse" onclick="switchInvestmentSubtab('house')">House</button>
         </div>
         <div id="investmentPortfolio" class="tab-panel" role="tabpanel" aria-labelledby="investmentPortfolioTab">
         <section class="filters-bar portfolio-filters" aria-label="Portfolio filters">
-            <input id="portfolioSearch" class="portfolio-search" type="search" placeholder="Search ticker or name" aria-label="Search ticker or name">
+            <div class="portfolio-search-wrap">
+                <svg class="portfolio-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="11" cy="11" r="7" />
+                    <path d="m20 20-4-4" />
+                </svg>
+                <input id="portfolioSearch" class="portfolio-search" type="search" placeholder="Search ticker or name" aria-label="Search ticker or name">
+            </div>
         </section>
         <section class="investments-card">
             <div class="investments-heading">
@@ -392,10 +398,6 @@
                     </button>
                     <button id="investmentAdd" class="btn-primary investment-add" type="button" aria-label="Add portfolio item" title="Add portfolio item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg></button>
                     <button id="portfolioTransactionAdd" class="btn-primary investment-add" type="button" aria-label="Add portfolio transaction" title="Add portfolio transaction" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg></button>
-                    <div class="portfolio-view-buttons" role="group" aria-label="Portfolio view">
-                        <button id="portfolioOverviewButton" class="btn-secondary" type="button" aria-controls="portfolioOverview" aria-pressed="true">Overview</button>
-                        <button id="portfolioTransactionsButton" class="btn-secondary" type="button" aria-controls="portfolioTransactions" aria-pressed="false">Transactions</button>
-                    </div>
                 </div>
             </div>
             <p id="investmentStatus" class="investment-status" role="status" aria-live="polite"></p>
@@ -446,7 +448,7 @@
                     <tbody id="investmentTableBody"></tbody>
                 </table>
             </div>
-            <p class="investment-note">Net P/L = current value + buy and sell cash flows + fees + dividends. Total P/L excludes OPS Capital and KuCoin positions and includes other closed positions with zero current value, whether shown or hidden. This is not a tax-lot calculation. Portfolio percentages use only in-scope positions with known values; text colors range from green for the smallest allocation to red for the largest. Other transaction actions do not change quantity or cash flows; their fees still count.</p>
+            <p class="investment-note">Net P/L = current value + buy and sell cash flows + fees + dividends. Total P/L excludes positions whose "In scope" setting is off (editable per item) and includes other closed positions with zero current value, whether shown or hidden. This is not a tax-lot calculation. Portfolio percentages use only open positions with known values; text colors range from green for the smallest allocation to red for the largest. Other transaction actions do not change quantity or cash flows; their fees still count.</p>
             </div>
             <div id="portfolioTransactions" hidden>
                 <p id="portfolioTransactionStatus" class="investment-note" role="status" aria-live="polite"></p>
@@ -469,6 +471,7 @@
                     <label>Name<input id="investmentName" type="text" required></label>
                     <label>Type<input id="investmentType" type="text" required></label>
                     <label>Platform<input id="investmentPlatform" type="text" required></label>
+                    <label class="checkbox-label"><input id="investmentInScope" type="checkbox" checked> In scope (counts toward Total P/L)</label>
                     <p id="investmentFormStatus" class="investment-note" role="status" aria-live="polite"></p>
                     <div class="modal-actions">
                         <button id="investmentCancel" class="btn-secondary" type="button">Cancel</button>
@@ -522,7 +525,7 @@
                     <thead><tr><th id="analyticsNameHeading" scope="col">Platform</th><th scope="col">Value DKK</th><th scope="col">Portfolio %</th><th scope="col">Net P/L DKK</th></tr></thead>
                     <tbody id="analyticsTableBody"></tbody>
                 </table>
-                <p class="investment-note">Includes all platforms. Out-of-scope positions are treated as closed with zero current value; check that they are actually closed. Portfolio percentages use known in-scope values. Net P/L includes cash flows, fees and dividends. * indicates a partial platform total.</p>
+                <p class="investment-note">Includes all platforms. Closed positions are treated as having zero current value; check that they are actually closed. Portfolio percentages use known open-position values. Net P/L includes cash flows, fees and dividends. * indicates a partial platform total.</p>
             </section>
         </div>
         <section id="investmentHouse" class="house-layout" role="tabpanel" aria-labelledby="investmentHouseTab" hidden>
@@ -629,8 +632,8 @@
 <script src="supabase-config.js"></script>
 <script src="date-utils.js?v=1"></script>
 <script src="investment-math.js?v=1"></script>
-<script src="investments.js?v=30"></script>
-<script src="house.js?v=16"></script>
+<script src="investments.js?v=33"></script>
+<script src="house.js?v=17"></script>
 <script src="app.js?v=29"></script>
 </body>
 </html>

@@ -22,8 +22,8 @@ The value is read on sign-in and after transaction changes.
 Sign in and open **Investments** to load portfolio items and transactions from
 Supabase. See [db/supabase/README.md](db/supabase/README.md) for the schema and
 one-off CSV migration. Items are identified by ticker and platform. Only items
-marked in scope are displayed and refreshed. Use **+** to create an item or
-the row's edit button to change its ticker, name, type or platform. Its quantity
+marked open are displayed and refreshed. Use **+** to create an item or
+the row's edit button to change its ticker, name, type, platform or **In scope** setting. Its quantity
 is unknown until it has transactions. Changing a priced item's ticker or
 changing its type clears its saved value and quote; refresh a priced item afterwards.
 For price refreshes, the ticker must be its exact Yahoo Finance ticker, such as
@@ -33,9 +33,9 @@ Previously saved browser-only crowdlending values remain a local fallback until
 the value is saved again.
 
 Within Portfolio, search by ticker or name to filter the Overview and Transactions
-lists. Portfolio totals remain unfiltered. Choose **Transactions** to browse
+lists. Portfolio totals remain unfiltered. Choose the **Transactions** subtab to browse
 pages and add, edit, duplicate or delete transactions for existing
-items (including out-of-scope items). Select the information button next to
+items (including closed items). Select the information button next to
 the ticker to see the name, platform, type and currencies. Enter fees and dividend cash flows with
 their signs and total cost in DKK. Adding, editing, duplicating or deleting a
 buy or sell clears affected priced items' saved values until their next price
@@ -66,7 +66,7 @@ The optional **Refresh portfolio prices** GitHub Actions workflow runs at 00:00
 Europe/Copenhagen on weekdays and can also be started manually. It uses the same
 authenticated Edge Function and eight-second request pacing as manual refresh,
 reuses duplicate quotes and exchange rates, and stops if Yahoo rate-limits it.
-This does not guarantee that Yahoo will accept requests. It refreshes in-scope,
+This does not guarantee that Yahoo will accept requests. It refreshes open,
 non-crowdlending items and preserves valuation-version checks. When quantity is
 unknown or conversion fails, it saves only the quote; conversion failures fail
 the workflow. An open app must reload the portfolio to see scheduled updates.
@@ -90,11 +90,12 @@ before updating. See the portfolio instructions in
 [db/supabase/README.md](db/supabase/README.md) for migration cautions.
 Net P/L is the current value plus buy and sell cash flows, fees, and dividends;
 it is not realized/unrealized tax-lot accounting. The portfolio size sums valued
-in-scope positions. Use the **Show closed positions** eye icon in Overview to display
-out-of-scope items. Total P/L excludes positions on the OPS Capital and KuCoin platforms.
-It includes other out-of-scope positions, treating their current value as zero,
+open positions. Use the **Show closed positions** eye icon in Overview to display
+closed items. Total P/L excludes items whose editable **In scope** setting is off
+(for example OPS Capital, KuCoin and Ethereum). It includes other closed positions,
+treating their current value as zero,
 regardless of stored value or calculated quantity.
-Unvalued in-scope positions are excluded and reported.
+Unvalued open positions are excluded and reported.
 Percent changes compare the
 latest quote with the last daily close at least 7, 30, or 90 calendar days ago.
 Hover or focus the Today percentage to see those changes; select the information
@@ -102,11 +103,10 @@ icon beside a position for its platform and cash flows. Portfolio percentages
 use only positions with known DKK values.
 
 The **Analytics** subtab shows performance by platform or the top/worst 10
-positions by net P/L. It includes all platforms (including OPS Capital and
-KuCoin), unlike the Overview total P/L. Both in-scope and out-of-scope positions
-are included; out-of-scope positions are treated as closed with zero current
+positions by net P/L. It includes all platforms and ignores the **In scope** setting, unlike the Overview total P/L. Both open and closed positions
+are included; closed positions are treated as having zero current
 value, so check that they are actually closed. Portfolio percentages use
-known in-scope values. Unknown valuations are excluded from rankings and marked
+known open values. Unknown valuations are excluded from rankings and marked
 as partial in platform totals.
 
 ### House

@@ -166,7 +166,7 @@ function renderInvestmentAnalytics() {
     if (!investmentLoaded) return;
 
     const positions = investmentPositions.map(position => {
-        const value = position.isInScope === false ? 0 : investmentValue(position);
+        const value = position.isClosed ? 0 : investmentValue(position);
         const pnl = Number.isFinite(value) ? value + position.bought + position.sold + position.fees + position.dividends : null;
         return { position, value: Number.isFinite(value) ? value : null, pnl: Number.isFinite(pnl) ? pnl : null };
     });
@@ -246,13 +246,13 @@ function renderInvestments() {
     renderPortfolioTransactions();
     const body = document.getElementById('investmentTableBody');
     body.replaceChildren();
-    const visiblePositions = investmentPositions.filter(p => p.isInScope !== false);
+    const visiblePositions = investmentPositions.filter(p => !p.isClosed);
     const values = visiblePositions.map(investmentValue);
     const pnls = visiblePositions.map((p, index) => values[index] === null
         ? null : values[index] + p.bought + p.sold + p.fees + p.dividends);
     const total = values.reduce((sum, value) => sum + (value === null ? 0 : value), 0);
-    const hiddenPositions = investmentPositions.filter(p => p.isInScope === false);
-    const includedInTotalPnl = p => !['ops capital', 'kucoin'].includes(p.platform.trim().toLowerCase());
+    const hiddenPositions = investmentPositions.filter(p => p.isClosed);
+    const includedInTotalPnl = p => p.isInScope;
     const pnlHiddenPositions = hiddenPositions.filter(includedInTotalPnl);
     const totalPnl = pnls.reduce((sum, pnl, index) => sum + (pnl === null || !includedInTotalPnl(visiblePositions[index]) ? 0 : pnl), 0)
         + pnlHiddenPositions.reduce((sum, p) => sum + p.bought + p.sold + p.fees + p.dividends, 0);
@@ -267,7 +267,7 @@ function renderInvestments() {
     pnlKpi.textContent = pnlKnown ? `${investmentFormat(totalPnl)} DKK` : '—';
     pnlKpi.className = `kpi-real${pnlKnown && totalPnl !== 0 ? (totalPnl < 0 ? ' investment-negative' : ' investment-positive') : ''}`;
     document.getElementById('investmentCoverage').textContent = visiblePositions.length && known < visiblePositions.length
-        ? `${known} of ${visiblePositions.length} in-scope positions valued; totals exclude the remainder.`
+        ? `${known} of ${visiblePositions.length} open positions valued; totals exclude the remainder.`
         : '';
     const closedToggle = document.getElementById('investmentClosedToggle');
     const closedToggleLabel = investmentShowClosed ? 'Hide closed positions' : 'Show closed positions';
@@ -393,7 +393,7 @@ function renderInvestments() {
                 heading.append(name, info);
                 td.append(heading);
                 const details = document.createElement('small');
-                details.textContent = p.ticker + (p.isInScope === false ? ' · Closed' : '')
+                details.textContent = p.ticker + (p.isClosed ? ' · Closed' : '')
                     + (p.other.length ? ` · Review actions: ${p.other.join(', ')}` : '');
                 td.append(details);
             }
@@ -412,10 +412,10 @@ function renderInvestments() {
                 refresh.className = 'investment-refresh';
                 refresh.textContent = '↻';
                 refresh.setAttribute('aria-label', `Refresh price for ${p.name || p.ticker}`);
-                refresh.title = p.isInScope === false ? 'Closed positions are not refreshed'
+                refresh.title = p.isClosed ? 'Closed positions are not refreshed'
                     : crowdlending ? 'Crowdlending values are entered manually'
                     : investmentBusy ? 'Another price refresh is in progress' : `Refresh price for ${p.name || p.ticker}`;
-                refresh.disabled = investmentBusy || investmentItemSaving || portfolioTransactionSaving || !investmentLoaded || crowdlending || p.isInScope === false;
+                refresh.disabled = investmentBusy || investmentItemSaving || portfolioTransactionSaving || !investmentLoaded || crowdlending || p.isClosed;
                 if (investmentRefreshingKey === p.key) {
                     refresh.classList.add('is-refreshing');
                     refresh.setAttribute('aria-busy', 'true');
@@ -430,7 +430,7 @@ function renderInvestments() {
                 if (quote.error) details.setAttribute('role', 'status');
                 td.append(details);
             }
-            if (cell.key === 'value' && crowdlending && p.isInScope !== false) {
+            if (cell.key === 'value' && crowdlending && !p.isClosed) {
                 td.textContent = '';
                 const manual = document.createElement('input');
                 manual.type = 'text';
@@ -511,8 +511,6 @@ function renderInvestments() {
 function renderPortfolioTransactions() {
     document.getElementById('portfolioOverview').hidden = portfolioTransactionsVisible;
     document.getElementById('portfolioTransactions').hidden = !portfolioTransactionsVisible;
-    document.getElementById('portfolioOverviewButton').setAttribute('aria-pressed', String(!portfolioTransactionsVisible));
-    document.getElementById('portfolioTransactionsButton').setAttribute('aria-pressed', String(portfolioTransactionsVisible));
     document.getElementById('investmentClosedToggle').hidden = portfolioTransactionsVisible;
     const itemAdd = document.getElementById('investmentAdd');
     itemAdd.hidden = portfolioTransactionsVisible;
@@ -616,12 +614,6 @@ function renderPortfolioTransactions() {
     });
 }
 
-for (const [id, visible] of [['portfolioOverviewButton', false], ['portfolioTransactionsButton', true]]) {
-    document.getElementById(id).addEventListener('click', () => {
-        portfolioTransactionsVisible = visible;
-        renderPortfolioTransactions();
-    });
-}
 document.getElementById('investmentClosedToggle').addEventListener('click', () => {
     if (!investmentLoaded) return;
     investmentShowClosed = !investmentShowClosed;
@@ -648,7 +640,7 @@ function openPortfolioTransaction(row = null) {
     investmentItems.forEach(item => {
         const option = document.createElement('option');
         option.value = item.id;
-        option.textContent = `${item.ticker} · ${item.platform} · ${item.name}${item.is_in_scope ? '' : ' (out of scope)'}`;
+        option.textContent = `${item.ticker} · ${item.platform} · ${item.name}${item.is_closed ? ' (closed)' : ''}`;
         select.append(option);
     });
     portfolioTransactionEditing = row ? { id: row.id, revision: row.revision } : null;
@@ -766,7 +758,7 @@ async function openInvestments() {
                 if (data.length < pageSize) return rows;
             }
         }
-        const itemColumns = 'id, ticker, platform, name, type, is_in_scope, current_value_dkk, valuation_version, market_price, market_currency, market_price_at';
+        const itemColumns = 'id, ticker, platform, name, type, is_closed, is_in_scope, current_value_dkk, valuation_version, market_price, market_currency, market_price_at';
         const transactionColumns = 'id, revision, portfolio_item_id, transaction_date, action, platform, type, ticker, name, quantity, price_per_unit, exchange_rate, commission, fees, currency, total_cost, local_value, local_currency';
         let items, transactions;
         for (let attempt = 0; attempt < 3; attempt++) {
@@ -855,6 +847,7 @@ function openInvestmentDialog(position = null) {
         document.getElementById('investmentType').value = investmentEditingItem.type;
         document.getElementById('investmentPlatform').value = investmentEditingItem.platform;
     }
+    document.getElementById('investmentInScope').checked = investmentEditingItem ? investmentEditingItem.is_in_scope !== false : true;
     document.getElementById('investmentDialogTitle').textContent = position ? 'Edit portfolio item' : 'Add portfolio item';
     document.getElementById('investmentSubmit').textContent = position ? 'Save changes' : 'Add item';
     document.getElementById('investmentFormStatus').textContent = '';
@@ -883,7 +876,8 @@ document.getElementById('investmentForm').addEventListener('submit', async event
             ticker: document.getElementById('investmentTicker').value.trim(),
             name: document.getElementById('investmentName').value.trim(),
             type: document.getElementById('investmentType').value.trim(),
-            platform: document.getElementById('investmentPlatform').value.trim()
+            platform: document.getElementById('investmentPlatform').value.trim(),
+            is_in_scope: document.getElementById('investmentInScope').checked
         };
         if ([item.ticker, item.name, item.type, item.platform].some(value => !value)) throw new Error('All item fields are required.');
         const typeChanged = existing && existing.type.toLowerCase() !== item.type.toLowerCase();
@@ -905,7 +899,7 @@ document.getElementById('investmentForm').addEventListener('submit', async event
             query = supabaseClient.from('portfolio_items').insert(item);
         }
         requestSent = true;
-        const { data, error } = await query.select('id, ticker, platform, name, type, is_in_scope, current_value_dkk, valuation_version, market_price, market_currency, market_price_at').single();
+        const { data, error } = await query.select('id, ticker, platform, name, type, is_closed, is_in_scope, current_value_dkk, valuation_version, market_price, market_currency, market_price_at').single();
         if (error) throw new Error(error.message);
         if (generation !== investmentGeneration) return;
         if (existing) {
@@ -982,7 +976,7 @@ async function investmentRequest(path, params) {
 }
 
 async function refreshInvestment(p) {
-    if (investmentBusy || investmentItemSaving || portfolioTransactionSaving || !investmentLoaded || p.isInScope === false || p.type.toLowerCase() === 'crowdlending') return;
+    if (investmentBusy || investmentItemSaving || portfolioTransactionSaving || !investmentLoaded || p.isClosed || p.type.toLowerCase() === 'crowdlending') return;
     investmentBusy = true;
     investmentRefreshingKey = p.key;
     const generation = investmentGeneration;
