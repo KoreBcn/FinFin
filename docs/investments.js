@@ -262,9 +262,9 @@ function renderInvestments() {
     const heatValues = values.filter(Number.isFinite);
     const heatMin = heatValues.reduce((min, value) => Math.min(min, value), Infinity);
     const heatMax = heatValues.reduce((max, value) => Math.max(max, value), -Infinity);
-    document.getElementById('investmentPortfolioSize').textContent = known ? `${investmentFormat(total)} DKK` : '—';
+    document.getElementById('investmentPortfolioSize').textContent = known ? `${investmentFormat(total, 0)} DKK` : '—';
     const pnlKpi = document.getElementById('investmentPortfolioPnl');
-    pnlKpi.textContent = pnlKnown ? `${investmentFormat(totalPnl)} DKK` : '—';
+    pnlKpi.textContent = pnlKnown ? `${investmentFormat(totalPnl, 0)} DKK` : '—';
     pnlKpi.className = `kpi-real${pnlKnown && totalPnl !== 0 ? (totalPnl < 0 ? ' investment-negative' : ' investment-positive') : ''}`;
     document.getElementById('investmentCoverage').textContent = visiblePositions.length && known < visiblePositions.length
         ? `${known} of ${visiblePositions.length} open positions valued; totals exclude the remainder.`
@@ -510,6 +510,7 @@ function renderInvestments() {
 
 function renderPortfolioTransactions() {
     document.getElementById('portfolioOverview').hidden = portfolioTransactionsVisible;
+    document.getElementById('portfolioKpis').hidden = portfolioTransactionsVisible;
     document.getElementById('portfolioTransactions').hidden = !portfolioTransactionsVisible;
     document.getElementById('investmentClosedToggle').hidden = portfolioTransactionsVisible;
     const itemAdd = document.getElementById('investmentAdd');

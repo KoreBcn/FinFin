@@ -11,7 +11,7 @@
     <link rel="icon" href="icons/icon-192.png">
     <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
     <title>A &amp; C Finances</title>
-    <link rel="stylesheet" href="styles.css?v=63">
+    <link rel="stylesheet" href="styles.css?v=64">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 </head>
@@ -391,35 +391,32 @@
                 </svg>
                 <input id="portfolioSearch" class="portfolio-search" type="search" placeholder="Search ticker or name" aria-label="Search ticker or name">
             </div>
+            <div class="portfolio-heading-actions">
+                <button id="investmentClosedToggle" class="btn-secondary investment-closed-toggle" type="button" aria-controls="investmentTableBody" aria-expanded="false" aria-label="Show closed positions" title="Show closed positions">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z" />
+                        <circle cx="12" cy="12" r="3" />
+                        <path class="closed-eye-slash" d="M4 4 20 20" />
+                    </svg>
+                </button>
+                <button id="investmentAdd" class="btn-primary investment-add" type="button" aria-label="Add portfolio item" title="Add portfolio item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg></button>
+                <button id="portfolioTransactionAdd" class="btn-primary investment-add" type="button" aria-label="Add portfolio transaction" title="Add portfolio transaction" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg></button>
+            </div>
+        </section>
+        <section id="portfolioKpis" class="kpi-section investment-kpis" aria-label="Portfolio totals">
+            <div class="kpi-card net-card">
+                <div class="kpi-top"><span class="kpi-icon" aria-hidden="true">💼</span><span class="kpi-label">Total Portfolio Size</span></div>
+                <div id="investmentPortfolioSize" class="kpi-real">—</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-top"><span class="kpi-icon" aria-hidden="true">📈</span><span class="kpi-label">Total PnL</span></div>
+                <div id="investmentPortfolioPnl" class="kpi-real">—</div>
+            </div>
         </section>
         <section class="investments-card">
-            <div class="investments-heading">
-                <h2>Investments</h2>
-                <div class="portfolio-heading-actions">
-                    <button id="investmentClosedToggle" class="btn-secondary investment-closed-toggle" type="button" aria-controls="investmentTableBody" aria-expanded="false" aria-label="Show closed positions" title="Show closed positions">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z" />
-                            <circle cx="12" cy="12" r="3" />
-                            <path class="closed-eye-slash" d="M4 4 20 20" />
-                        </svg>
-                    </button>
-                    <button id="investmentAdd" class="btn-primary investment-add" type="button" aria-label="Add portfolio item" title="Add portfolio item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg></button>
-                    <button id="portfolioTransactionAdd" class="btn-primary investment-add" type="button" aria-label="Add portfolio transaction" title="Add portfolio transaction" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg></button>
-                </div>
-            </div>
             <p id="investmentStatus" class="investment-status" role="status" aria-live="polite"></p>
             <button id="investmentRetry" class="btn-secondary" type="button" hidden>Retry portfolio load</button>
             <div id="portfolioOverview">
-            <section class="investment-kpis" aria-label="Portfolio totals">
-                <div class="kpi-card">
-                    <div class="kpi-label">Total Portfolio Size</div>
-                    <div id="investmentPortfolioSize" class="kpi-real">—</div>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-label">Total PnL</div>
-                    <div id="investmentPortfolioPnl" class="kpi-real">—</div>
-                </div>
-            </section>
             <p id="investmentCoverage" class="investment-note" role="status"></p>
             <div class="investment-sort-controls">
                 <label for="investmentSortField">Sort by</label>
@@ -639,7 +636,7 @@
 <script src="supabase-config.js"></script>
 <script src="date-utils.js?v=1"></script>
 <script src="investment-math.js?v=1"></script>
-<script src="investments.js?v=33"></script>
+<script src="investments.js?v=35"></script>
 <script src="house.js?v=17"></script>
 <script src="app.js?v=32"></script>
     <script>
