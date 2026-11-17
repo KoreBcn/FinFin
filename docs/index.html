@@ -11,7 +11,7 @@
     <link rel="icon" href="icons/icon-192.png">
     <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
     <title>A &amp; C Finances</title>
-    <link rel="stylesheet" href="styles.css?v=57">
+    <link rel="stylesheet" href="styles.css?v=63">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 </head>
@@ -211,7 +211,7 @@
                 <button type="button" id="homeHighlightsTab" class="investment-subtab" role="tab" aria-selected="false" aria-controls="tabHighlights" onclick="switchHomeSubtab('highlights')">Highlights</button>
                 <button type="button" id="homeTransactionsTab" class="investment-subtab" role="tab" aria-selected="false" aria-controls="tabTransactions" onclick="switchHomeSubtab('transactions')">Transactions</button>
             </div>
-            <span id="transactionInsertDate" class="transaction-insert-date" role="status" aria-live="polite">Latest transaction insert: &mdash;</span>
+            <span id="transactionInsertDate" class="transaction-insert-date" role="status" aria-live="polite">Last updated: &mdash;</span>
         </div>
     <!-- ═══════════════════════════════════════════
          DASHBOARD TAB
@@ -641,7 +641,7 @@
 <script src="investment-math.js?v=1"></script>
 <script src="investments.js?v=33"></script>
 <script src="house.js?v=17"></script>
-<script src="app.js?v=29"></script>
+<script src="app.js?v=32"></script>
     <script>
         if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
     </script>

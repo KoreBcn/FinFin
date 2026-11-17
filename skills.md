@@ -4,6 +4,7 @@
 - Follow a consistent layout, spacing, and visual style across components.
 - Keep controls accessible and usable on desktop and mobile.
 - On wide screens the main navigation (Home, Investments) is a left sidebar; on narrow screens it collapses into a burger menu.
+- Match Home and Investments subtab backgrounds to the menu; on mobile, keep them sticky below the header.
 - Investments subtabs are Portfolio, Transactions, Analytics and House.
 - Search fields should have a small decorative icon on the left and retain a clear accessible label.
 - The filter pane should always be right underneath the subtab

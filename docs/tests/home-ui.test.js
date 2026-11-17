@@ -100,7 +100,7 @@ test('queries the latest non-null transaction insert without filtering its sourc
     vm.runInContext("activeAuthUserId = 'user'; supabaseClient = client", context);
     await vm.runInContext('refreshTransactionInsertDate()', context);
     const expected = localTimestamp('2026-03-01T10:15:00Z');
-    assert.equal(elements.get('transactionInsertDate').textContent, `Latest transaction insert: ${expected}`);
+    assert.equal(elements.get('transactionInsertDate').textContent, `Last updated: ${expected}`);
     assert.deepEqual(calls, [
         ['from', 'transactions'], ['select', 'inserted_at'], ['not', 'inserted_at', 'is', null],
         ['order', 'inserted_at', false], ['limit', 1]
@@ -120,7 +120,7 @@ test('reports missing dates and errors and ignores an old response after sign-ou
     };
     vm.runInContext("activeAuthUserId = 'user'; supabaseClient = client", context);
     await vm.runInContext('refreshTransactionInsertDate()', context);
-    assert.equal(elements.get('transactionInsertDate').textContent, 'Latest transaction insert: —');
+    assert.equal(elements.get('transactionInsertDate').textContent, 'Last updated: —');
     response = { error: { message: 'query failed' } };
     await vm.runInContext('refreshTransactionInsertDate()', context);
     assert.match(elements.get('transactionInsertDate').textContent, /unavailable: query failed/);
@@ -130,7 +130,7 @@ test('reports missing dates and errors and ignores an old response after sign-ou
     await vm.runInContext('applyAuthSession(null)', context);
     resolve({ data: { inserted_at: '2026-03-01T10:15:00Z' }, error: null });
     await pending;
-    assert.equal(elements.get('transactionInsertDate').textContent, 'Latest transaction insert: —');
+    assert.equal(elements.get('transactionInsertDate').textContent, 'Last updated: —');
 });
 
 test('keeps the newest timestamp query when responses arrive out of order', async () => {
@@ -152,7 +152,7 @@ test('keeps the newest timestamp query when responses arrive out of order', asyn
     pending[0]({ data: { inserted_at: '2026-03-01T10:15:00Z' }, error: null });
     await first;
     const expected = localTimestamp('2026-03-02T10:15:00Z');
-    assert.equal(elements.get('transactionInsertDate').textContent, `Latest transaction insert: ${expected}`);
+    assert.equal(elements.get('transactionInsertDate').textContent, `Last updated: ${expected}`);
 });
 
 test('refreshes the insert date after transaction writes and deletes', async () => {
@@ -172,11 +172,11 @@ test('refreshes the insert date after transaction writes and deletes', async () 
     await vm.runInContext('apiSaveRow({})', context);
     await new Promise(resolve => setImmediate(resolve));
     const format = localTimestamp;
-    assert.equal(elements.get('transactionInsertDate').textContent, `Latest transaction insert: ${format(timestamp)}`);
+    assert.equal(elements.get('transactionInsertDate').textContent, `Last updated: ${format(timestamp)}`);
     timestamp = '2026-03-01T10:15:00Z';
     await vm.runInContext("apiDeleteRow('id')", context);
     await new Promise(resolve => setImmediate(resolve));
-    assert.equal(elements.get('transactionInsertDate').textContent, `Latest transaction insert: ${format(timestamp)}`);
+    assert.equal(elements.get('transactionInsertDate').textContent, `Last updated: ${format(timestamp)}`);
 });
 
 test('round-trips full transaction dates and rejects invalid calendar dates without mutating edits', () => {

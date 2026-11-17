@@ -265,7 +265,7 @@ async function refreshTransactionInsertDate() {
     if (!userId) return;
     const request = ++transactionInsertRequest;
     const label = document.getElementById('transactionInsertDate');
-    label.textContent = 'Latest transaction insert: loading…';
+    label.textContent = 'Last updated: loading…';
     try {
         const { data, error } = await supabaseClient.from('transactions')
             .select('inserted_at').not('inserted_at', 'is', null)
@@ -273,15 +273,15 @@ async function refreshTransactionInsertDate() {
         if (error) throw new Error(error.message);
         if (request !== transactionInsertRequest || userId !== activeAuthUserId) return;
         if (!data) {
-            label.textContent = 'Latest transaction insert: —';
+            label.textContent = 'Last updated: —';
             return;
         }
         const date = new Date(data.inserted_at);
         if (typeof data.inserted_at !== 'string' || !Number.isFinite(date.getTime())) throw new Error('Invalid insert date');
-        label.textContent = `Latest transaction insert: ${formatLocalDateTime(date)}`;
+        label.textContent = `Last updated: ${formatLocalDateTime(date)}`;
     } catch (error) {
         if (request === transactionInsertRequest && userId === activeAuthUserId) {
-            label.textContent = `Latest transaction insert unavailable: ${error.message}`;
+            label.textContent = `Last updated unavailable: ${error.message}`;
         }
     }
 }
@@ -297,7 +297,7 @@ async function applyAuthSession(session) {
 
     activeAuthUserId = userId;
     transactionInsertRequest++;
-    document.getElementById('transactionInsertDate').textContent = 'Latest transaction insert: —';
+    document.getElementById('transactionInsertDate').textContent = 'Last updated: —';
     clearInvestments();
     clearHouse();
     if (!user) {
@@ -2066,25 +2066,22 @@ function renderHighlightsTab() {
     // Filter bar
     // KPI row
     const kpiHtml = `
-    <section class="hl-kpi-row">
-        <div class="hl-kpi-card">
-            <div class="hl-kpi-icon">💰</div>
-            <div class="hl-kpi-label">Savings Rate</div>
-            <div class="hl-kpi-value" style="color:${srColor}">${savingsRate.toFixed(1)}%</div>
-            <div class="hl-kpi-sub">${srLabel}</div>
+    <section class="kpi-section hl-kpi-row">
+        <div class="kpi-card hl-kpi-card">
+            <div class="kpi-top"><span class="kpi-icon">💰</span><span class="kpi-label">Savings Rate</span></div>
+            <div class="kpi-real" style="color:${srColor}">${savingsRate.toFixed(1)}%</div>
+            <div class="kpi-planned-label">${srLabel}</div>
         </div>
-        <div class="hl-kpi-card">
-            <div class="hl-kpi-icon">📅</div>
-            <div class="hl-kpi-label">Avg Monthly Spend</div>
-            <div class="hl-kpi-value">${fmt(avgMonthly)}</div>
-            <div class="hl-kpi-sub">Over ${monthCount} month${monthCount !== 1 ? 's' : ''}</div>
+        <div class="kpi-card hl-kpi-card">
+            <div class="kpi-top"><span class="kpi-icon">📅</span><span class="kpi-label">Avg Monthly Spend</span></div>
+            <div class="kpi-real">${fmt(avgMonthly)}</div>
+            <div class="kpi-planned-label">Over ${monthCount} month${monthCount !== 1 ? 's' : ''}</div>
         </div>
-        <button type="button" class="hl-kpi-card hl-kpi-action ${uncatCount > 0 ? 'hl-kpi-warning' : ''}"
+        <button type="button" class="kpi-card hl-kpi-card hl-kpi-action ${uncatCount > 0 ? 'hl-kpi-warning' : ''}"
             onclick="openHighlightsReviewDrawer()" ${uncatCount === 0 ? 'disabled' : ''}>
-            <div class="hl-kpi-icon">${uncatCount > 0 ? '⚠️' : '✅'}</div>
-            <div class="hl-kpi-label">⚠️ Review</div>
-            <div class="hl-kpi-value" style="color:${uncatCount > 0 ? '#f59e0b' : '#10b981'}">${uncatCount}</div>
-            <div class="hl-kpi-sub">${uncatCount > 0 ? '⚠️ Review items' : 'All categorized!'}</div>
+            <div class="kpi-top"><span class="kpi-icon">${uncatCount > 0 ? '⚠️' : '✅'}</span><span class="kpi-label">⚠️ Review</span></div>
+            <div class="kpi-real" style="color:${uncatCount > 0 ? '#f59e0b' : '#10b981'}">${uncatCount}</div>
+            <div class="kpi-planned-label">${uncatCount > 0 ? '⚠️ Review items' : 'All categorized!'}</div>
         </button>
     </section>`;
 
@@ -2401,6 +2398,12 @@ function renderHighlightsSavingsChart(rows, selectedYears, currency) {
 (function () {
     document.documentElement.setAttribute('data-theme', 'dark');
     document.addEventListener('DOMContentLoaded', () => {
+        const header = document.querySelector('#appShell > header');
+        const updateHeaderHeight = () => {
+            document.documentElement.style.setProperty('--navigation-header-height', `${header.getBoundingClientRect().height}px`);
+        };
+        new ResizeObserver(updateHeaderHeight).observe(header);
+        updateHeaderHeight();
         applyChartTheme();
         initializeSupabaseAuth().catch(error => {
             setAuthMessage('Could not initialize Supabase: ' + error.message);
