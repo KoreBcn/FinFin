@@ -2,6 +2,14 @@
 Dates are displayed and entered as `YYYY-MM-DD` throughout the app. Enter
 dates as text in this format; timestamps use the browser's local time.
 
+## Install as a mobile app
+
+The app is a PWA. Open the HTTPS (GitHub Pages) URL on your phone, then use
+**Add to Home Screen** (iOS Safari: Share menu; Android Chrome: menu → Install app).
+It opens full screen with its own icon. The service worker is network-first, so updates
+appear on the next load; the shell is cached only as an offline fallback and Supabase data
+is never cached. It needs HTTPS (or localhost) to install.
+
 ## Bank transaction import
 
 The GitHub Actions workflow imports transactions on weekdays and can also be
