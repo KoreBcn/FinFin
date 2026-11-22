@@ -1707,19 +1707,17 @@ function renderMonthlyView(referenceDate = new Date()) {
         .reduce((sum, row) => sum - row.Amount, 0);
 
     document.getElementById('monthlyReviewCount').textContent = String(reviewRows.length);
-    document.getElementById('monthlyReviewHint').textContent = monthlyViewReviewOnly
-        ? 'Showing review rows — click to show all'
-        : `${scopeRows.length} transactions in the selected scope`;
     const reviewKpi = document.getElementById('monthlyReviewKpi');
     reviewKpi.classList.toggle('active', monthlyViewReviewOnly);
     reviewKpi.setAttribute('aria-pressed', String(monthlyViewReviewOnly));
     document.getElementById('monthlySpendTotal').textContent =
         formatMoney(toDisplay(currentMonthSpend));
+    const monthLabel = referenceDate.toLocaleDateString('en-GB', {
+        month: 'short',
+        year: '2-digit',
+    }).replace(' ', ' ');
     document.getElementById('monthlySpendLabel').textContent =
-        referenceDate.toLocaleDateString(undefined, {
-            month: 'long',
-            year: 'numeric',
-        });
+        `Month Spend - ${monthLabel}`;
 
     monthlyViewData = monthlyViewReviewOnly ? [...reviewRows] : scopeRows;
     monthlyViewPage = Math.min(monthlyViewPage, Math.max(
@@ -1888,7 +1886,7 @@ function renderTransactionsTab() {
             new Intl.NumberFormat('da-DK', { maximumFractionDigits: 2 }).format(Math.abs(r.Amount));
         const acctVal  = String(r.Account || '').toLowerCase();
         const exclCls  = r.excluded ? 'tx-excl-btn tx-excluded' : 'tx-excl-btn tx-included';
-        const exclTxt  = r.excluded ? '🚫 Excluded' : '✅ Included';
+        const exclTxt  = r.excluded ? '🚫 Off' : '✅ On';
 
         const tr = document.createElement('tr');
         if (r.excluded) tr.classList.add('tx-row-dimmed');

@@ -1778,7 +1778,24 @@ body.is-authenticated .auth-gate { display: none; }
     .tx-search-input { grid-column: 1 / 3; min-width: 0; width: 100%; }
     .tx-toolbar select { min-width: 0; width: 100%; padding-inline: 0.45rem; }
     .transaction-add-btn { grid-column: 3; grid-row: 1; }
-    .tx-table-wrap { overflow-x: hidden; }
+    .tx-table-wrap,
+    .drawer-table-wrapper,
+    .monthly-view-table,
+    .portfolio-transaction-table-wrap {
+        overflow-x: auto;
+    }
+    #tabTransactions .tx-table { min-width: 820px; }
+    .monthly-view-table table,
+    .drawer-table-wrapper table { min-width: 760px; }
+    #portfolioTransactions .tx-table-wrap table.portfolio-transaction-table {
+        display: table;
+        min-width: 1280px;
+    }
+    .portfolio-transaction-table thead { display: table-header-group; }
+    .portfolio-transaction-table tbody { display: table-row-group; }
+    table.portfolio-transaction-table tbody tr { display: table-row; padding: 0; }
+    table.portfolio-transaction-table tbody td { display: table-cell; }
+    table.portfolio-transaction-table tbody td::before { content: none; }
     .tx-table-wrap,
     .drawer-table-wrapper,
     .monthly-view-table {
@@ -1787,46 +1804,37 @@ body.is-authenticated .auth-gate { display: none; }
     }
     .tx-table-wrap table.tx-table { min-width: 0; width: 100%; }
     #tabTransactions .tx-table thead,
-    .monthly-view-table thead { display: none; }
+    .monthly-view-table thead { display: table-header-group; }
     #tabTransactions .tx-table,
+    .monthly-view-table table { display: table; width: 100%; }
     #tabTransactions .tx-table tbody,
-    .monthly-view-table table,
-    .monthly-view-table tbody { display: block; width: 100%; }
+    .monthly-view-table tbody { display: table-row-group; }
     #tabTransactions .tx-table tbody tr,
     .monthly-view-table tbody tr {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        padding: 0.65rem;
+        display: table-row;
+        padding: 0;
         border-bottom: 1px solid var(--border);
-        gap: 0.35rem 0.65rem;
     }
     #tabTransactions .tx-table tbody td,
     .monthly-view-table tbody td {
-        display: block;
+        display: table-cell;
         min-width: 0;
-        padding: 0.35rem 0;
-        border: 0;
+        padding: 0.45rem 0.55rem;
+        border-bottom: 1px solid var(--border);
         text-align: left;
-        white-space: normal;
-        overflow: visible;
+        white-space: nowrap;
+        overflow: hidden;
     }
     #tabTransactions .tx-table tbody td::before,
     .monthly-view-table tbody td::before {
-        content: attr(data-label);
-        display: block;
-        margin-bottom: 0.2rem;
-        color: var(--text-light);
-        font-size: 0.68rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.03em;
+        content: none;
     }
     #tabTransactions .tx-table tbody td:nth-child(3),
     #tabTransactions .tx-table tbody td:last-child,
     .monthly-view-table tbody td:nth-child(3),
     .monthly-view-table tbody td:nth-child(4),
     .monthly-view-table tbody td:nth-child(5) {
-        grid-column: 1 / -1;
+        grid-column: auto;
     }
     #tabTransactions .tx-table input,
     #tabTransactions .tx-table select,
