@@ -6,6 +6,7 @@ from api.api_call import (
     categorize_raw_transaction,
     load_account_uids_from_environment,
     load_import_profiles_from_environment,
+    parse_date_override,
 )
 
 
@@ -90,6 +91,15 @@ class BankAccountConfigurationTests(unittest.TestCase):
         self.assertEqual(unknown[1]["Account"], "anna")
         self.assertEqual(unknown[1]["Expense"], "⚠️ Review")
         self.assertEqual(unknown[1]["Type"], "⚠️ Review")
+
+    def test_parses_valid_adhoc_start_date(self):
+        parsed = parse_date_override("2026-05-22")
+
+        self.assertEqual(parsed.isoformat(), "2026-05-22")
+
+    def test_rejects_invalid_adhoc_start_date(self):
+        with self.assertRaisesRegex(ValueError, "does not match format"):
+            parse_date_override("22-05-2026")
 
 
 if __name__ == "__main__":

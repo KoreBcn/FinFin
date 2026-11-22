@@ -293,6 +293,23 @@ and is also available for manual runs from the Actions tab. It has read-only rep
 permissions, serializes runs, and exposes credentials only to the import step.
 The static Pages workflow uploads only `docs/`, not the rest of the repository.
 
+### Authorize the Anna profile from the CLI
+
+Use the local helper to connect Anna's bank. The redirect URL must already be
+registered for the Anna Enable Banking application. Pass credentials through
+environment variables and keep the PEM in an ignored local file:
+
+```powershell
+$env:ENABLEBANKING_ANNA_APP_ID = "<Anna application ID>"
+$env:ENABLEBANKING_ANNA_REDIRECT_URL = "<registered redirect URL>"
+python api\authorize_anna.py --certificate-file "C:\private\anna.pem"
+```
+
+The helper opens the bank authorization page, lets you select a Danish bank,
+and asks for the final redirected URL or its `code` parameter. It writes
+`api\anna-session.json`, which is ignored by Git. Copy the JSON `accounts` array
+to the `ENABLEBANKING_ANNA_ACCOUNT_UIDS` GitHub secret; do not commit it.
+
 The import script can also be run locally after installing dependencies with
 `pip install -r requirements.txt` from `api`. Supply the Enable Banking values
 through environment variables; Supabase values can come from the ignored local

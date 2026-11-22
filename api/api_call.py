@@ -1,6 +1,7 @@
 import os
 import json
 import logging
+import argparse
 import pip_system_certs.wrapt_requests
 from uuid import uuid4
 from datetime import datetime, timezone
@@ -484,8 +485,21 @@ def _safe_bank_error(error: Exception) -> str:
     return type(error).__name__
 
 
-def fetch_all_transactions():
+def parse_date_override(value: str):
+    if not value:
+        return None
+    parsed = datetime.strptime(value, "%Y-%m-%d").date()
+    if parsed > datetime.now(timezone.utc).date():
+        raise ValueError("Import start date cannot be in the future.")
+    return parsed
+
+
+def fetch_all_transactions(profile_name: str | None = None, fetch_from_override=None):
     profiles = load_import_profiles_from_environment()
+    if profile_name:
+        profiles = [profile for profile in profiles if profile["name"] == profile_name]
+        if not profiles:
+            raise RuntimeError(f"Unknown import profile: {profile_name}")
     for profile in profiles:
         missing_configuration = [
             name
@@ -509,7 +523,14 @@ def fetch_all_transactions():
         logger.error("Supabase import configuration failed: %s", error)
         raise
 
-    fetch_from = get_fetch_start_date(initial_start_date, last_successful_date)
+    fetch_from = fetch_from_override or get_fetch_start_date(
+        initial_start_date, last_successful_date
+    )
+    if fetch_from_override and fetch_from_override < initial_start_date:
+        logger.warning(
+            "Ad-hoc fetch starts before the configured watermark floor (%s).",
+            initial_start_date.isoformat(),
+        )
     fetch_from_datetime = datetime(
         fetch_from.year, fetch_from.month, fetch_from.day, tzinfo=timezone.utc
     )
@@ -676,4 +697,16 @@ def fetch_all_transactions():
 
 
 if __name__ == "__main__":
-    fetch_all_transactions()
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--profile",
+        choices=("primary", "anna"),
+        help="Run only one Enable Banking credential profile.",
+    )
+    parser.add_argument(
+        "--from",
+        dest="fetch_from",
+        help="Override the fetch start date as YYYY-MM-DD.",
+    )
+    args = parser.parse_args()
+    fetch_all_transactions(args.profile, parse_date_override(args.fetch_from))

@@ -30,6 +30,7 @@ house-config.json
 Thumbs.db
 
 api/session.json
+api/anna-session.json
 api/*.pem
 api/supabase-config.json
 supabase/.temp/
