@@ -1,6 +1,7 @@
-const CACHE = 'finances-shell-v1';
+const CACHE = 'finances-shell-v3';
 const SHELL = ['./', 'index.html', 'styles.css', 'app.js', 'house.js', 'investments.js',
-    'investment-math.js', 'date-utils.js', 'supabase-config.js', 'manifest.webmanifest'];
+    'investment-math.js', 'date-utils.js', 'supabase-config.js', 'manifest.webmanifest',
+    'icons/home-finances-logo.svg'];
 
 self.addEventListener('install', event => {
     event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(SHELL)).then(() => self.skipWaiting()));

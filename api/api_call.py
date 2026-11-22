@@ -22,9 +22,7 @@ else:
     )
 
 # === CONFIGURATION ===
-EB_BASE_URL = os.getenv("ENABLEBANKING_BASE_URL", "https://api.enablebanking.com").strip()
-EB_APP_ID = os.getenv("ENABLEBANKING_APP_ID", "").strip()
-EB_CERTIFICATE = os.getenv("ENABLEBANKING_CERTIFICATE_PEM", "").strip()
+DEFAULT_EB_BASE_URL = "https://api.enablebanking.com"
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -389,16 +387,21 @@ def categorize_raw_transaction(row: dict, account_label: str):
 
 
 # === NONINTERACTIVE ACCOUNT CONFIGURATION ===
-def load_account_uids_from_environment() -> list[str]:
-    account_uids_value = os.getenv("ENABLEBANKING_ACCOUNT_UIDS", "").strip()
+def load_account_uids_from_environment(prefix: str = "") -> list[str]:
+    variable_name = (
+        f"ENABLEBANKING_{prefix}ACCOUNT_UIDS"
+        if prefix
+        else "ENABLEBANKING_ACCOUNT_UIDS"
+    )
+    account_uids_value = os.getenv(variable_name, "").strip()
     if not account_uids_value:
-        raise RuntimeError("Set ENABLEBANKING_ACCOUNT_UIDS.")
+        raise RuntimeError(f"Set {variable_name}.")
 
     try:
         account_uids = json.loads(account_uids_value)
     except json.JSONDecodeError:
         raise RuntimeError(
-            "ENABLEBANKING_ACCOUNT_UIDS must be a JSON array of account UIDs."
+            f"{variable_name} must be a JSON array of account UIDs."
         ) from None
 
     if (
@@ -407,10 +410,71 @@ def load_account_uids_from_environment() -> list[str]:
         or any(not isinstance(uid, str) or not uid.strip() for uid in account_uids)
     ):
         raise RuntimeError(
-            "ENABLEBANKING_ACCOUNT_UIDS must be a non-empty JSON array of strings."
+            f"{variable_name} must be a non-empty JSON array of strings."
         )
 
     return [uid.strip() for uid in account_uids]
+
+
+def load_import_profiles_from_environment() -> list[dict]:
+    primary = {
+        "name": "primary",
+        "base_url": os.getenv(
+            "ENABLEBANKING_BASE_URL", DEFAULT_EB_BASE_URL
+        ).strip(),
+        "app_id": os.getenv("ENABLEBANKING_APP_ID", "").strip(),
+        "certificate": os.getenv("ENABLEBANKING_CERTIFICATE_PEM", "").strip(),
+        "account_uids": load_account_uids_from_environment(),
+        "account_label": None,
+        "reference_prefix": "",
+    }
+    profiles = [primary]
+
+    anna_prefix = "ENABLEBANKING_ANNA_"
+    anna_values = {
+        "base_url": os.getenv(
+            f"{anna_prefix}BASE_URL", DEFAULT_EB_BASE_URL
+        ).strip(),
+        "app_id": os.getenv(f"{anna_prefix}APP_ID", "").strip(),
+        "certificate": os.getenv(
+            f"{anna_prefix}CERTIFICATE_PEM", ""
+        ).strip(),
+        "account_uids_value": os.getenv(
+            f"{anna_prefix}ACCOUNT_UIDS", ""
+        ).strip(),
+    }
+    anna_configured = any(
+        value
+        for key, value in anna_values.items()
+        if key != "base_url"
+    )
+    if anna_configured:
+        missing = [
+            f"{anna_prefix}{name}"
+            for name, value in (
+                ("APP_ID", anna_values["app_id"]),
+                ("CERTIFICATE_PEM", anna_values["certificate"]),
+                ("ACCOUNT_UIDS", anna_values["account_uids_value"]),
+            )
+            if not value
+        ]
+        if missing:
+            raise RuntimeError(
+                "Incomplete Anna Enable Banking profile: " + ", ".join(missing)
+            )
+        profiles.append(
+            {
+                "name": "anna",
+                "base_url": anna_values["base_url"],
+                "app_id": anna_values["app_id"],
+                "certificate": anna_values["certificate"],
+                "account_uids": load_account_uids_from_environment("ANNA_"),
+                "account_label": "anna",
+                "reference_prefix": "anna:",
+            }
+        )
+
+    return profiles
 
 
 def _safe_bank_error(error: Exception) -> str:
@@ -421,21 +485,22 @@ def _safe_bank_error(error: Exception) -> str:
 
 
 def fetch_all_transactions():
-    missing_configuration = [
-        name
-        for name, value in (
-            ("ENABLEBANKING_BASE_URL", EB_BASE_URL),
-            ("ENABLEBANKING_APP_ID", EB_APP_ID),
-            ("ENABLEBANKING_CERTIFICATE_PEM", EB_CERTIFICATE),
-        )
-        if not value
-    ]
-    if missing_configuration:
-        raise RuntimeError(
-            "Missing required configuration: " + ", ".join(missing_configuration)
-        )
-
-    account_uids = load_account_uids_from_environment()
+    profiles = load_import_profiles_from_environment()
+    for profile in profiles:
+        missing_configuration = [
+            name
+            for name, value in (
+                ("base URL", profile["base_url"]),
+                ("app ID", profile["app_id"]),
+                ("certificate", profile["certificate"]),
+            )
+            if not value
+        ]
+        if missing_configuration:
+            raise RuntimeError(
+                f"Missing {profile['name']} Enable Banking configuration: "
+                + ", ".join(missing_configuration)
+            )
 
     try:
         importer = SupabaseImportClient()
@@ -454,109 +519,145 @@ def fetch_all_transactions():
         f"through {fetch_to.date().isoformat()}."
     )
 
-    try:
-        eb_service = EnableBankingService(
-            integration=EnableBankingIntegration(
-                base_url=EB_BASE_URL,
-                app_id=EB_APP_ID,
-                certificate=EB_CERTIFICATE,
-            )
-        )
-    except Exception as error:
-        raise RuntimeError(
-            "Enable Banking SDK initialization failed "
-            f"({_safe_bank_error(error)})."
-        ) from None
-
-    logger.info(
-        "Using %s configured Enable Banking account(s).",
-        len(account_uids),
-    )
     imported_rows_by_reference = {}
     all_accounts_fetched = True
 
-    for account_index, account_uid in enumerate(account_uids, start=1):
+    for profile in profiles:
         try:
-            account_details = eb_service.get_account_details(account_uid=account_uid)
-            account_name = str(getattr(account_details, "name", "") or "").lower()
+            eb_service = EnableBankingService(
+                integration=EnableBankingIntegration(
+                    base_url=profile["base_url"],
+                    app_id=profile["app_id"],
+                    certificate=profile["certificate"],
+                )
+            )
         except Exception as error:
-            logger.warning(
-                "Could not retrieve metadata for configured account %s (%s).",
-                account_index,
-                _safe_bank_error(error),
-            )
-            account_name = ""
+            raise RuntimeError(
+                f"{profile['name']} Enable Banking SDK initialization failed "
+                f"({_safe_bank_error(error)})."
+            ) from None
 
-        if "carlos" in account_name and "anna" in account_name:
-            account_label = "joint"
-        elif "carlos" in account_name:
-            account_label = "carlos"
-        else:
-            account_label = "joint"
+        logger.info(
+            "Using %s account(s) from the %s Enable Banking profile.",
+            len(profile["account_uids"]),
+            profile["name"],
+        )
 
-        try:
-            transactions = eb_service.get_account_transactions(
-                account_uid=account_uid,
-                date_from=fetch_from_datetime,
-                date_to=fetch_to,
-            )
+        for account_index, account_uid in enumerate(
+            profile["account_uids"], start=1
+        ):
+            account_label = profile["account_label"]
+            if account_label is None:
+                try:
+                    account_details = eb_service.get_account_details(
+                        account_uid=account_uid
+                    )
+                    account_name = str(
+                        getattr(account_details, "name", "") or ""
+                    ).lower()
+                except Exception as error:
+                    logger.warning(
+                        "Could not retrieve metadata for %s account %s (%s).",
+                        profile["name"],
+                        account_index,
+                        _safe_bank_error(error),
+                    )
+                    account_name = ""
 
-            for tx in transactions:
-                debtor = getattr(tx, "debtor", None)
-                creditor = getattr(tx, "creditor", None)
-                transaction_amount = getattr(tx, "transaction_amount", None)
-                booking_date = getattr(tx, "booking_date", "")
-                entry_reference = str(getattr(tx, "entry_reference", "") or "").strip()
-                raw_row = {
-                    "booking_date": booking_date,
-                    "amount": getattr(transaction_amount, "amount", ""),
-                    "credit_debit_indicator": getattr(
-                        tx, "credit_debit_indicator", ""
-                    ),
-                    "entry_reference": entry_reference,
-                    "debtor_name": getattr(debtor, "name", "") if debtor else "",
-                    "creditor_name": getattr(creditor, "name", "") if creditor else "",
-                    "remittance_information": extract_remittance_info(tx),
-                }
-
-                parsed_date, categorized_row = categorize_raw_transaction(
-                    raw_row, account_label
-                )
-                if parsed_date is None:
-                    raise ValueError("Bank transaction has an invalid booking date.")
-                if parsed_date.date() < fetch_from:
-                    continue
-
-                transaction = build_supabase_transaction(
-                    categorized_row, entry_reference
-                )
-                existing = imported_rows_by_reference.get(entry_reference)
-                if existing:
-                    comparable_existing = {
-                        key: value for key, value in existing.items() if key != "id"
-                    }
-                    comparable_transaction = {
-                        key: value for key, value in transaction.items() if key != "id"
-                    }
-                    if comparable_existing != comparable_transaction:
-                        raise ValueError(
-                            "A bank reference was returned with inconsistent data."
-                        )
+                if "carlos" in account_name and "anna" in account_name:
+                    account_label = "joint"
+                elif "carlos" in account_name:
+                    account_label = "carlos"
                 else:
-                    imported_rows_by_reference[entry_reference] = transaction
+                    account_label = "joint"
 
-            logger.info(
-                "Fetched transactions for configured account %s: %s.",
-                account_index,
-                len(transactions),
-            )
-        except Exception as error:
-            all_accounts_fetched = False
-            logger.error(
-                "Fetching transactions for configured account %s failed (%s).",
-                account_index,
-                _safe_bank_error(error),
-            )
+            try:
+                transactions = eb_service.get_account_transactions(
+                    account_uid=account_uid,
+                    date_from=fetch_from_datetime,
+                    date_to=fetch_to,
+                )
+
+                for tx in transactions:
+                    debtor = getattr(tx, "debtor", None)
+                    creditor = getattr(tx, "creditor", None)
+                    transaction_amount = getattr(tx, "transaction_amount", None)
+                    booking_date = getattr(tx, "booking_date", "")
+                    entry_reference = str(
+                        getattr(tx, "entry_reference", "") or ""
+                    ).strip()
+                    if not entry_reference:
+                        raise ValueError(
+                            "Bank transaction is missing entry_reference."
+                        )
+                    source_reference = (
+                        f"{profile['reference_prefix']}{entry_reference}"
+                    )
+                    raw_row = {
+                        "booking_date": booking_date,
+                        "amount": getattr(transaction_amount, "amount", ""),
+                        "credit_debit_indicator": getattr(
+                            tx, "credit_debit_indicator", ""
+                        ),
+                        "entry_reference": entry_reference,
+                        "debtor_name": (
+                            getattr(debtor, "name", "") if debtor else ""
+                        ),
+                        "creditor_name": (
+                            getattr(creditor, "name", "") if creditor else ""
+                        ),
+                        "remittance_information": extract_remittance_info(tx),
+                    }
+
+                    parsed_date, categorized_row = categorize_raw_transaction(
+                        raw_row, account_label
+                    )
+                    if parsed_date is None:
+                        raise ValueError(
+                            "Bank transaction has an invalid booking date."
+                        )
+                    if parsed_date.date() < fetch_from:
+                        continue
+
+                    transaction = build_supabase_transaction(
+                        categorized_row, source_reference
+                    )
+                    existing = imported_rows_by_reference.get(source_reference)
+                    if existing:
+                        comparable_existing = {
+                            key: value
+                            for key, value in existing.items()
+                            if key != "id"
+                        }
+                        comparable_transaction = {
+                            key: value
+                            for key, value in transaction.items()
+                            if key != "id"
+                        }
+                        if comparable_existing != comparable_transaction:
+                            raise ValueError(
+                                "A bank reference was returned with "
+                                "inconsistent data."
+                            )
+                    else:
+                        imported_rows_by_reference[
+                            source_reference
+                        ] = transaction
+
+                logger.info(
+                    "Fetched transactions for %s account %s: %s.",
+                    profile["name"],
+                    account_index,
+                    len(transactions),
+                )
+            except Exception as error:
+                all_accounts_fetched = False
+                logger.error(
+                    "Fetching transactions for %s account %s failed (%s).",
+                    profile["name"],
+                    account_index,
+                    _safe_bank_error(error),
+                )
 
     if not all_accounts_fetched:
         raise RuntimeError(

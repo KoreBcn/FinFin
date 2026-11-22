@@ -8,10 +8,11 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="Finances">
     <link rel="manifest" href="manifest.webmanifest">
-    <link rel="icon" href="icons/icon-192.png">
+    <link rel="icon" href="icons/home-finances-logo.svg" type="image/svg+xml">
+    <link rel="alternate icon" href="icons/icon-192.png" type="image/png">
     <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
     <title>A &amp; C Finances</title>
-    <link rel="stylesheet" href="styles.css?v=64">
+    <link rel="stylesheet" href="styles.css?v=66">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 </head>
@@ -19,7 +20,7 @@
 
 <section id="authGate" class="auth-gate">
     <form id="loginForm" class="auth-card">
-        <div class="logo-icon">💰</div>
+        <img class="logo-icon auth-logo" src="icons/home-finances-logo.svg" alt="A and C home finances">
         <h1>A &amp; C Finances</h1>
         <p>Sign in with your Supabase account to continue.</p>
         <label for="loginEmail">Email</label>
@@ -35,7 +36,7 @@
 <header>
     <div class="header-content">
         <div class="logo">
-            <span class="logo-icon">💰</span>
+            <img class="logo-icon" src="icons/home-finances-logo.svg" alt="" aria-hidden="true">
             <h1>A &amp; C Finances</h1>
         </div>
         <nav>
@@ -190,7 +191,7 @@
             <tbody id="drawerTableBody"></tbody>
         </table>
     </div>
-    <div class="drawer-pagination" id="drawerPagination"></div>
+    <div class="drawer-pagination tx-pagination" id="drawerPagination"></div>
     <div class="drawer-footer">
         <div class="drawer-summary" id="drawerSummary"></div>
     </div>
@@ -207,12 +208,69 @@
     <div id="tabHome" class="tab-panel" style="display:none">
         <div class="home-subtab-bar">
             <div class="investment-subtabs" role="tablist" aria-label="Home sections">
+                <button type="button" id="homeMonthlyTab" class="investment-subtab" role="tab" aria-selected="false" aria-controls="tabMonthly" onclick="switchHomeSubtab('monthly')">Monthly view</button>
                 <button type="button" id="homeDashboardTab" class="investment-subtab active" role="tab" aria-selected="true" aria-controls="tabDashboard" onclick="switchHomeSubtab('dashboard')">Dashboard</button>
                 <button type="button" id="homeHighlightsTab" class="investment-subtab" role="tab" aria-selected="false" aria-controls="tabHighlights" onclick="switchHomeSubtab('highlights')">Highlights</button>
                 <button type="button" id="homeTransactionsTab" class="investment-subtab" role="tab" aria-selected="false" aria-controls="tabTransactions" onclick="switchHomeSubtab('transactions')">Transactions</button>
             </div>
             <span id="transactionInsertDate" class="transaction-insert-date" role="status" aria-live="polite">Last updated: &mdash;</span>
         </div>
+    <!-- ═══════════════════════════════════════════
+         MONTHLY VIEW TAB
+    ════════════════════════════════════════════ -->
+    <div id="tabMonthly" class="tab-panel" role="tabpanel" aria-labelledby="homeMonthlyTab" style="display:none">
+        <section class="kpi-section monthly-view-kpis">
+            <button type="button" id="monthlyReviewKpi" class="kpi-card hl-kpi-action" onclick="toggleMonthlyReviewFilter()"
+                aria-pressed="false">
+                <div class="kpi-top"><span class="kpi-icon">⚠️</span><span class="kpi-label">Transactions to Review</span></div>
+                <div class="kpi-real" id="monthlyReviewCount">0</div>
+                <div class="kpi-planned-label" id="monthlyReviewHint">In the selected scope</div>
+            </button>
+            <div class="kpi-card expenses-card">
+                <div class="kpi-top"><span class="kpi-icon">📉</span><span class="kpi-label">Month Spend</span></div>
+                <div class="kpi-real" id="monthlySpendTotal">—</div>
+                <div class="kpi-planned-label" id="monthlySpendLabel">Current month</div>
+            </div>
+        </section>
+
+        <section class="monthly-view-panel">
+            <div class="monthly-view-toolbar">
+                <div class="drawer-filters monthly-view-search">
+                    <input type="text" id="monthlySearch" placeholder="🔍 Search transactions..." oninput="filterMonthlyTransactions()">
+                </div>
+                <div class="monthly-view-actions">
+                    <button class="btn-tx-add monthly-save-btn" id="monthlySaveButton" type="button"
+                        onclick="saveDrawerChanges('monthly')" aria-label="Save changes" title="Save changes" disabled>💾</button>
+                    <div class="toggle-group" role="group" aria-label="Monthly view account scope">
+                        <button type="button" id="monthlyScopeAnna" class="toggle-btn active" aria-pressed="true"
+                            onclick="setMonthlyScope('anna')">Anna</button>
+                        <button type="button" id="monthlyScopeCarlos" class="toggle-btn" aria-pressed="false"
+                            onclick="setMonthlyScope('carlos')">Carlos</button>
+                        <button type="button" id="monthlyScopeJoint" class="toggle-btn" aria-pressed="false"
+                            onclick="setMonthlyScope('joint')">Joint</button>
+                    </div>
+                </div>
+            </div>
+            <div class="drawer-table-wrapper monthly-view-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th onclick="sortDrawer('Date', 'monthly')">Date ↕</th>
+                            <th onclick="sortDrawer('Amount', 'monthly')">Amount ↕</th>
+                            <th>Sub-category</th>
+                            <th>Category</th>
+                            <th>Description</th>
+                            <th>Account</th>
+                            <th>Analytics</th>
+                        </tr>
+                    </thead>
+                    <tbody id="monthlyTableBody"></tbody>
+                </table>
+            </div>
+            <div class="drawer-pagination tx-pagination" id="monthlyPagination"></div>
+        </section>
+    </div>
+
     <!-- ═══════════════════════════════════════════
          DASHBOARD TAB
     ════════════════════════════════════════════ -->
@@ -279,7 +337,7 @@
             </div>
             <div class="kpi-card net-card">
                 <div class="kpi-top">
-                    <span class="kpi-icon">💰</span>
+                    <span class="kpi-icon" aria-hidden="true">💰</span>
                     <span class="kpi-label">Savings</span>
                 </div>
                 <div class="kpi-real" id="kpiSavTotal">—</div>
@@ -463,9 +521,11 @@
                     </table>
                 </div>
                 <div class="house-pagination" aria-label="Portfolio transaction pages">
-                    <button id="portfolioTransactionPrevious" class="page-btn" type="button">Previous</button>
+                    <button id="portfolioTransactionPrevious" class="page-btn pagination-arrow" type="button"
+                        aria-label="Previous page">‹</button>
                     <span id="portfolioTransactionPage" aria-live="polite"></span>
-                    <button id="portfolioTransactionNext" class="page-btn" type="button">Next</button>
+                    <button id="portfolioTransactionNext" class="page-btn pagination-arrow" type="button"
+                        aria-label="Next page">›</button>
                 </div>
             </div>
             <dialog id="investmentDialog" class="modal house-dialog" aria-labelledby="investmentDialogTitle">
@@ -563,9 +623,11 @@
                         </table>
                     </div>
                     <div class="house-pagination" aria-label="Installment pages">
-                        <button id="housePreviousPage" class="page-btn" type="button">Previous</button>
+                        <button id="housePreviousPage" class="page-btn pagination-arrow" type="button"
+                            aria-label="Previous page">‹</button>
                         <span id="housePageStatus" aria-live="polite"></span>
-                        <button id="houseNextPage" class="page-btn" type="button">Next</button>
+                        <button id="houseNextPage" class="page-btn pagination-arrow" type="button"
+                            aria-label="Next page">›</button>
                     </div>
                 </div>
                 <dialog id="houseInstallmentDialog" class="modal house-dialog" aria-labelledby="houseDialogTitle">
@@ -627,9 +689,6 @@
 
 <div id="toast" class="toast"></div>
 
-<footer>
-    <p>A &amp; C Finances &mdash; Personal Finance Tracker</p>
-</footer>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

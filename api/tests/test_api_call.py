@@ -2,7 +2,11 @@ import os
 import unittest
 from unittest.mock import patch
 
-from api.api_call import load_account_uids_from_environment
+from api.api_call import (
+    categorize_raw_transaction,
+    load_account_uids_from_environment,
+    load_import_profiles_from_environment,
+)
 
 
 class BankAccountConfigurationTests(unittest.TestCase):
@@ -19,6 +23,73 @@ class BankAccountConfigurationTests(unittest.TestCase):
         with patch.dict(os.environ, {"ENABLEBANKING_ACCOUNT_UIDS": "account-1"}):
             with self.assertRaisesRegex(RuntimeError, "JSON array"):
                 load_account_uids_from_environment()
+
+    def test_loads_optional_anna_profile_with_separate_credentials(self):
+        with patch.dict(
+            os.environ,
+            {
+                "ENABLEBANKING_APP_ID": "primary-app",
+                "ENABLEBANKING_CERTIFICATE_PEM": "primary-certificate",
+                "ENABLEBANKING_ACCOUNT_UIDS": '["primary-account"]',
+                "ENABLEBANKING_ANNA_APP_ID": "anna-app",
+                "ENABLEBANKING_ANNA_CERTIFICATE_PEM": "anna-certificate",
+                "ENABLEBANKING_ANNA_ACCOUNT_UIDS": '["anna-account"]',
+            },
+            clear=True,
+        ):
+            profiles = load_import_profiles_from_environment()
+
+        self.assertEqual(len(profiles), 2)
+        self.assertEqual(profiles[1]["account_label"], "anna")
+        self.assertEqual(profiles[1]["reference_prefix"], "anna:")
+        self.assertEqual(profiles[1]["app_id"], "anna-app")
+        self.assertEqual(profiles[1]["account_uids"], ["anna-account"])
+
+    def test_rejects_incomplete_anna_profile(self):
+        with patch.dict(
+            os.environ,
+            {
+                "ENABLEBANKING_APP_ID": "primary-app",
+                "ENABLEBANKING_CERTIFICATE_PEM": "primary-certificate",
+                "ENABLEBANKING_ACCOUNT_UIDS": '["primary-account"]',
+                "ENABLEBANKING_ANNA_APP_ID": "anna-app",
+            },
+            clear=True,
+        ):
+            with self.assertRaisesRegex(
+                RuntimeError, "Incomplete Anna Enable Banking profile"
+            ):
+                load_import_profiles_from_environment()
+
+    def test_anna_profile_rows_are_categorized_for_anna_and_keep_review(self):
+        known = categorize_raw_transaction(
+            {
+                "booking_date": "2026-11-22",
+                "amount": "25.00",
+                "credit_debit_indicator": "DBIT",
+                "debtor_name": "",
+                "creditor_name": "Netto",
+                "remittance_information": "Netto groceries",
+            },
+            "anna",
+        )
+        unknown = categorize_raw_transaction(
+            {
+                "booking_date": "2026-11-22",
+                "amount": "25.00",
+                "credit_debit_indicator": "DBIT",
+                "debtor_name": "",
+                "creditor_name": "Unknown Merchant",
+                "remittance_information": "No category match",
+            },
+            "anna",
+        )
+
+        self.assertEqual(known[1]["Account"], "anna")
+        self.assertEqual(known[1]["Type"], "👩 Anna")
+        self.assertEqual(unknown[1]["Account"], "anna")
+        self.assertEqual(unknown[1]["Expense"], "⚠️ Review")
+        self.assertEqual(unknown[1]["Type"], "⚠️ Review")
 
 
 if __name__ == "__main__":

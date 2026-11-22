@@ -260,6 +260,8 @@ repository variables:
 | `SUPABASE_URL` | Supabase project URL |
 | `ENABLEBANKING_APP_ID` | Enable Banking application ID |
 | `ENABLEBANKING_BASE_URL` | Enable Banking API URL; optional, defaults to `https://api.enablebanking.com` |
+| `ENABLEBANKING_ANNA_APP_ID` | Optional second Enable Banking application ID; all fetched rows are assigned to Anna |
+| `ENABLEBANKING_ANNA_BASE_URL` | Optional second API URL; defaults to the primary base URL |
 
 Add these repository secrets:
 
@@ -268,6 +270,8 @@ Add these repository secrets:
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase service-role key; never use the browser anon key |
 | `ENABLEBANKING_CERTIFICATE_PEM` | Full PEM certificate/private-key contents required by the Enable Banking SDK |
 | `ENABLEBANKING_ACCOUNT_UIDS` | JSON array of authorized account UIDs, e.g. `["uid-1","uid-2"]` |
+| `ENABLEBANKING_ANNA_CERTIFICATE_PEM` | Certificate/private-key contents for the optional Anna profile |
+| `ENABLEBANKING_ANNA_ACCOUNT_UIDS` | JSON array of account UIDs for the optional Anna profile |
 
 Enter the PEM contents directly as a GitHub secret; do not commit a PEM file or
 put secret values in workflow YAML. Copy the account UIDs from an existing
@@ -277,6 +281,12 @@ SDK uses the account UIDs for requests; the saved session ID is not required.
 This importer does not perform interactive bank consent. If access is revoked,
 complete the bank's authorization process separately and update the account
 UID secret as needed.
+
+The Anna profile is enabled only when at least one of its non-base-URL
+credentials is present. If enabled, its app ID, certificate, and account UID
+secret are all required. Its transactions use the primary categorization rules,
+are assigned to account `anna`, and are flagged `⚠️ Review` when no rule
+matches.
 
 The `Import bank transactions` workflow runs Monday through Friday at 05:20 UTC
 and is also available for manual runs from the Actions tab. It has read-only repository

@@ -42,9 +42,18 @@ let drawerDirtyRows = new Set();
 let drawerSaving    = false;
 const DRAWER_PER   = 15;
 let drawerSort     = { key: 'Date', dir: 'asc' };
+let monthlyViewData = [];
+let monthlyViewFiltered = [];
+let monthlyViewPage = 1;
+let monthlyViewDirtyRows = new Set();
+let monthlyViewSaving = false;
+let monthlyViewSort = { key: 'Date', dir: 'desc' };
+let monthlyViewScope = 'anna';
+let monthlyViewReviewOnly = false;
 let txSort         = { key: 'DateSortKey', dir: 'desc' };
 let txPage         = 1;
 const TX_PER_PAGE  = 50;
+const transactionPageSizes = {};
 
 let activeTab = 'dashboard';
 let homeSubtab = 'dashboard';
@@ -134,13 +143,14 @@ function switchTab(tab) {
 function switchHomeSubtab(tab) {
     homeSubtab = tab;
     activeTab = tab;
-    for (const [name, suffix] of [['dashboard', 'Dashboard'], ['highlights', 'Highlights'], ['transactions', 'Transactions']]) {
+    for (const [name, suffix] of [['monthly', 'Monthly'], ['dashboard', 'Dashboard'], ['highlights', 'Highlights'], ['transactions', 'Transactions']]) {
         const selected = name === tab;
         const button = document.getElementById(`home${suffix}Tab`);
         button.classList.toggle('active', selected);
         button.setAttribute('aria-selected', String(selected));
         document.getElementById(`tab${suffix}`).style.display = selected ? 'flex' : 'none';
     }
+    if (tab === 'monthly') renderMonthlyView();
     if (tab === 'transactions') renderTransactionsTab();
     if (tab === 'highlights') renderHighlightsTab();
 }
@@ -1276,21 +1286,92 @@ function closeDrawer() {
     document.getElementById('transactionDrawer').classList.remove('open');
 }
 
-function updateDrawerSaveButton() {
-    const button = document.getElementById('drawerSaveButton');
+function getTransactionEditorState(view) {
+    if (view === 'monthly') {
+        return {
+            data: monthlyViewData,
+            filtered: monthlyViewFiltered,
+            page: monthlyViewPage,
+            dirtyRows: monthlyViewDirtyRows,
+            saving: monthlyViewSaving,
+            sort: monthlyViewSort,
+            searchId: 'monthlySearch',
+            bodyId: 'monthlyTableBody',
+            paginationId: 'monthlyPagination',
+            summaryId: 'monthlySummary',
+            saveButtonId: 'monthlySaveButton',
+        };
+    }
+    return {
+        data: drawerData,
+        filtered: drawerFiltered,
+        page: drawerPage,
+        dirtyRows: drawerDirtyRows,
+        saving: drawerSaving,
+        sort: drawerSort,
+        searchId: 'drawerSearch',
+        bodyId: 'drawerTableBody',
+        paginationId: 'drawerPagination',
+        summaryId: 'drawerSummary',
+        saveButtonId: 'drawerSaveButton',
+    };
+}
+
+function transactionRowsPerPage(view) {
+    if (typeof window === 'undefined'
+        || window.matchMedia?.('(max-width: 768px)').matches) {
+        return view === 'transactions' ? TX_PER_PAGE : DRAWER_PER;
+    }
+
+    if (transactionPageSizes[view]) return transactionPageSizes[view];
+
+    const state = getTransactionEditorState(view === 'transactions' ? 'drawer' : view);
+    const tableBody = document.getElementById(
+        view === 'transactions' ? 'txTableBody' : state.bodyId
+    );
+    const tableWrap = tableBody?.closest(
+        view === 'transactions' ? '.tx-table-wrap' : '.drawer-table-wrapper'
+    );
+    if (!tableWrap) return view === 'transactions' ? TX_PER_PAGE : DRAWER_PER;
+
+    const rowHeight = 50;
+    const headerHeight = 40;
+    const paginationHeight = 64;
+    const availableHeight = Math.max(
+        0,
+        window.innerHeight
+            - tableWrap.getBoundingClientRect().top
+            - paginationHeight
+            - 16
+    );
+    transactionPageSizes[view] = Math.max(
+        4,
+        Math.min(DRAWER_PER, Math.floor((availableHeight - headerHeight) / rowHeight))
+    );
+    return transactionPageSizes[view];
+}
+
+function setTransactionEditorFiltered(view, rows) {
+    if (view === 'monthly') monthlyViewFiltered = rows;
+    else drawerFiltered = rows;
+}
+
+function updateDrawerSaveButton(view = 'drawer') {
+    const state = getTransactionEditorState(view);
+    const button = document.getElementById(state.saveButtonId);
     if (!button) return;
-    const count = drawerDirtyRows.size;
-    button.disabled = drawerSaving || count === 0;
-    const label = drawerSaving
+    const count = state.dirtyRows.size;
+    button.disabled = state.saving || count === 0;
+    const label = state.saving
         ? 'Saving changes…'
         : count ? `Save changes (${count})` : 'Save changes';
     button.setAttribute('aria-label', label);
     button.title = label;
 }
 
-function markDrawerRowDirty(row) {
-    drawerDirtyRows.add(row);
-    updateDrawerSaveButton();
+function markDrawerRowDirty(row, view = 'drawer') {
+    getTransactionEditorState(view).dirtyRows.add(row);
+    updateDrawerSaveButton(view);
 }
 
 function updateDrawerRowDate(row, value) {
@@ -1303,38 +1384,43 @@ function updateDrawerRowDate(row, value) {
     return true;
 }
 
-async function saveDrawerChanges() {
-    if (drawerSaving || !drawerDirtyRows.size) return;
-    drawerSaving = true;
-    updateDrawerSaveButton();
+async function saveDrawerChanges(view = 'drawer') {
+    const state = getTransactionEditorState(view);
+    if (state.saving || !state.dirtyRows.size) return;
+    if (view === 'monthly') monthlyViewSaving = true;
+    else drawerSaving = true;
+    updateDrawerSaveButton(view);
 
     let saved = 0;
     const failed = [];
-    for (const row of [...drawerDirtyRows]) {
+    for (const row of [...state.dirtyRows]) {
         const snapshot = JSON.stringify(rowToSupabaseData(row));
         try {
             await apiSaveRow(row);
             saved++;
-            if (JSON.stringify(rowToSupabaseData(row)) === snapshot) drawerDirtyRows.delete(row);
+            if (JSON.stringify(rowToSupabaseData(row)) === snapshot) state.dirtyRows.delete(row);
         } catch (err) {
             failed.push(err.message);
         }
     }
 
-    drawerSaving = false;
-    updateDrawerSaveButton();
+    if (view === 'monthly') monthlyViewSaving = false;
+    else drawerSaving = false;
+    updateDrawerSaveButton(view);
     if (failed.length) {
         const message = `❌ Saved ${saved}; ${failed.length} failed: ${failed[0]}`;
         showToast(message, 'error');
     } else {
         showToast(`✅ Saved ${saved} transaction${saved === 1 ? '' : 's'}`, 'success');
     }
+    if (view === 'monthly') renderMonthlyView();
 }
 
-function renderDrawerTable() {
-    const search = document.getElementById('drawerSearch').value.toLowerCase();
+function renderDrawerTable(view = 'drawer') {
+    const state = getTransactionEditorState(view);
+    const search = (document.getElementById(state.searchId)?.value || '').toLowerCase();
 
-    drawerFiltered = drawerData.filter(row => {
+    const filtered = state.data.filter(row => {
         const okSr = !search ||
             row.Type.toLowerCase().includes(search)    ||
             row.Expense.toLowerCase().includes(search) ||
@@ -1343,18 +1429,21 @@ function renderDrawerTable() {
         return okSr;
     });
 
-    drawerFiltered.sort((a, b) => {
-        let A = drawerSort.key === 'Date' ? a.DateSortKey : a[drawerSort.key];
-        let B = drawerSort.key === 'Date' ? b.DateSortKey : b[drawerSort.key];
-        if (drawerSort.key === 'Amount') { A = Math.abs(a.Amount); B = Math.abs(b.Amount); }
-        if (A < B) return drawerSort.dir === 'asc' ? -1 : 1;
-        if (A > B) return drawerSort.dir === 'asc' ?  1 : -1;
+    filtered.sort((a, b) => {
+        let A = state.sort.key === 'Date' ? a.DateSortKey : a[state.sort.key];
+        let B = state.sort.key === 'Date' ? b.DateSortKey : b[state.sort.key];
+        if (state.sort.key === 'Amount') { A = Math.abs(a.Amount); B = Math.abs(b.Amount); }
+        if (A < B) return state.sort.dir === 'asc' ? -1 : 1;
+        if (A > B) return state.sort.dir === 'asc' ?  1 : -1;
         return 0;
     });
+    setTransactionEditorFiltered(view, filtered);
 
-    const start = (drawerPage - 1) * DRAWER_PER;
-    const page  = drawerFiltered.slice(start, start + DRAWER_PER);
-    const tbody = document.getElementById('drawerTableBody');
+    const pageIndex = view === 'monthly' ? monthlyViewPage : drawerPage;
+    const rowsPerPage = transactionRowsPerPage(view);
+    const start = (pageIndex - 1) * rowsPerPage;
+    const page  = filtered.slice(start, start + rowsPerPage);
+    const tbody = document.getElementById(state.bodyId);
 
     const fmtFn = v => formatMoney(toDisplay(v));
 
@@ -1386,23 +1475,27 @@ function renderDrawerTable() {
                     showToast('❌ Enter a valid date in YYYY-MM-DD format', 'error');
                     return;
                 }
-                markDrawerRowDirty(row);
+                markDrawerRowDirty(row, view);
                 applyGlobalFilters();
                 renderDashboard();
                 if (activeTab === 'highlights') renderHighlightsTab();
+                if (view === 'monthly') renderMonthlyView();
             });
+            tdDate.dataset.label = 'Date';
             tdDate.appendChild(inpDate);
             tr.appendChild(tdDate);
 
             // ── Amount ────────────────────────────────
             const tdAmt = document.createElement('td');
             tdAmt.className = `${row.Amount >= 0 ? 'amount-saving' : 'amount-expense'} tx-amount`;
+            tdAmt.dataset.label = 'Amount';
             tdAmt.textContent = (row.Amount >= 0 ? '+' : '−') +
                 new Intl.NumberFormat('da-DK', { maximumFractionDigits: 2 }).format(Math.abs(row.Amount));
             tr.appendChild(tdAmt);
 
             // ── Sub-category (Expense) — editable ────
             const tdExp  = document.createElement('td');
+            tdExp.dataset.label = 'Sub-category';
             const inpExp = document.createElement('input');
             inpExp.className   = 'drawer-cat-input';
             inpExp.setAttribute('list', 'expenseOptions');
@@ -1410,17 +1503,19 @@ function renderDrawerTable() {
             inpExp.placeholder = 'Sub-category…';
             inpExp.addEventListener('change', () => {
                 row.Expense = inpExp.value.trim();
-                markDrawerRowDirty(row);
+                markDrawerRowDirty(row, view);
                 updateTxDataLists();
                 applyGlobalFilters();
                 renderDashboard();
                 if (activeTab === 'highlights') renderHighlightsTab();
+                if (view === 'monthly') renderMonthlyView();
             });
             tdExp.appendChild(inpExp);
             tr.appendChild(tdExp);
 
             // ── Category (Type) — editable ────────────
             const tdType  = document.createElement('td');
+            tdType.dataset.label = 'Category';
             const inpType = document.createElement('input');
             inpType.className   = 'drawer-cat-input';
             inpType.setAttribute('list', 'typeOptions');
@@ -1429,17 +1524,19 @@ function renderDrawerTable() {
             inpType.addEventListener('change', () => {
                 row.Type = inpType.value.trim();
                 row.kind = (row.Amount < 0 || !row.Type.startsWith('💰')) ? 'expense' : 'saving';
-                markDrawerRowDirty(row);
+                markDrawerRowDirty(row, view);
                 updateTxDataLists();
                 applyGlobalFilters();
                 renderDashboard();
                 if (activeTab === 'highlights') renderHighlightsTab();
+                if (view === 'monthly') renderMonthlyView();
             });
             tdType.appendChild(inpType);
             tr.appendChild(tdType);
 
             // ── Description (editable comment) ────────
             const tdDesc   = document.createElement('td');
+            tdDesc.dataset.label = 'Description';
             const inpDesc  = document.createElement('input');
             inpDesc.className   = 'drawer-cat-input';
             inpDesc.value       = row.Comments || '';
@@ -1448,13 +1545,14 @@ function renderDrawerTable() {
             inpDesc.addEventListener('change', () => {
                 row.Comments     = inpDesc.value;
                 inpDesc.title    = inpDesc.value;
-                markDrawerRowDirty(row);
+                markDrawerRowDirty(row, view);
             });
             tdDesc.appendChild(inpDesc);
             tr.appendChild(tdDesc);
 
             // ── Account ───────────────────────────────
             const tdAcct = document.createElement('td');
+            tdAcct.dataset.label = 'Account';
             const acct = String(row.Account || '').toLowerCase();
             const acctSel = document.createElement('select');
             acctSel.className = `tx-acct-select tx-acct-${acct}`;
@@ -1462,13 +1560,15 @@ function renderDrawerTable() {
             acctSel.addEventListener('change', () => {
                 row.Account = acctSel.value;
                 acctSel.className = `tx-acct-select tx-acct-${acctSel.value}`;
-                markDrawerRowDirty(row);
+                markDrawerRowDirty(row, view);
+                if (view === 'monthly') renderMonthlyView();
             });
             tdAcct.appendChild(acctSel);
             tr.appendChild(tdAcct);
 
             // ── Analytics toggle ──────────────────────
             const tdExcl = document.createElement('td');
+            tdExcl.dataset.label = 'Analytics';
             const btn    = document.createElement('button');
             const setBtn = () => {
                 btn.className = `tx-excl-btn ${row.excluded ? 'tx-excluded' : 'tx-included'}`;
@@ -1482,10 +1582,11 @@ function renderDrawerTable() {
             btn.addEventListener('click', () => {
                 row.excluded = !row.excluded;
                 setBtn();
-                markDrawerRowDirty(row);
+                markDrawerRowDirty(row, view);
                 applyGlobalFilters();
                 renderDashboard();
                 if (activeTab === 'highlights') renderHighlightsTab();
+                if (view === 'monthly') renderMonthlyView();
             });
             tdExcl.appendChild(btn);
             tr.appendChild(tdExcl);
@@ -1494,48 +1595,164 @@ function renderDrawerTable() {
         });
     }
 
-    const totExp = drawerFiltered.filter(d => d.kind === 'expense').reduce((s, d) => s - d.Amount, 0);
-    const totSav = drawerFiltered.filter(d => d.kind === 'saving').reduce((s, d) => s + d.Amount, 0);
+    const totExp = filtered.filter(d => d.kind === 'expense').reduce((s, d) => s - d.Amount, 0);
+    const totSav = filtered.filter(d => d.kind === 'saving').reduce((s, d) => s + d.Amount, 0);
 
-    document.getElementById('drawerSummary').innerHTML = `
-        <div class="drawer-summary-item">Records: <strong>${drawerFiltered.length}</strong></div>
-        ${totExp ? `<div class="drawer-summary-item">Expenses: <strong class="amount-expense">${fmtFn(totExp)}</strong></div>` : ''}
-        ${totSav ? `<div class="drawer-summary-item">Savings: <strong class="amount-saving">${fmtFn(totSav)}</strong></div>` : ''}`;
+    if (view !== 'monthly') {
+        document.getElementById(state.summaryId).innerHTML = `
+            <div class="drawer-summary-item">Records: <strong>${filtered.length}</strong></div>
+            ${totExp ? `<div class="drawer-summary-item">Expenses: <strong class="amount-expense">${fmtFn(totExp)}</strong></div>` : ''}
+            ${totSav ? `<div class="drawer-summary-item">Savings: <strong class="amount-saving">${fmtFn(totSav)}</strong></div>` : ''}`;
+    }
 
-    renderDrawerPagination();
-    updateDrawerSaveButton();
+    renderDrawerPagination(view);
+    updateDrawerSaveButton(view);
 }
 
-function renderDrawerPagination() {
-    const total = Math.ceil(drawerFiltered.length / DRAWER_PER);
-    const el    = document.getElementById('drawerPagination');
+function renderDrawerPagination(view = 'drawer') {
+    const state = getTransactionEditorState(view);
+    const total = Math.ceil(
+        state.filtered.length / transactionRowsPerPage(view)
+    );
+    const el    = document.getElementById(state.paginationId);
+    const currentPage = view === 'monthly' ? monthlyViewPage : drawerPage;
     if (total <= 1) { el.innerHTML = ''; return; }
-    let html = `<button class="page-btn" onclick="changeDrawerPage(${drawerPage-1})"
-        ${drawerPage===1?'disabled':''}>← Prev</button>`;
+    let html = `<button class="page-btn pagination-arrow" aria-label="Previous page"
+        onclick="changeDrawerPage(${currentPage-1}, '${view}')"
+        ${currentPage===1?'disabled':''}>‹</button>`;
     for (let i=1; i<=total; i++) {
-        if (i===1||i===total||(i>=drawerPage-2&&i<=drawerPage+2))
-            html += `<button class="page-btn ${i===drawerPage?'active':''}"
-                onclick="changeDrawerPage(${i})">${i}</button>`;
-        else if (i===drawerPage-3||i===drawerPage+3)
+        if (i===1||i===total||(i>=currentPage-2&&i<=currentPage+2))
+            html += `<button class="page-btn ${i===currentPage?'active':''}"
+                onclick="changeDrawerPage(${i}, '${view}')">${i}</button>`;
+        else if (i===currentPage-3||i===currentPage+3)
             html += `<span style="padding:.35rem .5rem;color:var(--text-light)">…</span>`;
     }
-    html += `<button class="page-btn" onclick="changeDrawerPage(${drawerPage+1})"
-        ${drawerPage===total?'disabled':''}>Next →</button>`;
+    html += `<button class="page-btn pagination-arrow" aria-label="Next page"
+        onclick="changeDrawerPage(${currentPage+1}, '${view}')"
+        ${currentPage===total?'disabled':''}>›</button>`;
     el.innerHTML = html;
 }
 
-function changeDrawerPage(p) {
-    const total = Math.ceil(drawerFiltered.length / DRAWER_PER);
+function changeDrawerPage(p, view = 'drawer') {
+    const total = Math.ceil(
+        getTransactionEditorState(view).filtered.length
+        / transactionRowsPerPage(view)
+    );
     if (p<1||p>total) return;
-    drawerPage = p;
-    renderDrawerTable();
+    if (view === 'monthly') monthlyViewPage = p;
+    else drawerPage = p;
+    renderDrawerTable(view);
 }
 
-function sortDrawer(key) {
-    drawerSort.dir = drawerSort.key===key ? (drawerSort.dir==='asc'?'desc':'asc') : 'asc';
-    drawerSort.key = key;
-    drawerPage     = 1;
-    renderDrawerTable();
+function sortDrawer(key, view = 'drawer') {
+    const state = getTransactionEditorState(view);
+    state.sort.dir = state.sort.key===key ? (state.sort.dir==='asc'?'desc':'asc') : 'asc';
+    state.sort.key = key;
+    if (view === 'monthly') monthlyViewPage = 1;
+    else drawerPage = 1;
+    renderDrawerTable(view);
+}
+
+// =====================================================
+//  MONTHLY VIEW
+// =====================================================
+function monthlyViewScopeMatches(row) {
+    const account = String(row.Account || '').trim().toLowerCase();
+    return account === monthlyViewScope;
+}
+
+function getMonthIndex(year, month) {
+    const numericYear = Number(year);
+    const numericMonth = Number(month);
+    if (!Number.isInteger(numericYear)
+        || !Number.isInteger(numericMonth)
+        || numericMonth < 1
+        || numericMonth > 12) {
+        return NaN;
+    }
+    return numericYear * 12 + numericMonth - 1;
+}
+
+function getMonthlyViewScopeRows(referenceDate = new Date()) {
+    const currentMonthIndex = referenceDate.getFullYear() * 12
+        + referenceDate.getMonth();
+    const earliestMonthIndex = currentMonthIndex - 2;
+
+    return rawData.filter(row => {
+        if (!monthlyViewScopeMatches(row)) return false;
+        const monthIndex = getMonthIndex(row.Year, row.Month);
+        return Number.isInteger(monthIndex)
+            && monthIndex >= earliestMonthIndex
+            && monthIndex <= currentMonthIndex;
+    });
+}
+
+function isMonthlyReviewRow(row) {
+    return row.excluded !== true
+        && (isReviewCategory(row.Expense) || isReviewCategory(row.Type));
+}
+
+function renderMonthlyView(referenceDate = new Date()) {
+    const scopeRows = getMonthlyViewScopeRows(referenceDate);
+    const reviewRows = scopeRows.filter(isMonthlyReviewRow);
+    const currentMonthIndex = referenceDate.getFullYear() * 12
+        + referenceDate.getMonth();
+    const currentMonthSpend = scopeRows
+        .filter(row =>
+            row.PlannedReal === 'Real'
+            && !row.excluded
+            && row.Amount < 0
+            && getMonthIndex(row.Year, row.Month) === currentMonthIndex
+        )
+        .reduce((sum, row) => sum - row.Amount, 0);
+
+    document.getElementById('monthlyReviewCount').textContent = String(reviewRows.length);
+    document.getElementById('monthlyReviewHint').textContent = monthlyViewReviewOnly
+        ? 'Showing review rows — click to show all'
+        : `${scopeRows.length} transactions in the selected scope`;
+    const reviewKpi = document.getElementById('monthlyReviewKpi');
+    reviewKpi.classList.toggle('active', monthlyViewReviewOnly);
+    reviewKpi.setAttribute('aria-pressed', String(monthlyViewReviewOnly));
+    document.getElementById('monthlySpendTotal').textContent =
+        formatMoney(toDisplay(currentMonthSpend));
+    document.getElementById('monthlySpendLabel').textContent =
+        referenceDate.toLocaleDateString(undefined, {
+            month: 'long',
+            year: 'numeric',
+        });
+
+    monthlyViewData = monthlyViewReviewOnly ? [...reviewRows] : scopeRows;
+    monthlyViewPage = Math.min(monthlyViewPage, Math.max(
+        1,
+        Math.ceil(monthlyViewData.length / transactionRowsPerPage('monthly'))
+    ));
+    renderDrawerTable('monthly');
+}
+
+function setMonthlyScope(scope) {
+    if (!['anna', 'carlos', 'joint'].includes(scope)) return;
+    monthlyViewScope = scope;
+    monthlyViewPage = 1;
+    ['anna', 'carlos', 'joint'].forEach(name => {
+        const active = name === scope;
+        const button = document.getElementById(
+            `monthlyScope${name.charAt(0).toUpperCase()}${name.slice(1)}`
+        );
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-pressed', String(active));
+    });
+    renderMonthlyView();
+}
+
+function toggleMonthlyReviewFilter() {
+    monthlyViewReviewOnly = !monthlyViewReviewOnly;
+    monthlyViewPage = 1;
+    renderMonthlyView();
+}
+
+function filterMonthlyTransactions() {
+    monthlyViewPage = 1;
+    renderDrawerTable('monthly');
 }
 
 
@@ -1651,9 +1868,10 @@ function renderTransactionsTab() {
             if (typeof av === 'string') return txSort.dir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
             return txSort.dir === 'asc' ? av - bv : bv - av;
         });
-    const totalPages = Math.ceil(shown.length / TX_PER_PAGE);
+    const rowsPerPage = transactionRowsPerPage('transactions');
+    const totalPages = Math.ceil(shown.length / rowsPerPage);
     txPage = Math.min(Math.max(txPage, 1), Math.max(totalPages, 1));
-    const pageRows = shown.slice((txPage - 1) * TX_PER_PAGE, txPage * TX_PER_PAGE);
+    const pageRows = shown.slice((txPage - 1) * rowsPerPage, txPage * rowsPerPage);
 
     updateTxDataLists();
 
@@ -1678,18 +1896,18 @@ function renderTransactionsTab() {
         const acctOptsHtml = accountOptionsHtml(acctVal);
 
         tr.innerHTML = `
-            <td><input class="tx-date-input" value="${escHtml(r.Date)}" data-idx="${i}" placeholder="YYYY-MM-DD" aria-label="Transaction date (YYYY-MM-DD)"></td>
-            <td><select class="tx-acct-select tx-acct-${acctVal}" data-idx="${i}">
+            <td data-label="Date"><input class="tx-date-input" value="${escHtml(r.Date)}" data-idx="${i}" placeholder="YYYY-MM-DD" aria-label="Transaction date (YYYY-MM-DD)"></td>
+            <td data-label="Account"><select class="tx-acct-select tx-acct-${acctVal}" data-idx="${i}">
                 ${acctOptsHtml}
             </select></td>
-            <td><input class="tx-comment-input" value="${escHtml(r.Comments)}" data-idx="${i}" placeholder="Add comment…" title="${escHtml(r.Comments)}"></td>
-            <td class="${amtCls} tx-amount"><input class="tx-amount-input ${amtCls}" type="number" step="0.01" value="${r.Amount}" data-idx="${i}"></td>
-            <td><input class="tx-cat-input" list="expenseOptions"
+            <td data-label="Description"><input class="tx-comment-input" value="${escHtml(r.Comments)}" data-idx="${i}" placeholder="Add comment…" title="${escHtml(r.Comments)}"></td>
+            <td data-label="Amount" class="${amtCls} tx-amount"><input class="tx-amount-input ${amtCls}" type="number" step="0.01" value="${r.Amount}" data-idx="${i}"></td>
+            <td data-label="Sub-category"><input class="tx-cat-input" list="expenseOptions"
                     value="${escHtml(r.Expense)}" data-field="Expense" data-idx="${i}"></td>
-            <td><input class="tx-cat-input" list="typeOptions"
+            <td data-label="Category"><input class="tx-cat-input" list="typeOptions"
                     value="${escHtml(r.Type)}" data-field="Type" data-idx="${i}"></td>
-            <td><button class="${exclCls}" data-idx="${i}">${exclTxt}</button></td>
-            <td class="tx-actions-cell">
+            <td data-label="Analytics"><button class="${exclCls}" data-idx="${i}">${exclTxt}</button></td>
+            <td data-label="Actions" class="tx-actions-cell">
                 <button class="tx-action-btn tx-save-btn" data-idx="${i}" title="Save changes to CSV" aria-label="Save transaction">\ud83d\udcbe</button>
                 <button class="tx-action-btn tx-duplicate-btn" data-idx="${i}" title="Duplicate transaction below" aria-label="Duplicate transaction">\ud83d\udccb</button>
                 <button class="btn-tx-delete tx-action-btn tx-delete-btn" data-idx="${i}" title="Delete transaction" aria-label="Delete transaction">\ud83d\uddd1</button>
@@ -1697,7 +1915,7 @@ function renderTransactionsTab() {
         `;
         tbody.appendChild(tr);
     });
-    renderTransactionsPagination(shown.length, totalPages);
+    renderTransactionsPagination(shown.length, totalPages, rowsPerPage);
 
     // Category edit
     tbody.querySelectorAll('.tx-cat-input').forEach(inp => {
@@ -1849,13 +2067,17 @@ function renderTransactionsTab() {
     });
 }
 
-function renderTransactionsPagination(totalCount, totalPages) {
+function renderTransactionsPagination(
+    totalCount,
+    totalPages,
+    rowsPerPage = transactionRowsPerPage('transactions')
+) {
     const pagination = document.getElementById('txPagination');
     if (!pagination) return;
 
     const pageCount = Math.max(totalPages, 1);
-    const firstItem = totalCount ? (txPage - 1) * TX_PER_PAGE + 1 : 0;
-    const lastItem = Math.min(txPage * TX_PER_PAGE, totalCount);
+    const firstItem = totalCount ? (txPage - 1) * rowsPerPage + 1 : 0;
+    const lastItem = Math.min(txPage * rowsPerPage, totalCount);
     const pages = [...new Set([
         1, pageCount, txPage - 2, txPage - 1, txPage, txPage + 1, txPage + 2,
     ].filter(page => page >= 1 && page <= pageCount))].sort((a, b) => a - b);
@@ -1872,11 +2094,13 @@ function renderTransactionsPagination(totalCount, totalPages) {
     pagination.innerHTML = `
         <span class="tx-pagination-summary">Showing ${firstItem}–${lastItem} of ${totalCount}</span>
         ${pageCount > 1 ? `<div class="tx-pagination-controls">
-            <button type="button" class="page-btn" onclick="changeTransactionsPage(${txPage - 1})"
-                ${txPage === 1 ? 'disabled' : ''}>← Prev</button>
+            <button type="button" class="page-btn pagination-arrow" aria-label="Previous page"
+                onclick="changeTransactionsPage(${txPage - 1})"
+                ${txPage === 1 ? 'disabled' : ''}>‹</button>
             ${pageButtons.join('')}
-            <button type="button" class="page-btn" onclick="changeTransactionsPage(${txPage + 1})"
-                ${txPage === pageCount ? 'disabled' : ''}>Next →</button>
+            <button type="button" class="page-btn pagination-arrow" aria-label="Next page"
+                onclick="changeTransactionsPage(${txPage + 1})"
+                ${txPage === pageCount ? 'disabled' : ''}>›</button>
         </div>` : ''}`;
 }
 
@@ -1884,6 +2108,20 @@ function changeTransactionsPage(page) {
     if (!Number.isInteger(page) || page < 1) return;
     txPage = page;
     renderTransactionsTab();
+}
+
+if (typeof window !== 'undefined') {
+    let tableResizeTimer;
+    window.addEventListener('resize', () => {
+        clearTimeout(tableResizeTimer);
+        tableResizeTimer = setTimeout(() => {
+            delete transactionPageSizes.transactions;
+            delete transactionPageSizes.monthly;
+            delete transactionPageSizes.drawer;
+            if (activeTab === 'monthly') renderMonthlyView();
+            else if (activeTab === 'transactions') renderTransactionsTab();
+        }, 100);
+    });
 }
 
 function addTransaction() {
@@ -2022,10 +2260,9 @@ function renderHighlightsTab() {
     const savingsRate   = totalIncome > 0 ? (netSavings / totalIncome * 100) : 0;
 
     const activeMonths  = new Set(realExp.map(d => `${d.Year}-${String(d.Month).padStart(2,'0')}`));
-    const monthCount    = activeMonths.size || 1;
-    const avgMonthly    = totalExpenses / monthCount;
-
-    const uncatCount = getHighlightsReviewRows().length;
+    const monthCount       = activeMonths.size || 1;
+    const avgMonthly       = totalExpenses / monthCount;
+    const avgMonthlyIncome = totalIncome / monthCount;
 
     // Biggest single expense
     const biggestTx = [...realExp].sort((a, b) => a.Amount - b.Amount)[0];
@@ -2077,12 +2314,11 @@ function renderHighlightsTab() {
             <div class="kpi-real">${fmt(avgMonthly)}</div>
             <div class="kpi-planned-label">Over ${monthCount} month${monthCount !== 1 ? 's' : ''}</div>
         </div>
-        <button type="button" class="kpi-card hl-kpi-card hl-kpi-action ${uncatCount > 0 ? 'hl-kpi-warning' : ''}"
-            onclick="openHighlightsReviewDrawer()" ${uncatCount === 0 ? 'disabled' : ''}>
-            <div class="kpi-top"><span class="kpi-icon">${uncatCount > 0 ? '⚠️' : '✅'}</span><span class="kpi-label">⚠️ Review</span></div>
-            <div class="kpi-real" style="color:${uncatCount > 0 ? '#f59e0b' : '#10b981'}">${uncatCount}</div>
-            <div class="kpi-planned-label">${uncatCount > 0 ? '⚠️ Review items' : 'All categorized!'}</div>
-        </button>
+        <div class="kpi-card hl-kpi-card">
+            <div class="kpi-top"><span class="kpi-icon">📈</span><span class="kpi-label">Avg Monthly Income</span></div>
+            <div class="kpi-real">${fmt(avgMonthlyIncome)}</div>
+            <div class="kpi-planned-label">Over ${monthCount} month${monthCount !== 1 ? 's' : ''}</div>
+        </div>
     </section>`;
 
     // Top categories
@@ -2146,23 +2382,6 @@ function renderHighlightsTab() {
     }
     renderHighlightsCategoriesChart(realAll, allYears, cur, selectedYears);
     renderHighlightsSavingsChart(analyticsReal, selectedYears, cur);
-}
-
-function getHighlightsReviewRows() {
-    return getHighlightsAnalyticsRows().filter(d =>
-        d.Expense === '⚠️ Review'
-        && (!globalFilters.years.length || globalFilters.years.includes(Number(d.Year)))
-    );
-}
-
-function openHighlightsReviewDrawer() {
-    const rows = getHighlightsReviewRows();
-    const yearLabel = globalFilters.years.length ? globalFilters.years.join(', ') : 'All years';
-    openDrawerWith(
-        rows,
-        '⚠️ Transactions to Review',
-        `${yearLabel} · ${rows.length} transaction${rows.length === 1 ? '' : 's'}`
-    );
 }
 
 function renderHighlightsCategoriesChart(rows, allYears, currency, selectedYears) {

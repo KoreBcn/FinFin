@@ -71,6 +71,96 @@ test('switches Home subtabs and preserves the selected subtab after visiting Inv
     assert.equal(vm.runInContext('highlightsRendered', context), 1);
 });
 
+test('Monthly view limits rows to the current three calendar months and selected scope', () => {
+    const { context } = setup();
+    vm.runInContext(`
+        rawData = [
+            {Year: 2026, Month: 11, Account: 'anna'},
+            {Year: 2026, Month: 10, Account: 'anna'},
+            {Year: 2026, Month: 9, Account: 'anna'},
+            {Year: 2026, Month: 8, Account: 'anna'},
+            {Year: 2026, Month: 12, Account: 'anna'},
+            {Year: 2026, Month: 11, Account: 'joint'},
+            {Year: 2026, Month: 11, Account: 'carlos'}
+        ];
+        monthlyViewScope = 'anna';
+    `, context);
+
+    assert.equal(
+        vm.runInContext(
+            'getMonthlyViewScopeRows(new Date(2026, 10, 22)).length',
+            context
+        ),
+        3
+    );
+    vm.runInContext("monthlyViewScope = 'carlos'", context);
+    assert.equal(
+        vm.runInContext(
+            'getMonthlyViewScopeRows(new Date(2026, 10, 22)).length',
+            context
+        ),
+        1
+    );
+    vm.runInContext("monthlyViewScope = 'joint'", context);
+    assert.equal(
+        vm.runInContext(
+            'getMonthlyViewScopeRows(new Date(2026, 10, 22)).length',
+            context
+        ),
+        1
+    );
+});
+
+test('Monthly review KPI excludes analytics-disabled rows while the full table keeps them', () => {
+    const { context } = setup();
+    context.renderDrawerTable = () => {};
+    vm.runInContext(`
+        rawData = [
+            {Expense: '⚠️ Review', Type: 'Food', Year: 2026, Month: 11, Account: 'anna'},
+            {Expense: 'Food', Type: '⚠️ Review', Year: 2026, Month: 11, Account: 'joint'},
+            {Expense: 'Food', Type: 'Groceries', Year: 2026, Month: 11, Account: 'anna'},
+            {Expense: '⚠️ Review', Type: '⚠️ Review', Year: 2026, Month: 11, Account: 'anna', excluded: true}
+        ];
+        monthlyViewScope = 'anna';
+    `, context);
+
+    vm.runInContext(
+        'monthlyViewReviewOnly = true; renderMonthlyView(new Date(2026, 10, 22))',
+        context
+    );
+    assert.equal(vm.runInContext('monthlyViewData.length', context), 1);
+    assert.equal(vm.runInContext("monthlyReviewKpiAttribute = document.getElementById('monthlyReviewKpi').attributes['aria-pressed']", context), 'true');
+    vm.runInContext(
+        'monthlyViewReviewOnly = false; renderMonthlyView(new Date(2026, 10, 22))',
+        context
+    );
+    assert.equal(vm.runInContext('monthlyViewData.length', context), 3);
+    assert.equal(vm.runInContext('monthlyViewData.some(row => row.excluded)', context), true);
+    assert.equal(vm.runInContext("document.getElementById('monthlyReviewCount').textContent", context), '1');
+});
+
+test('Monthly view bulk-saves all dirty rows with one action', async () => {
+    const { context, elements } = setup();
+    context.savedRows = [];
+    vm.runInContext(`
+        rowToSupabaseData = row => ({ id: row.id });
+        apiSaveRow = async row => savedRows.push(row);
+        showToast = () => {};
+        renderMonthlyView = () => {};
+        firstMonthlyRow = {id: 'one'};
+        secondMonthlyRow = {id: 'two'};
+        monthlyViewDirtyRows.add(firstMonthlyRow);
+        monthlyViewDirtyRows.add(secondMonthlyRow);
+    `, context);
+
+    await vm.runInContext("saveDrawerChanges('monthly')", context);
+
+    assert.equal(context.savedRows.length, 2);
+    assert.equal(vm.runInContext('monthlyViewDirtyRows.size', context), 0);
+    assert.equal(elements.get('monthlySaveButton').disabled, true);
+    assert.equal(vm.runInContext('monthlyViewSaving', context), false);
+});
+
 test('shows the signed-in email in the account controls and clears it on sign-out', async () => {
     const { context, elements } = setup();
     vm.runInContext('loadData = async () => {}; refreshTransactionInsertDate = async () => {}', context);
