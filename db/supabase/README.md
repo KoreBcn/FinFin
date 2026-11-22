@@ -287,6 +287,13 @@ secret are all required. Its transactions use the primary categorization rules,
 are assigned to account `anna`, and are flagged `⚠️ Review` when no rule
 matches.
 
+Each workflow failure reports the profile and account index without exposing
+account UIDs or API response bodies. An `HTTP 404` on a transaction fetch
+normally means the configured account UID is stale or does not belong to that
+Enable Banking application. Re-authorize that profile and replace its account
+UID secret, then rerun the workflow. A successful profile is not committed when
+another profile fails, so the next run refetches the same date range.
+
 The `Import bank transactions` workflow runs Monday through Friday at 05:20 UTC
 and is also available for manual runs from the Actions tab. It has read-only repository
 permissions, serializes runs, and exposes credentials only to the import step.

@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 from api.api_call import (
     categorize_raw_transaction,
+    format_account_fetch_failure,
     load_account_uids_from_environment,
     load_import_profiles_from_environment,
     parse_date_override,
@@ -100,6 +101,19 @@ class BankAccountConfigurationTests(unittest.TestCase):
     def test_rejects_invalid_adhoc_start_date(self):
         with self.assertRaisesRegex(ValueError, "does not match format"):
             parse_date_override("22-05-2026")
+
+    def test_formats_bank_failure_without_private_account_identifiers(self):
+        error = RuntimeError("private account response")
+
+        message = format_account_fetch_failure(
+            "primary", 1, "transaction fetch", error
+        )
+
+        self.assertEqual(
+            message,
+            "primary account 1: transaction fetch failed (RuntimeError)",
+        )
+        self.assertNotIn("private", message)
 
 
 if __name__ == "__main__":

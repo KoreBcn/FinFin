@@ -478,6 +478,15 @@ def _safe_bank_error(error: Exception) -> str:
     return type(error).__name__
 
 
+def format_account_fetch_failure(
+    profile_name: str, account_index: int, operation: str, error: Exception
+) -> str:
+    return (
+        f"{profile_name} account {account_index}: {operation} failed "
+        f"({_safe_bank_error(error)})"
+    )
+
+
 def parse_date_override(value: str):
     if not value:
         return None
@@ -535,6 +544,7 @@ def fetch_all_transactions(profile_name: str | None = None, fetch_from_override=
 
     imported_rows_by_reference = {}
     all_accounts_fetched = True
+    account_failures = []
 
     for profile in profiles:
         try:
@@ -666,17 +676,20 @@ def fetch_all_transactions(profile_name: str | None = None, fetch_from_override=
                 )
             except Exception as error:
                 all_accounts_fetched = False
-                logger.error(
-                    "Fetching transactions for %s account %s failed (%s).",
+                failure = format_account_fetch_failure(
                     profile["name"],
                     account_index,
-                    _safe_bank_error(error),
+                    "transaction fetch",
+                    error,
                 )
+                account_failures.append(failure)
+                logger.error("%s.", failure)
 
     if not all_accounts_fetched:
         raise RuntimeError(
             "At least one account fetch failed; Supabase import and watermark "
-            "update were not run."
+            "update were not run. "
+            + "; ".join(account_failures)
         )
 
     inserted_count = importer.import_transactions(
