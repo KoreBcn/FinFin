@@ -141,7 +141,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--base-url",
         default=os.getenv(
-            "ENABLEBANKING_ANNA_BASE_URL", DEFAULT_BASE_URL
+            "ENABLEBANKING_BASE_URL", DEFAULT_BASE_URL
         ).strip(),
     )
     parser.add_argument("--certificate-file", default="")

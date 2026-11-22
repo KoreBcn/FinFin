@@ -261,7 +261,6 @@ repository variables:
 | `ENABLEBANKING_APP_ID` | Enable Banking application ID |
 | `ENABLEBANKING_BASE_URL` | Enable Banking API URL; optional, defaults to `https://api.enablebanking.com` |
 | `ENABLEBANKING_ANNA_APP_ID` | Optional second Enable Banking application ID; all fetched rows are assigned to Anna |
-| `ENABLEBANKING_ANNA_BASE_URL` | Optional second API URL; defaults to the primary base URL |
 
 Add these repository secrets:
 

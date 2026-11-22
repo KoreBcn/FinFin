@@ -21,9 +21,8 @@ GitHub variables and secrets as described in
 To import an additional Enable Banking profile whose transactions all belong to
 Anna, configure `ENABLEBANKING_ANNA_APP_ID` as a variable and
 `ENABLEBANKING_ANNA_CERTIFICATE_PEM` plus
-`ENABLEBANKING_ANNA_ACCOUNT_UIDS` as secrets. The optional
-`ENABLEBANKING_ANNA_BASE_URL` variable defaults to the primary API base URL.
-Both profiles use the same categorization rules and store unknown merchants as
+`ENABLEBANKING_ANNA_ACCOUNT_UIDS` as secrets. Both profiles use
+`ENABLEBANKING_BASE_URL`, the same categorization rules, and store unknown merchants as
 `⚠️ Review`.
 
 The Home subtab bar shows the latest `inserted_at` in the transactions table, in the

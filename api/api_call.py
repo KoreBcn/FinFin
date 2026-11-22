@@ -433,9 +433,6 @@ def load_import_profiles_from_environment() -> list[dict]:
 
     anna_prefix = "ENABLEBANKING_ANNA_"
     anna_values = {
-        "base_url": os.getenv(
-            f"{anna_prefix}BASE_URL", DEFAULT_EB_BASE_URL
-        ).strip(),
         "app_id": os.getenv(f"{anna_prefix}APP_ID", "").strip(),
         "certificate": os.getenv(
             f"{anna_prefix}CERTIFICATE_PEM", ""
@@ -444,11 +441,7 @@ def load_import_profiles_from_environment() -> list[dict]:
             f"{anna_prefix}ACCOUNT_UIDS", ""
         ).strip(),
     }
-    anna_configured = any(
-        value
-        for key, value in anna_values.items()
-        if key != "base_url"
-    )
+    anna_configured = any(anna_values.values())
     if anna_configured:
         missing = [
             f"{anna_prefix}{name}"
@@ -466,7 +459,7 @@ def load_import_profiles_from_environment() -> list[dict]:
         profiles.append(
             {
                 "name": "anna",
-                "base_url": anna_values["base_url"],
+                "base_url": primary["base_url"],
                 "app_id": anna_values["app_id"],
                 "certificate": anna_values["certificate"],
                 "account_uids": load_account_uids_from_environment("ANNA_"),
