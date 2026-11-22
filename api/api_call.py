@@ -358,11 +358,10 @@ def categorize_raw_transaction(row: dict, account_label: str):
         debtor_name, creditor_name, remittance_info, credit_debit
     )
 
-    if tx_type not in ('💰 Income', '⚠️ Review'):
-        if account_label == 'anna':
-            tx_type = '👩 Anna'
-        elif account_label == 'carlos':
-            tx_type = '👨 Carlos'
+    if account_label == 'anna' and tx_type != '💰 Income':
+        tx_type = '👩 Anna'
+    elif account_label == 'carlos' and tx_type not in ('💰 Income', '⚠️ Review'):
+        tx_type = '👨 Carlos'
 
     if expense == 'Salary':
         if account_label == 'anna':

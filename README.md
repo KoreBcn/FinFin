@@ -5,8 +5,11 @@ dates as text in this format; timestamps use the browser's local time.
 ## Install as a mobile app
 
 The app is a PWA. Open the HTTPS (GitHub Pages) URL on your phone, then use
-**Add to Home Screen** (iOS Safari: Share menu; Android Chrome: menu → Install app).
-It opens full screen with its own icon. The service worker is network-first, so updates
+**Add to Home Screen** (iOS Safari: Share menu, enable **Open as Web App** if
+offered; Android Chrome: menu → Install app). A normal browser bookmark is not
+the same as an installed app. Remove an existing home-screen shortcut and add it
+again to refresh its name and icon. The installed app opens in its own window.
+The service worker is network-first, so updates
 appear on the next load; the shell is cached only as an offline fallback and Supabase data
 is never cached. It needs HTTPS (or localhost) to install.
 
@@ -23,13 +26,19 @@ Anna, configure `ENABLEBANKING_ANNA_APP_ID` as a variable and
 `ENABLEBANKING_ANNA_CERTIFICATE_PEM` plus
 `ENABLEBANKING_ANNA_ACCOUNT_UIDS` as secrets. Both profiles use
 `ENABLEBANKING_BASE_URL`, the same categorization rules, and store unknown merchants as
-`⚠️ Review`.
+subcategory `⚠️ Review`. Anna's non-income transactions use category `👩 Anna`,
+including unmatched transactions. Existing imports are not recategorized.
 
 The Home subtab bar shows the latest `inserted_at` in the transactions table, in the
 browser's local time; on mobile it appears below the active Home content. It
 includes manual entries and is not the time of the last Enable Banking run; a
 run that adds no transactions does not change it.
 The value is read on sign-in and after transaction changes.
+
+On sign-in, Home opens Review if the selected account has transactions to
+review in the current or previous two calendar months; otherwise it opens
+Dashboard. Transactions excluded from analytics do not count as pending reviews,
+matching the Review tab's count. The initial account is Anna.
 
 ## Investments
 

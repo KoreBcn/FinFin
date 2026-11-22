@@ -1421,8 +1421,8 @@ body.is-authenticated .auth-gate { display: none; }
 .auth-message { min-height: 1.25rem; color: var(--danger); font-size: 0.9rem; }
 .account-controls { grid-area: account; display: flex; flex-direction: column; align-items: flex-end; min-width: 0; }
 .signed-in-email { max-width: 15rem; overflow: hidden; color: #cbd5e1; font-size: 0.75rem; text-overflow: ellipsis; white-space: nowrap; }
-.sign-out-btn { display: grid; place-items: center; width: 36px; height: 36px; padding: 0; border: 0; background: transparent; color: #cbd5e1; cursor: pointer; }
-.sign-out-btn svg { width: 22px; height: 22px; }
+.sign-out-btn { display: grid; place-items: center; width: 36px; height: 36px; padding: 7px; border: 1px solid rgba(255,255,255,0.16); border-radius: var(--radius-sm); background: transparent; color: #cbd5e1; cursor: pointer; }
+.sign-out-btn svg { width: 20px; height: 20px; }
 .sign-out-btn:hover { color: white; }
 .sign-out-btn:focus-visible { outline: 2px solid #60a5fa; outline-offset: 3px; }
 
@@ -1633,7 +1633,7 @@ body.is-authenticated .auth-gate { display: none; }
     .header-content {
         position: relative;
         display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(0, 9rem) auto;
+        grid-template-columns: minmax(0, max-content) auto minmax(0, 1fr);
         grid-template-areas: "logo account nav";
         gap: 0.5rem;
         padding: 0.75rem 1rem;
@@ -1644,8 +1644,8 @@ body.is-authenticated .auth-gate { display: none; }
         position: static;
         justify-self: end;
     }
-    .account-controls { margin-left: 0; }
-    .signed-in-email { max-width: 9rem; }
+    .account-controls { margin-left: 0; justify-self: start; }
+    .signed-in-email { display: none; }
     .sign-out-btn { min-height: 36px; }
     .mobile-menu-btn { display: flex !important; }
     #tabSwitcher,
@@ -1840,6 +1840,18 @@ body.is-authenticated .auth-gate { display: none; }
     #tabTransactions .tx-table select,
     .monthly-view-table input,
     .monthly-view-table select { width: 100%; min-width: 0; }
+    .monthly-view-table table { min-width: 562px; }
+    .monthly-view-table th:nth-child(1) { width: 86px; }
+    .monthly-view-table th:nth-child(2) { width: 86px; }
+    .monthly-view-table th:nth-child(3) { width: 105px; }
+    .monthly-view-table th:nth-child(4) { width: 90px; }
+    .monthly-view-table th:nth-child(5) { width: 125px; }
+    .monthly-view-table th:nth-child(7) { width: 70px; }
+    .monthly-view-table th:nth-child(6),
+    .monthly-view-table td[data-label="Account"] { display: none; }
+    .monthly-view-table thead th,
+    .monthly-view-table tbody td { padding: 0.35rem 0.25rem; }
+    .monthly-view-table input { padding-inline: 0.25rem; }
     .tx-pagination,
     .drawer-pagination.tx-pagination,
     .house-pagination {
@@ -1880,12 +1892,11 @@ body.is-authenticated .auth-gate { display: none; }
     main { padding: 0.65rem; }
     .home-subtab-bar .investment-subtabs { max-width: 100%; }
     .home-subtab-bar .investment-subtab { min-width: 0; padding-inline: 0.4rem; font-size: 0.875rem; }
-    .header-content { padding-inline: 0.7rem; grid-template-columns: minmax(0, 1fr) minmax(0, 6rem) auto; }
+    .header-content { padding-inline: 0.7rem; }
     .logo { gap: 0.45rem; }
     .logo-icon { width: 1.75rem; height: 2rem; }
     .logo h1 { font-size: 1rem; }
     nav { gap: 0.4rem; }
-    .signed-in-email { max-width: 6rem; font-size: 0.72rem; }
     .kpi-section { gap: 0.35rem; }
     .kpi-card { padding: 0.65rem 0.3rem; }
     .kpi-top { gap: 0.1rem; min-height: 1.375rem; margin-bottom: 0.35rem; }

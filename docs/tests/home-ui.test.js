@@ -71,6 +71,54 @@ test('switches Home subtabs and preserves the selected subtab after visiting Inv
     assert.equal(vm.runInContext('highlightsRendered', context), 1);
 });
 
+test('opens Monthly view when the selected account has a visible pending review', () => {
+    const { context, elements } = setup();
+    vm.runInContext(`
+        populateYearFilter = () => {};
+        populateCategoryFilter = () => {};
+        applyGlobalFilters = () => {};
+        renderDrawerTable = () => {};
+        const now = new Date();
+        const previousMonth = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+        rawData = [{ Year: previousMonth.getFullYear(), Month: previousMonth.getMonth() + 1,
+            Account: 'anna', Expense: 'Groceries', Type: '⚠️ Review' }];
+        bootstrapApp();
+    `, context);
+    assert.equal(elements.get('tabMonthly').style.display, 'flex');
+    assert.equal(elements.get('homeMonthlyTab').attributes['aria-selected'], 'true');
+    assert.equal(elements.get('monthlyReviewCount').textContent, '1');
+    vm.runInContext("switchHomeSubtab('dashboard'); switchTab('investments'); switchTab('home')", context);
+    assert.equal(elements.get('tabDashboard').style.display, 'flex');
+});
+
+test('opens Dashboard when reviews are outside the selected account or visible months, or excluded', () => {
+    const { context, elements } = setup();
+    vm.runInContext(`
+        populateYearFilter = () => {};
+        populateCategoryFilter = () => {};
+        applyGlobalFilters = () => {};
+        const now = new Date();
+        const oldMonth = new Date(now.getFullYear(), now.getMonth() - 3, 1);
+        const futureMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+        rawData = [
+            { Year: now.getFullYear(), Month: now.getMonth() + 1, Account: 'carlos', Expense: 'Review' },
+            { Year: oldMonth.getFullYear(), Month: oldMonth.getMonth() + 1, Account: 'anna', Expense: 'Review' },
+            { Year: futureMonth.getFullYear(), Month: futureMonth.getMonth() + 1, Account: 'anna', Expense: 'Review' },
+            { Year: now.getFullYear(), Month: now.getMonth() + 1, Account: 'anna', Type: 'Review', excluded: true }
+        ];
+        bootstrapApp();
+    `, context);
+    assert.equal(elements.get('tabDashboard').style.display, 'flex');
+    assert.equal(elements.get('homeDashboardTab').attributes['aria-selected'], 'true');
+    vm.runInContext(`
+        renderDrawerTable = () => {};
+        monthlyViewScope = 'carlos';
+        bootstrapApp();
+    `, context);
+    assert.equal(elements.get('tabMonthly').style.display, 'flex');
+    assert.equal(elements.get('monthlyReviewCount').textContent, '1');
+});
+
 test('Monthly view limits rows to the current three calendar months and selected scope', () => {
     const { context } = setup();
     vm.runInContext(`

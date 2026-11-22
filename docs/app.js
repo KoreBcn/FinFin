@@ -482,7 +482,7 @@ function bootstrapApp() {
     populateYearFilter();
     populateCategoryFilter();
     document.getElementById('emptyState').style.display      = 'none';
-    homeSubtab = 'dashboard';
+    homeSubtab = getMonthlyViewScopeRows().some(isMonthlyReviewRow) ? 'monthly' : 'dashboard';
     switchTab('home');
     document.getElementById('tabSwitcher').style.display     = 'flex';
     applyGlobalFilters();

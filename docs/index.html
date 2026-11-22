@@ -6,13 +6,13 @@
     <meta name="theme-color" content="#001b9b">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="Finances">
-    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="apple-mobile-web-app-title" content="MollerupFin">
+    <link rel="manifest" href="manifest.webmanifest?v=2">
     <link rel="icon" href="icons/home-finances-logo.svg" type="image/svg+xml">
     <link rel="alternate icon" href="icons/icon-192.png" type="image/png">
     <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-    <title>A &amp; C Finances</title>
-    <link rel="stylesheet" href="styles.css?v=66">
+    <title>MollerupFin</title>
+    <link rel="stylesheet" href="styles.css?v=70">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 </head>
@@ -20,8 +20,8 @@
 
 <section id="authGate" class="auth-gate">
     <form id="loginForm" class="auth-card">
-        <img class="logo-icon auth-logo" src="icons/home-finances-logo.svg" alt="A and C home finances">
-        <h1>A &amp; C Finances</h1>
+        <img class="logo-icon auth-logo" src="icons/home-finances-logo.svg" alt="MollerupFin">
+        <h1>MollerupFin</h1>
         <p>Sign in with your Supabase account to continue.</p>
         <label for="loginEmail">Email</label>
         <input id="loginEmail" type="email" autocomplete="username" required>
@@ -37,7 +37,7 @@
     <div class="header-content">
         <div class="logo">
             <img class="logo-icon" src="icons/home-finances-logo.svg" alt="" aria-hidden="true">
-            <h1>A &amp; C Finances</h1>
+            <h1>MollerupFin</h1>
         </div>
         <nav>
             <button class="mobile-menu-btn" id="tabMenuToggle" type="button"
@@ -55,12 +55,12 @@
             </div>
         </nav>
         <div class="account-controls">
+            <span id="signedInEmail" class="signed-in-email"></span>
             <button id="signOutButton" class="sign-out-btn" type="button" aria-label="Sign out" title="Sign out">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="M10 21 4 19V5l6-2v18ZM10 5h4M10 19h4M13 12h8m-3-3 3 3-3 3" />
+                    <path d="M10 17l5-5-5-5"/><path d="M15 12H3"/><path d="M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6"/>
                 </svg>
             </button>
-            <span id="signedInEmail" class="signed-in-email"></span>
         </div>
     </div>
 </header>
@@ -208,7 +208,7 @@
     <div id="tabHome" class="tab-panel" style="display:none">
         <div class="home-subtab-bar">
             <div class="investment-subtabs" role="tablist" aria-label="Home sections">
-                <button type="button" id="homeMonthlyTab" class="investment-subtab" role="tab" aria-selected="false" aria-controls="tabMonthly" onclick="switchHomeSubtab('monthly')">Monthly view</button>
+                <button type="button" id="homeMonthlyTab" class="investment-subtab" role="tab" aria-selected="false" aria-controls="tabMonthly" onclick="switchHomeSubtab('monthly')">Review</button>
                 <button type="button" id="homeDashboardTab" class="investment-subtab active" role="tab" aria-selected="true" aria-controls="tabDashboard" onclick="switchHomeSubtab('dashboard')">Dashboard</button>
                 <button type="button" id="homeHighlightsTab" class="investment-subtab" role="tab" aria-selected="false" aria-controls="tabHighlights" onclick="switchHomeSubtab('highlights')">Highlights</button>
                 <button type="button" id="homeTransactionsTab" class="investment-subtab" role="tab" aria-selected="false" aria-controls="tabTransactions" onclick="switchHomeSubtab('transactions')">Transactions</button>
@@ -239,7 +239,7 @@
                 <div class="monthly-view-actions">
                     <button class="btn-tx-add monthly-save-btn" id="monthlySaveButton" type="button"
                         onclick="saveDrawerChanges('monthly')" aria-label="Save changes" title="Save changes" disabled>💾</button>
-                    <div class="toggle-group" role="group" aria-label="Monthly view account scope">
+                    <div class="toggle-group" role="group" aria-label="Review account scope">
                         <button type="button" id="monthlyScopeAnna" class="toggle-btn active" aria-pressed="true"
                             onclick="setMonthlyScope('anna')">Anna</button>
                         <button type="button" id="monthlyScopeCarlos" class="toggle-btn" aria-pressed="false"
@@ -695,7 +695,7 @@
 <script src="investment-math.js?v=1"></script>
 <script src="investments.js?v=35"></script>
 <script src="house.js?v=17"></script>
-<script src="app.js?v=32"></script>
+<script src="app.js?v=33"></script>
     <script>
         if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
     </script>

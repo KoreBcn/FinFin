@@ -1,6 +1,6 @@
 {
-  "name": "A & C Finances",
-  "short_name": "Finances",
+  "name": "MollerupFin",
+  "short_name": "MollerupFin",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

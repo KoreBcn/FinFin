@@ -284,8 +284,10 @@ UID secret as needed.
 The Anna profile is enabled only when at least one of its non-base-URL
 credentials is present. If enabled, its app ID, certificate, and account UID
 secret are all required. Its transactions use the primary categorization rules,
-are assigned to account `anna`, and are flagged `⚠️ Review` when no rule
-matches.
+are assigned to account `anna`, and use category `👩 Anna` except for recognized
+income, which retains `💰 Income`. Unmatched transactions use subcategory
+`⚠️ Review`. This applies to newly imported transactions; previously imported
+transactions are not recategorized.
 
 Each workflow failure reports the profile and account index without exposing
 account UIDs or API response bodies. An `HTTP 404` on a transaction fetch

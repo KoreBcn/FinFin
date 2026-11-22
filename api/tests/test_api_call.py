@@ -89,9 +89,28 @@ class BankAccountConfigurationTests(unittest.TestCase):
 
         self.assertEqual(known[1]["Account"], "anna")
         self.assertEqual(known[1]["Type"], "👩 Anna")
+        self.assertEqual(known[1]["Expense"], "Food")
         self.assertEqual(unknown[1]["Account"], "anna")
         self.assertEqual(unknown[1]["Expense"], "⚠️ Review")
-        self.assertEqual(unknown[1]["Type"], "⚠️ Review")
+        self.assertEqual(unknown[1]["Type"], "👩 Anna")
+
+    def test_income_and_other_accounts_keep_their_existing_categories(self):
+        row = {
+            "booking_date": "2026-11-22",
+            "amount": "25.00",
+            "credit_debit_indicator": "CRDT",
+            "remittance_information": "transfer of salary",
+        }
+        _, income = categorize_raw_transaction(row, "anna")
+        self.assertEqual(income["Type"], "💰 Income")
+        self.assertEqual(income["Expense"], "Anna Salary")
+
+        row["remittance_information"] = "Unknown Merchant"
+        for account in ("carlos", "joint"):
+            with self.subTest(account=account):
+                _, unknown = categorize_raw_transaction(row, account)
+                self.assertEqual(unknown["Type"], "⚠️ Review")
+                self.assertEqual(unknown["Expense"], "⚠️ Review")
 
     def test_parses_valid_adhoc_start_date(self):
         parsed = parse_date_override("2026-05-22")
