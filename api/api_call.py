@@ -36,8 +36,8 @@ def categorize_transaction(debtor_name: str, creditor_name: str,
     """
     Returns (expense/sub-category, type/category, is_excluded) using the first
     matching rule from the category_rules table (ordered by position). A rule
-    only applies to transactions from its     from_account (or "all"); an empty
-        from_account never matches.
+    only applies to transactions from its from_account (or "all"); an empty
+    from_account never matches.
     """
     search_text = " ".join([
         str(debtor_name or ""),
@@ -131,11 +131,6 @@ def categorize_raw_transaction(row: dict, account_label: str, rules: list[dict])
         debtor_name, creditor_name, remittance_info, credit_debit, rules,
         account_label,
     )
-
-    if account_label == 'anna' and tx_type != '💰 Income':
-        tx_type = '👩 Anna'
-    elif account_label == 'carlos' and tx_type not in ('💰 Income', '⚠️ Review'):
-        tx_type = '👨 Carlos'
 
     if expense == 'Salary':
         if account_label == 'anna':

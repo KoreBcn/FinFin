@@ -74,7 +74,7 @@ class BankAccountConfigurationTests(unittest.TestCase):
             ):
                 load_import_profiles_from_environment()
 
-    def test_anna_profile_rows_are_categorized_for_anna_and_keep_review(self):
+    def test_anna_profile_rows_keep_rule_category_and_review(self):
         known = categorize_raw_transaction(
             {
                 "booking_date": "2026-11-22",
@@ -99,11 +99,25 @@ class BankAccountConfigurationTests(unittest.TestCase):
         )
 
         self.assertEqual(known[1]["Account"], "anna")
-        self.assertEqual(known[1]["Type"], "👩 Anna")
+        self.assertEqual(known[1]["Type"], "🛒 Groceries")
         self.assertEqual(known[1]["Expense"], "Food")
         self.assertEqual(unknown[1]["Account"], "anna")
         self.assertEqual(unknown[1]["Expense"], "⚠️ Review")
-        self.assertEqual(unknown[1]["Type"], "👩 Anna")
+        self.assertEqual(unknown[1]["Type"], "⚠️ Review")
+
+    def test_all_accounts_rule_keeps_its_category(self):
+        rule = {
+            "category": "🚗 Car",
+            "subcategory": "Parking",
+            "keywords": ["easypark"],
+            "from_account": "all",
+        }
+        row = {"creditor_name": "EasyPark", "credit_debit_indicator": "DBIT"}
+        for account in ("anna", "carlos", "joint"):
+            with self.subTest(account=account):
+                _, transaction = _categorize_raw_transaction(row, account, [rule])
+                self.assertEqual(transaction["Type"], "🚗 Car")
+                self.assertEqual(transaction["Expense"], "Parking")
 
     def test_income_and_other_accounts_keep_their_existing_categories(self):
         row = {
