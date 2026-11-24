@@ -892,7 +892,7 @@ test('switches views and searches and pages all transactions, including closed i
     const { context, elements, database } = setupPortfolio();
     database.items.push({ id: 'outside', ticker: 'OTHER', platform: 'Broker', name: 'Outside', type: 'Shares',
         is_closed: true, is_in_scope: true, current_value_dkk: null });
-    for (let i = 0; i < 12; i++) {
+    for (let i = 0; i < 14; i++) {
         database.transactions.push({ id: `other-${i}`, portfolio_item_id: 'outside', ticker: 'OTHER',
             name: 'Outside Company', transaction_date: `2026-01-${String(i + 1).padStart(2, '0')}`, action: 'Buy', quantity: '1', fees: '', total_cost: '-5' });
     }
@@ -902,18 +902,18 @@ test('switches views and searches and pages all transactions, including closed i
     assert.equal(elements.get('portfolioKpis').hidden, true);
     assert.equal(elements.get('portfolioTransactions').hidden, false);
     assert.equal(elements.get('investmentClosedToggle').hidden, true);
-    assert.equal(elements.get('portfolioTransactionBody').children.length, 10);
+    assert.equal(elements.get('portfolioTransactionBody').children.length, 12);
     assert.equal(elements.get('portfolioTransactionPage').textContent, 'Page 1 of 2');
     elements.get('portfolioTransactionNext').listeners.click();
     assert.equal(elements.get('portfolioTransactionBody').children.length, 3);
     elements.get('portfolioSearch').value = 'oth';
     elements.get('portfolioSearch').listeners.input();
     assert.equal(elements.get('portfolioTransactionPage').textContent, 'Page 1 of 2');
-    assert.match(elements.get('portfolioTransactionStatus').textContent, /12 transactions matching ticker or name/);
+    assert.match(elements.get('portfolioTransactionStatus').textContent, /14 transactions matching ticker or name/);
     elements.get('portfolioSearch').value = ' CoMPany ';
     elements.get('portfolioSearch').listeners.input();
-    assert.equal(elements.get('portfolioTransactionBody').children.length, 10);
-    assert.match(elements.get('portfolioTransactionStatus').textContent, /12 transactions matching ticker or name/);
+    assert.equal(elements.get('portfolioTransactionBody').children.length, 12);
+    assert.match(elements.get('portfolioTransactionStatus').textContent, /14 transactions matching ticker or name/);
     elements.get('portfolioSearch').value = 'no match';
     elements.get('portfolioSearch').listeners.input();
     assert.equal(elements.get('portfolioTransactionBody').children.length, 0);

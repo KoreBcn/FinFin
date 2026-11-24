@@ -3,12 +3,23 @@ import unittest
 from unittest.mock import patch
 
 from api.api_call import (
-    categorize_raw_transaction,
+    categorize_raw_transaction as _categorize_raw_transaction,
     format_account_fetch_failure,
     load_account_uids_from_environment,
     load_import_profiles_from_environment,
     parse_date_override,
 )
+
+TEST_RULES = [
+    {"category": "💰 Income", "subcategory": "Salary", "keywords": ["transfer of salary"], "from_account": "anna"},
+    {"category": "🛒 Groceries", "subcategory": "Food", "keywords": ["netto", "mad "], "from_account": "anna"},
+    {"category": "🏠 Home", "subcategory": "Internet", "keywords": ["ewii"], "is_excluded": True, "from_account": "joint"},
+    {"category": "🚗 Car", "subcategory": "Parking", "keywords": ["easypark"], "from_account": ""},
+]
+
+
+def categorize_raw_transaction(row, account_label):
+    return _categorize_raw_transaction(row, account_label, TEST_RULES)
 
 
 class BankAccountConfigurationTests(unittest.TestCase):
@@ -111,6 +122,36 @@ class BankAccountConfigurationTests(unittest.TestCase):
                 _, unknown = categorize_raw_transaction(row, account)
                 self.assertEqual(unknown["Type"], "⚠️ Review")
                 self.assertEqual(unknown["Expense"], "⚠️ Review")
+
+    def test_rule_with_is_excluded_marks_transaction_excluded(self):
+        row = {
+            "booking_date": "2026-11-22",
+            "amount": "25.00",
+            "credit_debit_indicator": "DBIT",
+            "creditor_name": "EWII",
+        }
+        _, excluded = categorize_raw_transaction(row, "joint")
+        _, included = categorize_raw_transaction(
+            {**row, "creditor_name": "Netto"}, "joint"
+        )
+
+        self.assertEqual(excluded["Excluded"], "true")
+        self.assertEqual(included["Excluded"], "false")
+
+    def test_rules_only_apply_to_their_from_account(self):
+        row = {
+            "booking_date": "2026-11-22",
+            "amount": "25.00",
+            "credit_debit_indicator": "DBIT",
+            "creditor_name": "EWII",
+        }
+        _, other_account = categorize_raw_transaction(row, "carlos")
+        _, empty_account_rule = categorize_raw_transaction(
+            {**row, "creditor_name": "EasyPark"}, "joint"
+        )
+
+        self.assertEqual(other_account["Expense"], "⚠️ Review")
+        self.assertEqual(empty_account_rule["Expense"], "⚠️ Review")
 
     def test_parses_valid_adhoc_start_date(self):
         parsed = parse_date_override("2026-05-22")

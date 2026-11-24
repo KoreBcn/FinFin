@@ -22,7 +22,7 @@ let portfolioTransactionsVisible = false;
 let portfolioTransactionPage = 1;
 let portfolioTransactionSaving = false;
 let portfolioTransactionEditing = null;
-const portfolioTransactionPageSize = 10;
+const portfolioTransactionPageSize = 12;
 const investmentSortKeys = ['name', 'type', 'qty', 'price', 'value', 'portfolio', 'today', 'pnl', 'return'];
 const portfolioTransactionFields = {
     portfolio_item_id: 'portfolioTransactionItem', transaction_date: 'portfolioTransactionDate',

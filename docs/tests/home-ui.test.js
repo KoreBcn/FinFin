@@ -91,19 +91,17 @@ test('opens Monthly view when the selected account has a visible pending review'
     assert.equal(elements.get('tabDashboard').style.display, 'flex');
 });
 
-test('opens Dashboard when reviews are outside the selected account or visible months, or excluded', () => {
+test('opens Dashboard when reviews are outside the selected account or current year, or excluded', () => {
     const { context, elements } = setup();
     vm.runInContext(`
         populateYearFilter = () => {};
         populateCategoryFilter = () => {};
         applyGlobalFilters = () => {};
         const now = new Date();
-        const oldMonth = new Date(now.getFullYear(), now.getMonth() - 3, 1);
-        const futureMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
         rawData = [
             { Year: now.getFullYear(), Month: now.getMonth() + 1, Account: 'carlos', Expense: 'Review' },
-            { Year: oldMonth.getFullYear(), Month: oldMonth.getMonth() + 1, Account: 'anna', Expense: 'Review' },
-            { Year: futureMonth.getFullYear(), Month: futureMonth.getMonth() + 1, Account: 'anna', Expense: 'Review' },
+            { Year: now.getFullYear() - 1, Month: now.getMonth() + 1, Account: 'anna', Expense: 'Review' },
+            { Year: now.getFullYear() + 1, Month: now.getMonth() + 1, Account: 'anna', Expense: 'Review' },
             { Year: now.getFullYear(), Month: now.getMonth() + 1, Account: 'anna', Type: 'Review', excluded: true }
         ];
         bootstrapApp();
@@ -119,14 +117,14 @@ test('opens Dashboard when reviews are outside the selected account or visible m
     assert.equal(elements.get('monthlyReviewCount').textContent, '1');
 });
 
-test('Monthly view limits rows to the current three calendar months and selected scope', () => {
+test('Monthly view limits rows to the current calendar year and selected scope', () => {
     const { context } = setup();
     vm.runInContext(`
         rawData = [
             {Year: 2026, Month: 11, Account: 'anna'},
             {Year: 2026, Month: 10, Account: 'anna'},
-            {Year: 2026, Month: 9, Account: 'anna'},
-            {Year: 2026, Month: 8, Account: 'anna'},
+            {Year: 2026, Month: 1, Account: 'anna'},
+            {Year: 2025, Month: 12, Account: 'anna'},
             {Year: 2026, Month: 12, Account: 'anna'},
             {Year: 2026, Month: 11, Account: 'joint'},
             {Year: 2026, Month: 11, Account: 'carlos'}
@@ -139,7 +137,7 @@ test('Monthly view limits rows to the current three calendar months and selected
             'getMonthlyViewScopeRows(new Date(2026, 10, 22)).length',
             context
         ),
-        3
+        4
     );
     vm.runInContext("monthlyViewScope = 'carlos'", context);
     assert.equal(

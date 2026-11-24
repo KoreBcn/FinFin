@@ -1,4 +1,4 @@
-const CACHE = 'finances-shell-v3';
+﻿const CACHE = 'finances-shell-v8';
 const SHELL = ['./', 'index.html', 'styles.css', 'app.js', 'house.js', 'investments.js',
     'investment-math.js', 'date-utils.js', 'supabase-config.js', 'manifest.webmanifest',
     'icons/home-finances-logo.svg'];

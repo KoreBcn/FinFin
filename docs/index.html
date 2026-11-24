@@ -145,6 +145,25 @@
     </div>
 </div>
 
+<!-- Category Rules Help Modal -->
+<div class="modal-overlay" id="rulesHelpModal" onclick="if (event.target === this) closeRulesHelp()">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="rulesHelpTitle">
+        <div class="modal-header">
+            <h2 id="rulesHelpTitle">ℹ️ How category rules work</h2>
+            <button type="button" class="modal-close" onclick="closeRulesHelp()" aria-label="Close help">✕</button>
+        </div>
+        <ul class="rules-help-list">
+            <li>Each row is a rule. When bank transactions are imported, the rules are checked from top to bottom and the <strong>first match wins</strong>.</li>
+            <li><strong>Key words</strong> are separated with <code>|</code>. A rule matches if any key word appears (case-insensitive) in the debtor, creditor or description. Spaces count, so <code>el </code> differs from <code>el</code>.</li>
+            <li><strong>From account</strong> limits the rule to one account (joint, anna, carlos). <em>all</em> applies it to every account. A rule with no account never matches.</li>
+            <li><strong>Analytics</strong>: when Off, matching transactions are excluded from analytics.</li>
+            <li><strong>Actions</strong>: 💾 saves the row, 📋 duplicates it just below, 🗑 deletes it. Edits are only stored after pressing 💾.</li>
+            <li>The <strong>+</strong> button adds a new rule at the top. Rules apply to future imports; existing transactions are not changed.</li>
+            <li>Transactions that match no rule are marked ⚠️ Review.</li>
+        </ul>
+    </div>
+</div>
+
 <!-- Highlights Quick Facts Modal -->
 <div class="modal-overlay" id="highlightsQuickFactsModal" onclick="handleHighlightsQuickFactsModalClick(event)">
     <div class="modal modal-wide hl-facts-modal" role="dialog" aria-modal="true" aria-labelledby="highlightsQuickFactsTitle">
@@ -212,6 +231,7 @@
                 <button type="button" id="homeDashboardTab" class="investment-subtab active" role="tab" aria-selected="true" aria-controls="tabDashboard" onclick="switchHomeSubtab('dashboard')">Dashboard</button>
                 <button type="button" id="homeHighlightsTab" class="investment-subtab" role="tab" aria-selected="false" aria-controls="tabHighlights" onclick="switchHomeSubtab('highlights')">Highlights</button>
                 <button type="button" id="homeTransactionsTab" class="investment-subtab" role="tab" aria-selected="false" aria-controls="tabTransactions" onclick="switchHomeSubtab('transactions')">Transactions</button>
+                <button type="button" id="homeCategoriesTab" class="investment-subtab" role="tab" aria-selected="false" aria-controls="tabCategories" onclick="switchHomeSubtab('categories')">Categories</button>
             </div>
             <span id="transactionInsertDate" class="transaction-insert-date" role="status" aria-live="polite">Last updated: &mdash;</span>
         </div>
@@ -423,6 +443,36 @@
             </table>
         </div>
         <div id="txPagination" class="tx-pagination"></div>
+    </div>
+    <!-- ═══════════════════════════════════════════
+         CATEGORIES TAB
+    ════════════════════════════════════════════ -->
+    <div id="tabCategories" class="tab-panel" role="tabpanel" aria-labelledby="homeCategoriesTab" style="display:none">
+        <div class="tx-toolbar">
+            <input type="text" id="ruleSearch" class="tx-search-input"
+                placeholder="🔍 Search category, sub-category, keywords..."
+                oninput="rulePage = 1; renderCategoriesTab()">
+            <button type="button" class="transaction-add-btn rules-info-btn" onclick="openRulesHelp()"
+                title="How rules work" aria-label="How rules work">ℹ</button>
+            <button type="button" class="transaction-add-btn" onclick="addCategoryRule()"
+                title="Add rule" aria-label="Add rule">+</button>
+        </div>
+        <div class="tx-table-wrap">
+            <table class="tx-table">
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>Sub-category</th>
+                        <th title="Separate keywords with | (spaces are part of a keyword). Rules are applied top to bottom; the first match wins.">Key words</th>
+                        <th title="Account the rule applies to (joint, anna or carlos). Rules with an empty account never match.">From account</th>
+                        <th title="Rules marked Off import matching transactions as excluded from analytics">Analytics</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="ruleTableBody"></tbody>
+            </table>
+        </div>
+        <div id="rulePagination" class="tx-pagination"></div>
     </div>
     <!-- ═══════════════════════════════════════════
          HIGHLIGHTS TAB

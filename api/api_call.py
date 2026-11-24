@@ -28,269 +28,42 @@ DEFAULT_EB_BASE_URL = "https://api.enablebanking.com"
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# === CATEGORY RULES ===
-# Format: (keywords, sub_category/Expense, category/Type)
-# Ordered most-specific first; first match wins.
-CATEGORY_RULES = [
-
-    # ── Income ──────────────────────────────────────────────────────────────
-    # Salary — only match the exact payroll description
-    (["transfer of salary"],
-     "Salary", "💰 Income"),
-
-    # Child benefit
-    (["børne", "ungeydelse", "børne- og ungeydelse", "family allowance"],
-     "Børne og Unge Ydelse", "💰 Income"),
-
-    # Tax return
-    (["overskydende skat", "skat return", "skattestyrelsen refus",
-      "tax return", "restskat"],
-     "Skat Return", "💰 Income"),
-
-    # ── Home ────────────────────────────────────────────────────────────────
-    # Mortgage
-    (["boliglån", "boliglaan", "realkredit", "mortgage", "banklån",
-      "banklaen", "lån betaling", "monthly payment",
-      "4698831987", "4698831995"],
-     "Mortgage", "🏠 Home"),
-
-    # Rent
-    (["husleje", "leje", "fremlejer", "rent", "mollerupvej"],
-     "Rent", "🏠 Home"),
-
-    # Electricity
-    (["andel energi", "energi", "el ", "electricity", "dong", "ørsted",
-      "radius", "nrgi","Evdk ApS"],
-     "Electricity", "🏠 Home"),
-
-    # Hot Water / Gas
-    (["fjernvarme", "varme", "gas", "lpg", "gasservice", "elvvs"],
-     "Hot Water / Gas", "🏠 Home"),
-
-    # House insurance
-    (["husforsikring", "house insurance", "bygningsforsikring",
-      "tryg", "gf-forsikring", "alm. brand", "codan", "topdanmark"],
-     "House Insurance", "🏠 Home"),
-
-    # Content insurance (indbo)
-    (["indboforsikring", "indbo", "content insurance"],
-     "Content Insurance", "🏠 Home"),
-
-    # Cleaning
-    (["happyhelper", "cleaning", "rengøring", "rengoring",
-      "vaskeri", "vasketøj", "jannatul"],
-     "Cleaning", "🏠 Home"),
-
-    # Maintenance / repairs
-    (["silvan", "bauhaus", "jem og fix", "xl-byg", "hornbach",
-      "maintenance", "repair", "vedligehold", "tømrer", "maler",
-      "electrician", "plumber", "vvs", "skousen", "texas as",
-      "nordic lights", "sp nordic","jem & fix", "silvan", "bauhaus", "HARALD NYBORG", "RØVERKØB A/S"],
-     "Maintenance", "🏠 Home"),
-
-    # Furniture & Misc home
-    (["ikea", "jysk", "ilva", "bolia", "living", "furniture",
-      "indretning", "coolrunner"],
-     "Furniture & Misc", "🏠 Home"),
-
-    # Water
-    (["vand ", "vand,", "water", "hofor"],
-     "Water", "🏠 Home"),
-
-    #Internet
-    (["EWII"],
-    "Internet", "🏠 Home"),
-
-    # ── Groceries ───────────────────────────────────────────────────────────
-    (["netto", "lidl", "aldi", "fakta", "bilka", "føtex", "fotex", "f@tex",
-      "superbrugsen", "meny", "rema 1000", "rema1000", "rema,", "irma", "coop",
-      "salling", "kvickly", "mad ", "grocery", "groceries",
-      "min køb", "dagli", "supermarket", "lagkagehuset", "bageri",
-      "carlsro", "spar r"],
-     "Food", "🛒 Groceries"),
-
-    # ── Traveling ───────────────────────────────────────────────────────────
-    # Flights
-    (["norwegian", "sas ", "ryanair", "easyjet", "lufthansa", "klm",
-      "british airways", "airbaltic", "wizz", "flight", "fly ticket",
-      "lufthavn", "airport", "barcelona tickets"],
-     "Flight Tickets", "✈️ Traveling"),
-
-    # Accommodation
-    (["hotel", "airbnb", "booking.com", "hostel", "overnatning"],
-     "Accommodation", "✈️ Traveling"),
-
-    # Travel transport
-    (["rejsekort", "dsb", "flixbus", "intercity", "tog ", "bane",
-      "apcoa", "brobizz"],
-     "Transport", "✈️ Traveling"),
-
-    # Bars & Restaurants (travel context caught later by generic rule)
-
-    # ── Kids ────────────────────────────────────────────────────────────────
-    # Kindergarten / daycare
-    (["kindergarten", "daginstitution", "vuggestue", "børnehave",
-      "sfo", "fritidsordning", "dagpleje", "institution",
-      "rødovre kommune"],
-     "Kindergarden", "👶 Kids"),
-
-    # Kids clothes / gear
-    (["flea kids", "babysam", "kids", "børnetøj", "babyudstyr",
-      "vertbaudet", "name it", "lego"],
-     "Clothes", "👶 Kids"),
-
-    # Kids activities
-    (["dinos", "legoland", "tivoli", "zoo ", "museum", "place2book",
-      "børneaktivitet", "svømning", "fodbold", "aktivitet"],
-     "Activities", "👶 Kids"),
-
-    # ── Car ─────────────────────────────────────────────────────────────────
-    # Gasoline
-    (["shell", "circle k", "q8", "ok benzin", "benzin", "fuel",
-      "esso", "st1"],
-     "Gasoline", "🚗 Car"),
-    # Leasing
-    (["Volkswagen Semler Finans"],
-     "Leasing", "🚗 Car"),
-    
-    
-    # Car insurance
-    (["bilforsikring", "car insurance", "motoransvar", "kaskoforsikring"],
-     "Insurance", "🚗 Car"),
-
-    # Car service / repairs
-    (["autohjælp", "bilreparation", "bilservice", "mekanikerservice",
-      "autoværksted", "dæk", "dækkiosk", "pirelli", "michelin",
-      "thansen", "car service", "dah.dk", "dansk autohjælp"],
-     "Car Service", "🚗 Car"),
-
-    # Motor / road tax
-    (["skattestyrelsen motor", "ejerafgift", "motorregister",
-      "road tax", "køretøjsafgift"],
-     "Ejer afgifter", "🚗 Car"),
-
-    # ── Anna personal ────────────────────────────────────────────────────────
-    (["a-kasse anna", "aka anna", "foa", "hk"],
-     "Akasse", "👩 Anna"),
-
-    (["tandlæge anna", "dentist anna"],
-     "Dentist", "👩 Anna"),
-
-    (["psykolog anna", "psychologist anna", "terapi anna"],
-     "Psychologist", "👩 Anna"),
-
-    (["optik anna", "briller anna", "kontaktlinser anna",
-      "glasses anna", "synsoptik"],
-     "Glasses & Contacts", "👩 Anna"),
-
-    # ── Carlos personal ──────────────────────────────────────────────────────
-    (["a-kasse carlos", "aka carlos"],
-     "Akasse", "👨 Carlos"),
-
-    (["tandlæge carlos", "dentist carlos"],
-     "Dentist", "👨 Carlos"),
-
-    (["psykolog carlos", "psychologist carlos", "terapi carlos"],
-     "Psychologist", "👨 Carlos"),
-
-    (["musikforeningen", "musik forening", "music forening",
-      "vesterbro musik"],
-     "Music Forening", "👨 Carlos"),
-
-    # ── Health ───────────────────────────────────────────────────────────────
-    # Danmark / sygeforsikring
-    (["sygeforsikring", "danmark forsikring", "sundhedsforsikring",
-      "health insurance"],
-     "Danmark Forsikring", "💊 Health"),
-
-    # Pharmacy
-    (["apotek", "pharmacy", "medicin"],
-     "Pharmacy", "💊 Health"),
-
-    # Dentist (generic — not caught by personal rules above)
-    (["tandlæge", "dentist", "orthodontist"],
-     "Dentist", "💊 Health"),
-
-    # Massage / physio / psychologist (generic)
-    (["massage", "fysioterapi", "kiropraktor", "psykolog",
-      "psychologist", "terapi"],
-     "Massages", "💊 Health"),
-
-    # Doctor / hospital
-    (["læge", "hospital", "klinik", "sundhed"],
-     "Pharmacy", "💊 Health"),
-
-    # ── Entertainment ────────────────────────────────────────────────────────
-    # Subscriptions (streaming, apps)
-    (["netflix", "spotify", "hbo", "viaplay", "disney+", "disney plus", "disney +", "youtube",
-      "apple.com/bill", "subscription", "abonnement"],
-     "Subscriptions", "🎉 Entertainment"),
-
-    # Activities / events (generic)
-    (["biograf", "nordisk film", "concert", "festival", "teater",
-      "event", "aktivitet", "aben ", "kulturhus"],
-     "Activities", "🎉 Entertainment"),
-
-    # Bars & restaurants (generic — covers travel & entertainment)
-    (["restaurant", "cafe", "bastard", "saigon", "wolt", "just eat",
-      "takeaway", "pizza", "burger", "sushi", "mcdonalds", "starbucks",
-      "food and co", "kartal", "pho ", "lagkage", "brunch",
-      "bar ", "kro ", "brasserie", "bistro", "armandos"],
-     "Bars & Restaurants", "🎉 Entertainment"),
-
-    # ── Shopping ─────────────────────────────────────────────────────────────
-    # Clothes (generic)
-    (["zara", "h&m", "hm dk", "mango", "zalando", "vero moda",
-      "only ", "jack & jones", "selected", "cos ", "arket",
-      "weekday", "monki", "pyjamas"],
-     "Clothes", "🛍️ Shopping"),
-
-    # Gear / electronics
-    (["elgiganten", "power dk", "apple store", "computersalg",
-      "gear", "gadget", "elektronik"],
-     "Gear", "🛍️ Shopping"),
-
-    # General shopping (catch-all stores)
-    (["normal ", "tiger ", "søstrene grene", "flying tiger",
-      "sport ", "intersport", "stadium", "decathlon"],
-     "Misc", "🛍️ Shopping"),
-
-    # ── Presents ─────────────────────────────────────────────────────────────
-    (["present", "gave", "gift", "blomster", "flower"],
-     "Presents", "🎁 Presents"),
-
-    # ── Shared personal items (phone / bike / rejsekort) ────────────────────
-    (["telefon", "phone", "tdc", "telenor", "3 mobil", "yousee",
-      "onphone", "callme"],
-     "Phone", "👩 Anna"),      # Will also catch Carlos — re-classify in app if needed
-
-    (["rejsekort", "metro", "bus ", "movia", "transport",
-      "mobilepay rejsekort"],
-     "Rejsekort", "👩 Anna"),  # Generic travel card — re-classify as needed
-
-    (["cykel", "bike", "fri bikeshop", "bikeshop", "cykelsmed"],
-     "Bike repair", "👩 Anna"),
-]
-
-
 def categorize_transaction(debtor_name: str, creditor_name: str,
                             remittance_info: str,
-                            credit_debit: str) -> tuple[str, str]:
+                            credit_debit: str,
+                            rules: list[dict],
+                            account_label: str) -> tuple[str, str, bool]:
     """
-    Returns (expense/sub-category, type/category)
+    Returns (expense/sub-category, type/category, is_excluded) using the first
+    matching rule from the category_rules table (ordered by position). A rule
+    only applies to transactions from its     from_account (or "all"); an empty
+        from_account never matches.
     """
     search_text = " ".join([
         str(debtor_name or ""),
         str(creditor_name or ""),
         str(remittance_info or ""),
     ]).lower()
+    account = str(account_label or "").strip().lower()
 
-    for keywords, expense, tx_type in CATEGORY_RULES:
-        if any(keyword.lower() in search_text for keyword in keywords):
-            return expense, tx_type
+    for rule in rules:
+        rule_account = str(rule.get("from_account") or "").strip().lower()
+        if not rule_account or not account:
+            continue
+        if rule_account != "all" and rule_account != account:
+            continue
+        if any(
+            keyword and keyword.lower() in search_text
+            for keyword in rule.get("keywords") or []
+        ):
+            return (
+                rule["subcategory"],
+                rule["category"],
+                bool(rule.get("is_excluded")),
+            )
 
     # Default if no keyword matched — flag for manual review
-    return "⚠️ Review", "⚠️ Review"
+    return "⚠️ Review", "⚠️ Review", False
 
 
 def format_amount(amount: float, credit_debit: str) -> str:
@@ -335,7 +108,7 @@ def clean_description(remittance_info: str, debtor_name: str,
     return "Unknown"
 
 
-def categorize_raw_transaction(row: dict, account_label: str):
+def categorize_raw_transaction(row: dict, account_label: str, rules: list[dict]):
     debtor_name = row.get('debtor_name', '')
     creditor_name = row.get('creditor_name', '')
     remittance_info = row.get('remittance_information', '')
@@ -354,8 +127,9 @@ def categorize_raw_transaction(row: dict, account_label: str):
         month = ''
         year = ''
 
-    expense, tx_type = categorize_transaction(
-        debtor_name, creditor_name, remittance_info, credit_debit
+    expense, tx_type, is_excluded = categorize_transaction(
+        debtor_name, creditor_name, remittance_info, credit_debit, rules,
+        account_label,
     )
 
     if account_label == 'anna' and tx_type != '💰 Income':
@@ -382,7 +156,7 @@ def categorize_raw_transaction(row: dict, account_label: str):
                             remittance_info, debtor_name, creditor_name
                         ),
         'Account':      account_label,
-        'Excluded':     'false',
+        'Excluded':     'true' if is_excluded else 'false',
     }
 
 
@@ -520,6 +294,7 @@ def fetch_all_transactions(profile_name: str | None = None, fetch_from_override=
     try:
         importer = SupabaseImportClient()
         initial_start_date, last_successful_date = importer.get_import_state()
+        category_rules = importer.get_category_rules()
     except SupabaseImportError as error:
         logger.error("Supabase import configuration failed: %s", error)
         raise
@@ -633,7 +408,7 @@ def fetch_all_transactions(profile_name: str | None = None, fetch_from_override=
                     }
 
                     parsed_date, categorized_row = categorize_raw_transaction(
-                        raw_row, account_label
+                        raw_row, account_label, category_rules
                     )
                     if parsed_date is None:
                         raise ValueError(

@@ -1,7 +1,7 @@
 'use strict';
 
 const HOUSE_DEFAULT_VALUE = 6100000;
-const HOUSE_ROWS_PER_PAGE = 10;
+const HOUSE_ROWS_PER_PAGE = 12;
 
 const HouseMath = (() => {
     function matchingRows(rows, concept, matches) {

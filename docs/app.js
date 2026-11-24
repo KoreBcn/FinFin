@@ -40,7 +40,6 @@ let drawerFiltered = [];
 let drawerPage     = 1;
 let drawerDirtyRows = new Set();
 let drawerSaving    = false;
-const DRAWER_PER   = 15;
 let drawerSort     = { key: 'Date', dir: 'asc' };
 let monthlyViewData = [];
 let monthlyViewFiltered = [];
@@ -52,8 +51,7 @@ let monthlyViewScope = 'anna';
 let monthlyViewReviewOnly = false;
 let txSort         = { key: 'DateSortKey', dir: 'desc' };
 let txPage         = 1;
-const TX_PER_PAGE  = 50;
-const transactionPageSizes = {};
+const ROWS_PER_PAGE = 12;   // shared by every paginated table
 
 let activeTab = 'dashboard';
 let homeSubtab = 'dashboard';
@@ -143,7 +141,7 @@ function switchTab(tab) {
 function switchHomeSubtab(tab) {
     homeSubtab = tab;
     activeTab = tab;
-    for (const [name, suffix] of [['monthly', 'Monthly'], ['dashboard', 'Dashboard'], ['highlights', 'Highlights'], ['transactions', 'Transactions']]) {
+    for (const [name, suffix] of [['monthly', 'Monthly'], ['dashboard', 'Dashboard'], ['highlights', 'Highlights'], ['transactions', 'Transactions'], ['categories', 'Categories']]) {
         const selected = name === tab;
         const button = document.getElementById(`home${suffix}Tab`);
         button.classList.toggle('active', selected);
@@ -153,6 +151,7 @@ function switchHomeSubtab(tab) {
     if (tab === 'monthly') renderMonthlyView();
     if (tab === 'transactions') renderTransactionsTab();
     if (tab === 'highlights') renderHighlightsTab();
+    if (tab === 'categories') loadCategoryRules();
 }
 
 function toggleTabMenu() {
@@ -1317,38 +1316,8 @@ function getTransactionEditorState(view) {
     };
 }
 
-function transactionRowsPerPage(view) {
-    if (typeof window === 'undefined'
-        || window.matchMedia?.('(max-width: 768px)').matches) {
-        return view === 'transactions' ? TX_PER_PAGE : DRAWER_PER;
-    }
-
-    if (transactionPageSizes[view]) return transactionPageSizes[view];
-
-    const state = getTransactionEditorState(view === 'transactions' ? 'drawer' : view);
-    const tableBody = document.getElementById(
-        view === 'transactions' ? 'txTableBody' : state.bodyId
-    );
-    const tableWrap = tableBody?.closest(
-        view === 'transactions' ? '.tx-table-wrap' : '.drawer-table-wrapper'
-    );
-    if (!tableWrap) return view === 'transactions' ? TX_PER_PAGE : DRAWER_PER;
-
-    const rowHeight = 50;
-    const headerHeight = 40;
-    const paginationHeight = 64;
-    const availableHeight = Math.max(
-        0,
-        window.innerHeight
-            - tableWrap.getBoundingClientRect().top
-            - paginationHeight
-            - 16
-    );
-    transactionPageSizes[view] = Math.max(
-        4,
-        Math.min(DRAWER_PER, Math.floor((availableHeight - headerHeight) / rowHeight))
-    );
-    return transactionPageSizes[view];
+function transactionRowsPerPage() {
+    return ROWS_PER_PAGE;
 }
 
 function setTransactionEditorFiltered(view, rows) {
@@ -1674,17 +1643,11 @@ function getMonthIndex(year, month) {
 }
 
 function getMonthlyViewScopeRows(referenceDate = new Date()) {
-    const currentMonthIndex = referenceDate.getFullYear() * 12
-        + referenceDate.getMonth();
-    const earliestMonthIndex = currentMonthIndex - 2;
+    const currentYear = referenceDate.getFullYear();
 
-    return rawData.filter(row => {
-        if (!monthlyViewScopeMatches(row)) return false;
-        const monthIndex = getMonthIndex(row.Year, row.Month);
-        return Number.isInteger(monthIndex)
-            && monthIndex >= earliestMonthIndex
-            && monthIndex <= currentMonthIndex;
-    });
+    return rawData.filter(row =>
+        monthlyViewScopeMatches(row) && Number(row.Year) === currentYear
+    );
 }
 
 function isMonthlyReviewRow(row) {
@@ -2065,6 +2028,219 @@ function renderTransactionsTab() {
     });
 }
 
+// =====================================================
+//  CATEGORY RULES
+// =====================================================
+let categoryRules = [];   // ordered by position; unsaved drafts have id ''
+let rulePage = 1;
+
+function parseRuleKeywords(text) {
+    return text.split('|').filter(keyword => keyword.trim() !== '');
+}
+
+async function loadCategoryRules() {
+    try {
+        const { data, error } = await supabaseClient
+            .from('category_rules')
+            .select('id, position, category, subcategory, keywords, is_excluded, from_account')
+            .order('position', { ascending: true });
+        if (error) throw new Error(error.message);
+        categoryRules = data || [];
+        renderCategoriesTab();
+    } catch (err) {
+        showToast('❌ Failed to load category rules: ' + err.message, 'error');
+    }
+}
+
+function openRulesHelp() {
+    document.getElementById('rulesHelpModal').classList.add('open');
+}
+function closeRulesHelp() {
+    document.getElementById('rulesHelpModal').classList.remove('open');
+}
+
+function addCategoryRule() {
+    if (categoryRules.some(rule => !rule.id)) return;
+    categoryRules.unshift({ id: '', position: null, category: '', subcategory: '', keywords: [], is_excluded: false, from_account: '' });
+    const search = document.getElementById('ruleSearch');
+    if (search) search.value = '';
+    rulePage = 1;
+    renderCategoriesTab();
+}
+
+function renderCategoriesTab() {
+    const tbody = document.getElementById('ruleTableBody');
+    if (!tbody) return;
+    const search = (document.getElementById('ruleSearch')?.value || '').toLowerCase();
+
+    const shown = categoryRules
+        .map((rule, i) => ({ rule, i }))
+        .filter(({ rule }) => !rule.id || !search
+            || [rule.category, rule.subcategory, (rule.keywords || []).join('|')]
+                .join(' ').toLowerCase().includes(search));
+    const totalPages = Math.max(Math.ceil(shown.length / ROWS_PER_PAGE), 1);
+    rulePage = Math.min(Math.max(rulePage, 1), totalPages);
+
+    tbody.innerHTML = '';
+    shown.slice((rulePage - 1) * ROWS_PER_PAGE, rulePage * ROWS_PER_PAGE).forEach(({ rule, i }) => {
+        const keywords = (rule.keywords || []).join('|');
+        const tr = document.createElement('tr');
+        tr.dataset.idx = i;
+        tr.innerHTML = `
+            <td data-label="Category"><input class="tx-cat-input" data-field="category" value="${escHtml(rule.category)}" placeholder="Category…" aria-label="Category"></td>
+            <td data-label="Sub-category"><input class="tx-cat-input" data-field="subcategory" value="${escHtml(rule.subcategory)}" placeholder="Sub-category…" aria-label="Sub-category"></td>
+            <td data-label="Key words"><input class="tx-comment-input" data-field="keywords" value="${escHtml(keywords)}" placeholder="word|another word" title="${escHtml(keywords)}" aria-label="Key words"></td>
+            <td data-label="From account"><select class="tx-acct-select" data-field="from_account" aria-label="From account">
+                ${['', 'all', 'joint', 'anna', 'carlos'].map(a => `<option value="${a}" ${a === (rule.from_account || '') ? 'selected' : ''}>${a || '—'}</option>`).join('')}
+            </select></td>
+            <td data-label="Analytics"><button class="${rule.is_excluded ? 'tx-excl-btn tx-excluded' : 'tx-excl-btn tx-included'}" title="Off = matching transactions are excluded from analytics">${rule.is_excluded ? '🚫 Off' : '✅ On'}</button></td>
+            <td data-label="Actions" class="tx-actions-cell">
+                <button class="tx-action-btn tx-save-btn rule-save-btn" title="Save rule" aria-label="Save rule">\ud83d\udcbe</button>
+                <button class="tx-action-btn tx-duplicate-btn rule-duplicate-btn" title="Duplicate rule below" aria-label="Duplicate rule">\ud83d\udccb</button>
+                <button class="btn-tx-delete tx-action-btn tx-delete-btn rule-delete-btn" title="Delete rule" aria-label="Delete rule">\ud83d\uddd1</button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+    const pagination = document.getElementById('rulePagination');
+    if (pagination) pagination.innerHTML = paginationHtml(rulePage, shown.length, ROWS_PER_PAGE, 'changeRulesPage');
+
+    const ruleFromRow = tr => {
+        const value = field => tr.querySelector(`[data-field="${field}"]`).value;
+        return {
+            category: value('category').trim(),
+            subcategory: value('subcategory').trim(),
+            keywords: parseRuleKeywords(value('keywords')),
+            from_account: value('from_account'),
+        };
+    };
+    const rowIndex = el => parseInt(el.closest('tr').dataset.idx, 10);
+
+    // Keep unsaved edits in the model so re-rendering after a save doesn't discard them.
+    const syncEdit = e => {
+        const input = e.target.closest('[data-field]');
+        if (!input) return;
+        const rule = categoryRules[rowIndex(input)];
+        if (!rule) return;
+        const field = input.dataset.field;
+        if (field === 'keywords') rule.keywords = parseRuleKeywords(input.value);
+        else if (field === 'from_account') rule.from_account = input.value;
+        else rule[field] = input.value;
+    };
+    tbody.oninput = syncEdit;
+    tbody.onchange = syncEdit;
+
+    tbody.querySelectorAll('.tx-excl-btn').forEach(btn => {
+        btn.addEventListener('click', e => {
+            const rule = categoryRules[rowIndex(e.currentTarget)];
+            rule.is_excluded = !rule.is_excluded;
+            e.currentTarget.className = rule.is_excluded ? 'tx-excl-btn tx-excluded' : 'tx-excl-btn tx-included';
+            e.currentTarget.textContent = rule.is_excluded ? '🚫 Off' : '✅ On';
+            showToast('Press 💾 to save this change', 'info');
+        });
+    });
+
+    tbody.querySelectorAll('.rule-save-btn').forEach(btn => {
+        btn.addEventListener('click', async e => {
+            const tr = e.currentTarget.closest('tr');
+            const idx = rowIndex(e.currentTarget);
+            const rule = categoryRules[idx];
+            const fields = ruleFromRow(tr);
+            if (!fields.category || !fields.subcategory || !fields.keywords.length) {
+                showToast('❌ Category, sub-category and at least one key word are required', 'error');
+                return;
+            }
+            try {
+                const position = rule.id
+                    ? rule.position
+                    : (categoryRules.find(r => r.id)?.position ?? 1) - 1;
+                const row = { ...fields, is_excluded: Boolean(rule.is_excluded), position };
+                if (rule.id) row.id = rule.id;
+                const { data, error } = await supabaseClient
+                    .from('category_rules').upsert(row).select().single();
+                if (error) throw new Error(error.message);
+                categoryRules[idx] = data;
+                renderCategoriesTab();
+                showToast('✅ Rule saved', 'success');
+            } catch (err) {
+                showToast('❌ Save failed: ' + err.message, 'error');
+            }
+        });
+    });
+
+    tbody.querySelectorAll('.rule-duplicate-btn').forEach(btn => {
+        btn.addEventListener('click', async e => {
+            const idx = rowIndex(e.currentTarget);
+            const source = categoryRules[idx];
+            if (!source.id) return;
+            const next = categoryRules.slice(idx + 1).find(r => r.id);
+            const position = next ? (source.position + next.position) / 2 : source.position + 1;
+            try {
+                const { data, error } = await supabaseClient
+                    .from('category_rules')
+                    .insert({ category: source.category, subcategory: source.subcategory, keywords: source.keywords, is_excluded: source.is_excluded, from_account: source.from_account, position })
+                    .select().single();
+                if (error) throw new Error(error.message);
+                categoryRules.splice(idx + 1, 0, data);
+                renderCategoriesTab();
+                showToast('✅ Rule duplicated', 'success');
+            } catch (err) {
+                showToast('❌ Duplicate failed: ' + err.message, 'error');
+            }
+        });
+    });
+
+    tbody.querySelectorAll('.rule-delete-btn').forEach(btn => {
+        btn.addEventListener('click', async e => {
+            const idx = rowIndex(e.currentTarget);
+            const rule = categoryRules[idx];
+            if (rule.id) {
+                if (!confirm('Delete this rule?')) return;
+                try {
+                    const { error } = await supabaseClient.from('category_rules').delete().eq('id', rule.id);
+                    if (error) throw new Error(error.message);
+                } catch (err) {
+                    showToast('❌ Delete failed: ' + err.message, 'error');
+                    return;
+                }
+                showToast('✅ Rule deleted', 'success');
+            }
+            categoryRules.splice(idx, 1);
+            renderCategoriesTab();
+        });
+    });
+}
+
+function paginationHtml(page, totalCount, rowsPerPage, handler) {
+    const pageCount = Math.max(Math.ceil(totalCount / rowsPerPage), 1);
+    const firstItem = totalCount ? (page - 1) * rowsPerPage + 1 : 0;
+    const lastItem = Math.min(page * rowsPerPage, totalCount);
+    const pages = [...new Set([
+        1, pageCount, page - 2, page - 1, page, page + 1, page + 2,
+    ].filter(p => p >= 1 && p <= pageCount))].sort((a, b) => a - b);
+    const pageButtons = [];
+
+    pages.forEach((p, index) => {
+        if (index && p - pages[index - 1] > 1) {
+            pageButtons.push('<span class="tx-pagination-ellipsis">…</span>');
+        }
+        pageButtons.push(`<button type="button" class="page-btn ${p === page ? 'active' : ''}"
+            onclick="${handler}(${p})" ${p === page ? 'aria-current="page"' : ''}>${p}</button>`);
+    });
+
+    return `
+        <span class="tx-pagination-summary">Showing ${firstItem}–${lastItem} of ${totalCount}</span>
+        ${pageCount > 1 ? `<div class="tx-pagination-controls">
+            <button type="button" class="page-btn pagination-arrow" aria-label="Previous page"
+                onclick="${handler}(${page - 1})"
+                ${page === 1 ? 'disabled' : ''}>‹</button>
+            ${pageButtons.join('')}
+            <button type="button" class="page-btn pagination-arrow" aria-label="Next page"
+                onclick="${handler}(${page + 1})"
+                ${page === pageCount ? 'disabled' : ''}>›</button>
+        </div>` : ''}`;
+}
+
 function renderTransactionsPagination(
     totalCount,
     totalPages,
@@ -2072,54 +2248,19 @@ function renderTransactionsPagination(
 ) {
     const pagination = document.getElementById('txPagination');
     if (!pagination) return;
+    pagination.innerHTML = paginationHtml(txPage, totalCount, rowsPerPage, 'changeTransactionsPage');
+}
 
-    const pageCount = Math.max(totalPages, 1);
-    const firstItem = totalCount ? (txPage - 1) * rowsPerPage + 1 : 0;
-    const lastItem = Math.min(txPage * rowsPerPage, totalCount);
-    const pages = [...new Set([
-        1, pageCount, txPage - 2, txPage - 1, txPage, txPage + 1, txPage + 2,
-    ].filter(page => page >= 1 && page <= pageCount))].sort((a, b) => a - b);
-    const pageButtons = [];
-
-    pages.forEach((page, index) => {
-        if (index && page - pages[index - 1] > 1) {
-            pageButtons.push('<span class="tx-pagination-ellipsis">…</span>');
-        }
-        pageButtons.push(`<button type="button" class="page-btn ${page === txPage ? 'active' : ''}"
-            onclick="changeTransactionsPage(${page})" ${page === txPage ? 'aria-current="page"' : ''}>${page}</button>`);
-    });
-
-    pagination.innerHTML = `
-        <span class="tx-pagination-summary">Showing ${firstItem}–${lastItem} of ${totalCount}</span>
-        ${pageCount > 1 ? `<div class="tx-pagination-controls">
-            <button type="button" class="page-btn pagination-arrow" aria-label="Previous page"
-                onclick="changeTransactionsPage(${txPage - 1})"
-                ${txPage === 1 ? 'disabled' : ''}>‹</button>
-            ${pageButtons.join('')}
-            <button type="button" class="page-btn pagination-arrow" aria-label="Next page"
-                onclick="changeTransactionsPage(${txPage + 1})"
-                ${txPage === pageCount ? 'disabled' : ''}>›</button>
-        </div>` : ''}`;
+function changeRulesPage(page) {
+    if (!Number.isInteger(page) || page < 1) return;
+    rulePage = page;
+    renderCategoriesTab();
 }
 
 function changeTransactionsPage(page) {
     if (!Number.isInteger(page) || page < 1) return;
     txPage = page;
     renderTransactionsTab();
-}
-
-if (typeof window !== 'undefined') {
-    let tableResizeTimer;
-    window.addEventListener('resize', () => {
-        clearTimeout(tableResizeTimer);
-        tableResizeTimer = setTimeout(() => {
-            delete transactionPageSizes.transactions;
-            delete transactionPageSizes.monthly;
-            delete transactionPageSizes.drawer;
-            if (activeTab === 'monthly') renderMonthlyView();
-            else if (activeTab === 'transactions') renderTransactionsTab();
-        }, 100);
-    });
 }
 
 function addTransaction() {

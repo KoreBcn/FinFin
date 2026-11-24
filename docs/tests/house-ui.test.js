@@ -396,25 +396,25 @@ test('formats whole house values while retaining validation and precision of cal
 test('paginates combined entries without changing equity', async () => {
     const rows = [
         { id: 'initial', entry_date: '2026-01-01', amount: 800000, concept: 'Initial payment' },
-        ...Array.from({ length: 18 }, (_, i) => ({
+        ...Array.from({ length: 22 }, (_, i) => ({
             id: `row-${i}`, entry_date: `2026-02-${String(i + 1).padStart(2, '0')}`, amount: 1000, concept: 'Payment'
         }))
     ];
     const { context, elements } = setup(undefined, rows);
     await vm.runInContext('openHouse()', context);
     elements.get('houseInstallmentsButton').listeners.click();
-    assert.equal(elements.get('houseInstallmentsBody').children.length, 10);
-    assert.equal(elements.get('houseInstallmentsBody').children[0].children[0].textContent, '2026-02-18');
+    assert.equal(elements.get('houseInstallmentsBody').children.length, 12);
+    assert.equal(elements.get('houseInstallmentsBody').children[0].children[0].textContent, '2026-02-22');
     assert.equal(elements.get('housePageStatus').textContent, 'Page 1 of 3');
     const equity = elements.get('houseEquity').textContent;
     elements.get('houseNextPage').listeners.click();
-    assert.equal(elements.get('houseInstallmentsBody').children.length, 10);
+    assert.equal(elements.get('houseInstallmentsBody').children.length, 12);
     assert.equal(elements.get('houseEquity').textContent, equity);
     elements.get('houseNextPage').listeners.click();
     assert.equal(elements.get('houseInstallmentsBody').children.length, 1);
     assert.equal(elements.get('houseInstallmentsBody').children[0].children[0].textContent, '1900-01-01');
     assert.equal(elements.get('housePageStatus').textContent, 'Page 3 of 3');
-    await vm.runInContext('deleteHouseInstallment("row-17")', context);
+    await vm.runInContext('deleteHouseInstallment("row-21")', context);
     assert.equal(elements.get('housePageStatus').textContent, 'Page 2 of 2');
 });
 
@@ -423,7 +423,7 @@ test('combines bank interest and saved negative adjustments in the KPI on every 
         { id: 'initial', entry_date: '2026-01-01', amount: 800000, concept: 'Initial payment' },
         { id: 'negative', entry_date: '2026-02-01', amount: -30, concept: 'Custom adjustment' },
         { id: 'positive', entry_date: '2026-02-02', amount: 500, concept: 'Payment' },
-        ...Array.from({ length: 8 }, (_, i) => ({
+        ...Array.from({ length: 10 }, (_, i) => ({
             id: `row-${i}`, entry_date: `2026-02-${String(i + 3).padStart(2, '0')}`, amount: 100, concept: 'Payment'
         }))
     ];
@@ -436,9 +436,9 @@ test('combines bank interest and saved negative adjustments in the KPI on every 
     )`, context);
     await vm.runInContext('openHouse()', context);
     assert.equal(elements.get('houseInterestTotal').textContent, '-110.00 DKK');
-    assert.equal(elements.get('houseEquity').textContent, '846,270');
-    assert.equal(elements.get('houseDebt').textContent, '5,253,730');
-    assert.equal(elements.get('houseInstallmentsBody').children[9].children[1].textContent, 'Custom adjustment');
+    assert.equal(elements.get('houseEquity').textContent, '846,470');
+    assert.equal(elements.get('houseDebt').textContent, '5,253,530');
+    assert.equal(elements.get('houseInstallmentsBody').children[11].children[1].textContent, 'Custom adjustment');
     const chart = vm.runInContext('charts.houseHistory', context);
     const january = chart.data.labels.indexOf('2026-01');
     assert.equal(chart.data.datasets[0].data[january], 845000);
@@ -453,7 +453,7 @@ test('combines bank interest and saved negative adjustments in the KPI on every 
     assert.equal(elements.get('houseInstallmentsBody').children[1].children[2].textContent, '-100.00');
     await vm.runInContext('deleteHouseInstallment("negative")', context);
     assert.equal(elements.get('houseInterestTotal').textContent, '-80.00 DKK');
-    assert.equal(elements.get('houseEquity').textContent, '846,300');
+    assert.equal(elements.get('houseEquity').textContent, '846,500');
     elements.get('houseValue').value = '0';
     vm.runInContext('renderHouse()', context);
     assert.equal(elements.get('houseInterestTotal').textContent, '-80.00 DKK');

@@ -149,6 +149,19 @@ class SupabaseImportClient:
         except (KeyError, TypeError, ValueError) as error:
             raise SupabaseImportError("Supabase import state contains invalid dates.") from error
 
+    def get_category_rules(self) -> list[dict]:
+        rows = self._request(
+            "GET",
+            "category_rules",
+            params={"select": "category,subcategory,keywords,is_excluded,from_account", "order": "position.asc"},
+        )
+        if not isinstance(rows, list) or not rows:
+            raise SupabaseImportError(
+                "Category rules are missing. Apply db/supabase/category_rules.sql "
+                "in the Supabase SQL Editor."
+            )
+        return rows
+
     def import_transactions(self, transactions: list[dict], through_date: date) -> int:
         run_id = str(uuid4())
         staged_rows = [{**row, "run_id": run_id} for row in transactions]
