@@ -3,6 +3,9 @@
 let investmentPositions = [];
 let investmentItems = [];
 let investmentTransactions = [];
+let investmentPnlHistory = [];
+let investmentPnlHistoryError = '';
+let investmentPnlChart = null;
 let investmentQuotes = new Map();
 let investmentSettings = {};
 let investmentGeneration = 0;
@@ -56,6 +59,9 @@ function clearInvestments() {
     investmentPositions = [];
     investmentItems = [];
     investmentTransactions = [];
+    investmentPnlHistory = [];
+    investmentPnlHistoryError = '';
+    if (investmentPnlChart) { investmentPnlChart.destroy(); investmentPnlChart = null; }
     investmentQuotes.clear();
     investmentSettings = {};
     investmentSettingsOwner = null;
@@ -147,14 +153,54 @@ function matchesPortfolioSearch(item, search) {
     return (item.ticker || '').toLowerCase().includes(search) || (item.name || '').toLowerCase().includes(search);
 }
 
+function renderInvestmentPnlTrend(coverage) {
+    if (investmentPnlChart) { investmentPnlChart.destroy(); investmentPnlChart = null; }
+    const included = new Set(investmentItems.filter(item => item.is_in_scope).map(item => item.id));
+    const series = InvestmentMath.pnlSeries(investmentPnlHistory, included);
+    coverage.textContent = investmentPnlHistoryError
+        || (series.length ? '' : 'No P/L history yet; snapshots are saved by the price refresh workflow.');
+    if (!series.length || typeof Chart === 'undefined') return;
+    const dateLabel = ms => new Date(ms).toISOString().slice(0, 10);
+    investmentPnlChart = new Chart(document.getElementById('investmentPnlChart'), {
+        type: 'line',
+        data: {
+            datasets: [{
+                label: 'Net P/L DKK',
+                data: series.map(point => ({ x: Date.parse(point.date), y: point.pnl })),
+                borderColor: '#2563eb', backgroundColor: 'rgba(37,99,235,0.1)',
+                pointRadius: series.length > 60 ? 0 : 3, borderWidth: 2, tension: 0.2, fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: {
+                    title: items => dateLabel(items[0].parsed.x),
+                    label: item => ` Net P/L: ${investmentFormat(item.parsed.y)} DKK`
+                } }
+            },
+            scales: {
+                x: { type: 'linear', ticks: { callback: value => dateLabel(value), maxTicksLimit: 8 }, grid: { display: false } },
+                y: { ticks: { callback: value => Number(value).toLocaleString() } }
+            }
+        }
+    });
+}
+
 function renderInvestmentAnalytics() {
+    const trend = analyticsView === 'trend';
     const performers = analyticsView === 'performers';
-    document.getElementById('analyticsPlatformButton').setAttribute('aria-pressed', String(!performers));
+    document.getElementById('analyticsTrendButton').setAttribute('aria-pressed', String(trend));
+    document.getElementById('analyticsPlatformButton').setAttribute('aria-pressed', String(!performers && !trend));
     document.getElementById('analyticsPerformersButton').setAttribute('aria-pressed', String(performers));
     document.getElementById('analyticsTopButton').setAttribute('aria-pressed', String(analyticsRanking === 'top'));
     document.getElementById('analyticsWorstButton').setAttribute('aria-pressed', String(analyticsRanking === 'worst'));
     document.getElementById('analyticsRankingControls').hidden = !performers;
-    document.getElementById('analyticsTitle').textContent = performers
+    document.getElementById('analyticsTable').hidden = trend;
+    document.getElementById('analyticsTrendBox').hidden = !trend;
+    document.getElementById('analyticsTitle').textContent = trend ? 'Net P/L trend' : performers
         ? `${analyticsRanking === 'top' ? 'Top' : 'Worst'} performers` : 'Performance by platform';
     document.getElementById('analyticsNameHeading').textContent = performers ? 'Position' : 'Platform';
     document.getElementById('analyticsStatus').textContent = document.getElementById('investmentStatus').textContent;
@@ -163,7 +209,12 @@ function renderInvestmentAnalytics() {
     const coverage = document.getElementById('analyticsCoverage');
     body.replaceChildren();
     coverage.textContent = '';
+    if (!trend && investmentPnlChart) { investmentPnlChart.destroy(); investmentPnlChart = null; }
     if (!investmentLoaded) return;
+    if (trend) {
+        renderInvestmentPnlTrend(coverage);
+        return;
+    }
 
     const positions = investmentPositions.map(position => {
         const value = position.isClosed ? 0 : investmentValue(position);
@@ -226,7 +277,7 @@ function renderInvestmentAnalytics() {
     });
 }
 
-for (const [id, view] of [['analyticsPlatformButton', 'platform'], ['analyticsPerformersButton', 'performers']]) {
+for (const [id, view] of [['analyticsTrendButton', 'trend'], ['analyticsPlatformButton', 'platform'], ['analyticsPerformersButton', 'performers']]) {
     document.getElementById(id).addEventListener('click', () => {
         analyticsView = view;
         renderInvestmentAnalytics();
@@ -775,6 +826,16 @@ async function openInvestments() {
         investmentPositions = InvestmentMath.fromStored(items, transactions);
         investmentItems = items;
         investmentTransactions = transactions;
+        try {
+            const history = await readRows('portfolio_pnl_history', 'id, portfolio_item_id, snapshot_date, is_closed, pnl_dkk');
+            if (generation !== investmentGeneration || !activeAuthUserId) return;
+            investmentPnlHistory = history;
+            investmentPnlHistoryError = '';
+        } catch (error) {
+            if (generation !== investmentGeneration || !activeAuthUserId) return;
+            investmentPnlHistory = [];
+            investmentPnlHistoryError = `Unable to load P/L history: ${error.message}`;
+        }
         investmentQuotes.clear();
         items.forEach(item => {
             if (item.market_price != null && item.type.toLowerCase() !== 'crowdlending') {

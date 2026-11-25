@@ -16,12 +16,21 @@ function fixture(items, transactions) {
     const calls = [];
     const saves = [];
     const delays = [];
-    const state = { failFx: false, limited: false, limitedFx: false, stale: false, changedReads: 0 };
+    const historyPosts = [];
+    const state = { failFx: false, limited: false, limitedFx: false, stale: false, changedReads: 0, closedHistory: [] };
     const fetcher = async (url, options) => {
         calls.push({ url, options });
         if (url.pathname === '/auth/v1/token') return Response.json({ access_token: 'session' });
         assert.equal(options.headers.Authorization, 'Bearer session');
         if (url.pathname === '/rest/v1/rpc/is_shared_meal_plan_member') return Response.json(true);
+        if (url.pathname === '/rest/v1/portfolio_pnl_history') {
+            if (options.method === 'POST') {
+                const rows = JSON.parse(options.body);
+                historyPosts.push({ rows, prefer: options.headers.Prefer });
+                return Response.json(rows.map((_, index) => ({ id: index })));
+            }
+            return Response.json(state.closedHistory.map((id, index) => ({ id: index, portfolio_item_id: id })));
+        }
         if (url.pathname === '/rest/v1/portfolio_items' && options.method === 'PATCH') {
             const id = url.searchParams.get('id').slice(3);
             saves.push({ id, fields: JSON.parse(options.body), params: url.searchParams });
@@ -52,8 +61,8 @@ function fixture(items, transactions) {
         }
         return Response.json({ close: 10, currency: request.params.symbol === 'DANISH' ? 'DKK' : 'USD', last_quote_at: 1700000000, percent_change: '1.5' });
     };
-    const options = { fetcher, now: () => time, sleep: async delay => { delays.push(delay); time += delay; } };
-    return { state, calls, saves, delays, options };
+    const options = { fetcher, today: () => '2026-11-25', now: () => time, sleep: async delay => { delays.push(delay); time += delay; } };
+    return { state, calls, saves, delays, historyPosts, options };
 }
 
 test('refreshes eligible positions with shared math, cached quotes and FX, and paced requests', async () => {
@@ -125,6 +134,35 @@ test('does not save a stale valuation and stops when the provider rate limits', 
     assert.equal(limitedFx.saves.length, 1);
     assert.equal('current_value_dkk' in limitedFx.saves[0].fields, false);
     assert.equal(limitedFx.calls.filter(call => call.url.pathname === '/functions/v1/market-data').length, 3);
+});
+
+test('snapshots P/L for refreshed and crowdlending items and backfills each closed item once', async () => {
+    const items = [item('one', 'DANISH'), item('manual', 'MANUAL', { type: 'Crowdlending', current_value_dkk: 150 }),
+        item('closed', 'OLD', { is_closed: true, is_in_scope: true }), item('done', 'DONE', { is_closed: true })];
+    const transactions = [transaction('one', '2'), transaction('manual', '1'),
+        { ...transaction('closed'), transaction_date: '2024-03-01' }, { ...transaction('closed'), id: 'closed-sell', transaction_date: '2024-05-02', action: 'Sell', total_cost: '130' },
+        { ...transaction('done'), transaction_date: '2023-01-01' }];
+    const db = fixture(items, transactions);
+    db.state.closedHistory = ['done'];
+    const result = await refreshPortfolio(config, db.options);
+    assert.deepEqual(result.failures, []);
+    assert.equal(db.historyPosts.length, 2);
+    const [open, closed] = db.historyPosts;
+    assert.match(open.prefer, /merge-duplicates/);
+    assert.deepEqual(open.rows.map(row => [row.portfolio_item_id, row.snapshot_date, row.quantity, row.market_price, row.value_dkk, row.pnl_dkk]), [
+        ['one', '2026-11-25', 2, 10, 20, -80], ['manual', '2026-11-25', null, null, 150, 50]
+    ]);
+    assert.match(closed.prefer, /ignore-duplicates/);
+    assert.deepEqual(closed.rows.map(row => [row.portfolio_item_id, row.snapshot_date, row.is_closed, row.pnl_dkk]), [
+        ['closed', '2024-05-02', true, 30]
+    ]);
+});
+
+test('does not snapshot items whose value could not be refreshed', async () => {
+    const db = fixture([item('one', 'US')], [transaction('one')]);
+    db.state.failFx = true;
+    await refreshPortfolio(config, db.options);
+    assert.equal(db.historyPosts.length, 0);
 });
 
 test('retries when transactions may have changed during the initial read', async () => {

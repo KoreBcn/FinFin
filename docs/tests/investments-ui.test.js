@@ -191,6 +191,10 @@ function setupPortfolio(clock = null) {
                 range() {
                     if (database.failLoad) return Promise.resolve({ error: { message: 'load failed' } });
                     if (database.onRead) database.onRead(table);
+                    if (table === 'portfolio_pnl_history') {
+                        if (database.historyLoadError) return Promise.resolve({ error: { message: 'history failed' } });
+                        return Promise.resolve({ data: database.history || [], error: null });
+                    }
                     return Promise.resolve({ data: (table === 'portfolio_items' ? database.items : database.transactions).map(row =>
                         table === 'portfolio_items' ? { valuation_version: 0, ...row } : { revision: 0, ...row }), error: null });
                 },
@@ -350,6 +354,42 @@ test('ranks the top and worst ten known positions and excludes unvalued position
     assert.equal(elements.get('analyticsWorstButton').attributes['aria-pressed'], 'true');
     elements.get('analyticsPlatformButton').listeners.click();
     assert.equal(elements.get('analyticsRankingControls').hidden, true);
+});
+
+test('plots total P/L history for items counted in total P/L on the trend view', async () => {
+    const { context, elements, database } = setupPortfolio();
+    database.items.push({ id: 'out', ticker: 'OUT', platform: 'Broker', name: 'Out', type: 'Shares',
+        is_closed: true, is_in_scope: false, current_value_dkk: 0 });
+    database.history = [
+        { id: 1, portfolio_item_id: 'out', snapshot_date: '2024-01-01', pnl_dkk: 500 },
+        { id: 2, portfolio_item_id: 'item-1', snapshot_date: '2024-02-01', pnl_dkk: 10 },
+        { id: 3, portfolio_item_id: 'item-1', snapshot_date: '2024-03-01', pnl_dkk: 30 }
+    ];
+    vm.runInContext('globalThis.charts = []; Chart = class { constructor(canvas, config) { this.config = config; charts.push(this); } destroy() { this.destroyed = true; } }', context);
+    await vm.runInContext('openInvestments()', context);
+    elements.get('analyticsTrendButton').listeners.click();
+    assert.equal(elements.get('analyticsTable').hidden, true);
+    assert.equal(elements.get('analyticsTrendBox').hidden, false);
+    assert.equal(elements.get('analyticsTrendButton').attributes['aria-pressed'], 'true');
+    assert.equal(elements.get('analyticsPlatformButton').attributes['aria-pressed'], 'false');
+    const charts = vm.runInContext('charts', context);
+    assert.deepEqual(Array.from(charts[0].config.data.datasets[0].data, point => point.y), [10, 30]);
+    elements.get('analyticsPlatformButton').listeners.click();
+    assert.equal(charts[0].destroyed, true);
+    assert.equal(elements.get('analyticsTable').hidden, false);
+});
+
+test('explains an empty or unavailable P/L history on the trend view', async () => {
+    const { context, elements, database } = setupPortfolio();
+    await vm.runInContext('openInvestments()', context);
+    elements.get('analyticsTrendButton').listeners.click();
+    assert.match(elements.get('analyticsCoverage').textContent, /No P\/L history yet/);
+    database.historyLoadError = true;
+    vm.runInContext('clearInvestments()', context);
+    await vm.runInContext('openInvestments()', context);
+    elements.get('analyticsTrendButton').listeners.click();
+    assert.equal(elements.get('investmentTableBody').children.length, 1);
+    assert.match(elements.get('analyticsCoverage').textContent, /Unable to load P\/L history/);
 });
 
 test('shows portfolio load failures and allows retry from analytics', async () => {

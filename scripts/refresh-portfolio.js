@@ -3,11 +3,16 @@
 const { fromStored, changeSince } = require('../docs/investment-math.js');
 
 const itemColumns = 'id,ticker,platform,name,type,is_closed,is_in_scope,current_value_dkk,valuation_version,market_price,market_currency,market_price_at';
-const transactionColumns = 'id,portfolio_item_id,action,quantity,fees,total_cost';
+const transactionColumns = 'id,portfolio_item_id,transaction_date,action,quantity,fees,total_cost';
+
+function copenhagenDate(date = new Date()) {
+    return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Copenhagen' }).format(date);
+}
 
 async function refreshPortfolio(config, {
     fetcher = fetch,
     now = Date.now,
+    today = copenhagenDate,
     sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
 } = {}) {
     const { url, anonKey, email, password } = config;
@@ -24,6 +29,7 @@ async function refreshPortfolio(config, {
         const operation = path.startsWith('/auth/v1/token?') ? 'Supabase sign-in'
             : path.startsWith('/rest/v1/portfolio_items?') ? 'Supabase portfolio items request'
                 : path.startsWith('/rest/v1/portfolio_transactions?') ? 'Supabase portfolio transactions request'
+                    : path.startsWith('/rest/v1/portfolio_pnl_history') ? 'Supabase P/L history request'
                     : path === '/rest/v1/rpc/is_shared_meal_plan_member' ? 'Supabase household membership check'
                         : 'Supabase request';
         let response;
@@ -67,10 +73,10 @@ async function refreshPortfolio(config, {
     if (typeof isMember !== 'boolean') throw new Error('Supabase household membership check returned an invalid response.');
     if (!isMember) throw new Error('Refresh account is not a Meal Plan household member.');
 
-    async function readRows(table, columns) {
+    async function readRows(table, columns, filters = {}) {
         const rows = [];
         for (let offset = 0; ; offset += 1000) {
-            const query = new URLSearchParams({ select: columns, order: 'id', limit: '1000', offset: String(offset) });
+            const query = new URLSearchParams({ select: columns, order: 'id', limit: '1000', offset: String(offset), ...filters });
             const page = await request(`/rest/v1/${table}?${query}`, { headers });
             if (!Array.isArray(page)) throw new Error(`Invalid ${table} response.`);
             rows.push(...page);
@@ -94,7 +100,9 @@ async function refreshPortfolio(config, {
     }
     const positions = fromStored(items, transactions).filter(position =>
         position.isClosed === false && position.type.toLowerCase() !== 'crowdlending');
+    const allPositions = fromStored(items, transactions);
     const versions = new Map(items.map(item => [item.id, item.valuation_version]));
+    const saved = new Map();
     const quotes = new Map();
     const rates = new Map();
     let nextRequestAt = 0;
@@ -184,6 +192,9 @@ async function refreshPortfolio(config, {
                 throw error;
             }
             refreshed++;
+            if (fields.current_value_dkk !== undefined) {
+                saved.set(position.id, { price: quote.price, currency: quote.currency, quantity: position.quantity, value: fields.current_value_dkk });
+            }
             if (conversionError) throw conversionError;
             if (quote.historyError) throw quote.historyError;
         } catch (error) {
@@ -191,7 +202,58 @@ async function refreshPortfolio(config, {
             if (error.rateLimited) break;
         }
     }
+    try {
+        await saveHistory();
+    } catch (error) {
+        failures.push({ id: 'pnl-history', message: error.message });
+    }
     return { refreshed, eligible: positions.length, failures };
+
+    async function saveHistory() {
+        const snapshotDate = today();
+        const cashFlow = p => p.bought + p.sold + p.fees + p.dividends;
+        const lastTradeDate = new Map();
+        for (const row of transactions) {
+            if (typeof row.transaction_date === 'string' && row.transaction_date > (lastTradeDate.get(row.portfolio_item_id) || '')) {
+                lastTradeDate.set(row.portfolio_item_id, row.transaction_date);
+            }
+        }
+        const snapshots = [];
+        for (const p of allPositions.filter(entry => !entry.isClosed)) {
+            const result = saved.get(p.id);
+            const crowdlending = p.type.toLowerCase() === 'crowdlending';
+            if (!result && !(crowdlending && p.currentValue != null)) continue;
+            const value = result ? result.value : p.currentValue;
+            const pnl = value + cashFlow(p);
+            if (!Number.isFinite(pnl)) continue;
+            snapshots.push({
+                portfolio_item_id: p.id, snapshot_date: snapshotDate, is_closed: false,
+                quantity: result && !p.quantityUnknown ? p.quantity : null,
+                market_price: result ? result.price : null, market_currency: result ? result.currency : null,
+                value_dkk: value, pnl_dkk: pnl, source: 'refresh'
+            });
+        }
+        if (snapshots.length) {
+            await request('/rest/v1/portfolio_pnl_history?on_conflict=portfolio_item_id,snapshot_date&select=id', {
+                method: 'POST',
+                headers: { ...headers, 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates,return=representation' },
+                body: JSON.stringify(snapshots)
+            });
+        }
+        const known = new Set((await readRows('portfolio_pnl_history', 'id,portfolio_item_id', { is_closed: 'eq.true' }))
+            .map(row => row.portfolio_item_id));
+        const closed = allPositions.filter(p => p.isClosed && !known.has(p.id)).map(p => ({
+            portfolio_item_id: p.id, snapshot_date: lastTradeDate.get(p.id) || snapshotDate, is_closed: true,
+            quantity: 0, market_price: null, market_currency: null, value_dkk: 0, pnl_dkk: cashFlow(p), source: 'closed'
+        })).filter(row => Number.isFinite(row.pnl_dkk));
+        if (closed.length) {
+            await request('/rest/v1/portfolio_pnl_history?on_conflict=portfolio_item_id,snapshot_date&select=id', {
+                method: 'POST',
+                headers: { ...headers, 'Content-Type': 'application/json', Prefer: 'resolution=ignore-duplicates,return=representation' },
+                body: JSON.stringify(closed)
+            });
+        }
+    }
 }
 
 if (require.main === module) {

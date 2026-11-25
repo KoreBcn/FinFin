@@ -344,9 +344,17 @@ The workflow spaces requests at least eight seconds apart and caches duplicate
 quotes and currency rates within the run; concurrent browser refreshes are not
 coordinated. The provider can still rate-limit requests. A rate-limit response
 stops the run; other item failures are reported while remaining items continue.
-Historical price changes are not persisted and are not requested by the workflow.
+Today's % change and the 7/30/90-day changes are stored on the item
+(`market_change_*` columns) and requested once per ticker per run.
 Optimistic valuation-version checks prevent stale quantity-based values from
 overwriting changes made while it runs.
+
+Each run also writes one row per open item to `portfolio_pnl_history` (date,
+quantity, price, DKK value and net P/L). Items whose value could not be refreshed
+are skipped; crowdlending items use their manual value. The first run (and any
+later run, once an item is closed) also inserts a single realized P/L row for each
+closed item that has none, dated at its last transaction. Investments → Analytics →
+**P/L trend** plots the running total for items counted in total P/L.
 
 ## Import new Enable Banking transactions
 

@@ -97,6 +97,36 @@ CREATE POLICY homefin_household_restriction ON public.portfolio_transactions
     USING (coalesce(public.is_shared_meal_plan_member(), false))
     WITH CHECK (coalesce(public.is_shared_meal_plan_member(), false));
 
+-- One row per item and day: open positions are snapshotted by the refresh workflow;
+-- closed positions get a single realized P/L row dated at their last transaction.
+CREATE TABLE IF NOT EXISTS public.portfolio_pnl_history (
+    id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    portfolio_item_id uuid NOT NULL REFERENCES public.portfolio_items(id) ON DELETE CASCADE,
+    snapshot_date date NOT NULL,
+    is_closed boolean NOT NULL DEFAULT false,
+    quantity numeric,
+    market_price numeric,
+    market_currency text,
+    value_dkk numeric,
+    pnl_dkk numeric NOT NULL,
+    source text NOT NULL DEFAULT 'refresh',
+    inserted_at timestamptz NOT NULL DEFAULT now(),
+    UNIQUE (portfolio_item_id, snapshot_date)
+);
+CREATE INDEX IF NOT EXISTS portfolio_pnl_history_closed_idx
+    ON public.portfolio_pnl_history (portfolio_item_id) WHERE is_closed;
+ALTER TABLE public.portfolio_pnl_history ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.portfolio_pnl_history FROM PUBLIC, anon, authenticated;
+GRANT SELECT, INSERT, UPDATE ON public.portfolio_pnl_history TO authenticated;
+DROP POLICY IF EXISTS portfolio_pnl_history_authenticated_access ON public.portfolio_pnl_history;
+CREATE POLICY portfolio_pnl_history_authenticated_access ON public.portfolio_pnl_history
+    FOR ALL TO authenticated USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS homefin_household_restriction ON public.portfolio_pnl_history;
+CREATE POLICY homefin_household_restriction ON public.portfolio_pnl_history
+    AS RESTRICTIVE FOR ALL TO PUBLIC
+    USING (coalesce(public.is_shared_meal_plan_member(), false))
+    WITH CHECK (coalesce(public.is_shared_meal_plan_member(), false));
+
 CREATE OR REPLACE FUNCTION public.invalidate_portfolio_valuation()
 RETURNS trigger
 LANGUAGE plpgsql

@@ -620,6 +620,7 @@
         <div id="investmentAnalytics" class="tab-panel" role="tabpanel" aria-labelledby="investmentAnalyticsTab" hidden>
             <section class="filters-bar analytics-filters" aria-label="Analytics filters">
                 <div class="portfolio-view-buttons" role="group" aria-label="Analytics aggregation">
+                    <button id="analyticsTrendButton" class="btn-secondary" type="button" aria-pressed="false">P/L trend</button>
                     <button id="analyticsPlatformButton" class="btn-secondary" type="button" aria-pressed="true">Platform</button>
                     <button id="analyticsPerformersButton" class="btn-secondary" type="button" aria-pressed="false">Performers</button>
                 </div>
@@ -633,7 +634,11 @@
                 <p id="analyticsStatus" class="investment-note" role="status" aria-live="polite"></p>
                 <button id="analyticsRetry" class="btn-secondary" type="button" hidden>Retry portfolio load</button>
                 <p id="analyticsCoverage" class="investment-note" role="status"></p>
-                <table class="analytics-table">
+                <div id="analyticsTrendBox" class="chart-container" hidden>
+                    <div style="position:relative;height:340px"><canvas id="investmentPnlChart"></canvas></div>
+                    <p class="investment-note">Total net P/L over time for items counted in total P/L. Open positions are snapshotted by each price refresh; closed positions are dated at their last transaction.</p>
+                </div>
+                <table id="analyticsTable" class="analytics-table">
                     <thead><tr><th id="analyticsNameHeading" scope="col">Platform</th><th scope="col">Value DKK</th><th scope="col">Portfolio %</th><th scope="col">Net P/L DKK</th></tr></thead>
                     <tbody id="analyticsTableBody"></tbody>
                 </table>

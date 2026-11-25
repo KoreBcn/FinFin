@@ -76,7 +76,23 @@ const InvestmentMath = (() => {
         return prior ? (latest / Number(prior.close) - 1) * 100 : null;
     }
 
-    return { fromStored, number, changeSince };
+    function pnlSeries(snapshots, includedIds) {
+        const latest = new Map();
+        const byDate = new Map();
+        snapshots.filter(row => includedIds.has(row.portfolio_item_id) && Number.isFinite(Number(row.pnl_dkk)))
+            .forEach(row => {
+                if (!byDate.has(row.snapshot_date)) byDate.set(row.snapshot_date, []);
+                byDate.get(row.snapshot_date).push(row);
+            });
+        return [...byDate.keys()].sort().map(date => {
+            byDate.get(date).forEach(row => latest.set(row.portfolio_item_id, Number(row.pnl_dkk)));
+            let total = 0;
+            latest.forEach(value => { total += value; });
+            return { date, pnl: total };
+        });
+    }
+
+    return { fromStored, number, changeSince, pnlSeries };
 })();
 
 if (typeof module !== 'undefined') module.exports = InvestmentMath;
