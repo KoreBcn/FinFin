@@ -21,6 +21,7 @@ function fixture(items, transactions) {
         calls.push({ url, options });
         if (url.pathname === '/auth/v1/token') return Response.json({ access_token: 'session' });
         assert.equal(options.headers.Authorization, 'Bearer session');
+        if (url.pathname === '/rest/v1/rpc/is_shared_meal_plan_member') return Response.json(true);
         if (url.pathname === '/rest/v1/portfolio_items' && options.method === 'PATCH') {
             const id = url.searchParams.get('id').slice(3);
             saves.push({ id, fields: JSON.parse(options.body), params: url.searchParams });
@@ -118,4 +119,43 @@ test('rejects missing credentials and non-HTTPS project URLs before making reque
     await assert.rejects(refreshPortfolio({ ...config, password: '' }, db.options), /Missing Supabase/);
     await assert.rejects(refreshPortfolio({ ...config, url: 'http://project.example' }, db.options), /HTTPS/);
     assert.equal(db.calls.length, 0);
+});
+
+test('identifies sign-in failures without exposing response details', async () => {
+    const fetcher = async () => Response.json({
+        error_code: 'invalid_credentials', message: 'private response'
+    }, { status: 400 });
+    await assert.rejects(refreshPortfolio(config, { fetcher }), error => {
+        assert.match(error.message, /Supabase sign-in failed: invalid email or password \(HTTP 400\)/);
+        assert.doesNotMatch(error.message, /private response/);
+        return true;
+    });
+});
+
+test('identifies portfolio read failures without exposing response details', async () => {
+    const fetcher = async url => url.pathname === '/auth/v1/token'
+        ? Response.json({ access_token: 'session' })
+        : url.pathname === '/rest/v1/rpc/is_shared_meal_plan_member'
+            ? Response.json(true)
+            : Response.json({ message: 'private response' }, { status: 400 });
+    await assert.rejects(refreshPortfolio(config, { fetcher }), error => {
+        assert.match(error.message, /Supabase portfolio items request failed \(HTTP 400\)/);
+        assert.doesNotMatch(error.message, /private response/);
+        return true;
+    });
+});
+
+test('rejects a refresh account outside the household before loading positions', async () => {
+    const calls = [];
+    const fetcher = async url => {
+        calls.push(url.pathname);
+        return Response.json(url.pathname === '/auth/v1/token' ? { access_token: 'session' } : false);
+    };
+    await assert.rejects(refreshPortfolio(config, { fetcher }), /not a Meal Plan household member/);
+    assert.deepEqual(calls, ['/auth/v1/token', '/rest/v1/rpc/is_shared_meal_plan_member']);
+});
+
+test('does not report sign-in rate limiting as a market data failure', async () => {
+    const fetcher = async () => Response.json({ error: 'rate limited' }, { status: 429 });
+    await assert.rejects(refreshPortfolio(config, { fetcher }), /Supabase sign-in failed \(HTTP 429\)/);
 });

@@ -332,6 +332,11 @@ the `market-data` Edge Function. Do not use a service-role key for this workflow
 or commit the account password. Run the workflow manually after configuring it
 and inspect the Actions log; a failed item makes the job fail.
 
+If sign-in fails after moving projects, verify the refresh account's credentials
+against the target project's Auth users. The same email in another project does
+not imply the same password. Resetting that account's password also affects
+anyone who uses it to sign in to Meal Plan.
+
 The workflow requests only open, non-crowdlending quotes and any necessary
 DKK exchange rates through the existing Edge Function. The function uses a
 browser-like user agent, but requests originate from Supabase, not a browser.

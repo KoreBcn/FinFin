@@ -21,19 +21,29 @@ async function refreshPortfolio(config, {
     }
 
     async function request(path, options = {}) {
+        const operation = path.startsWith('/auth/v1/token?') ? 'Supabase sign-in'
+            : path.startsWith('/rest/v1/portfolio_items?') ? 'Supabase portfolio items request'
+                : path.startsWith('/rest/v1/portfolio_transactions?') ? 'Supabase portfolio transactions request'
+                    : path === '/rest/v1/rpc/is_shared_meal_plan_member' ? 'Supabase household membership check'
+                        : 'Supabase request';
         let response;
         try {
             response = await fetcher(new URL(path, base), { ...options, signal: AbortSignal.timeout(20000) });
         } catch {
-            throw new Error('Supabase request failed or timed out.');
+            throw new Error(`${operation} failed or timed out.`);
         }
         let data;
-        try { data = await response.json(); } catch { throw new Error(`Supabase returned invalid JSON (HTTP ${response.status}).`); }
+        try { data = await response.json(); } catch { throw new Error(`${operation} returned invalid JSON (HTTP ${response.status}).`); }
         if (!response.ok) {
-            const rateLimited = response.status === 429 || (typeof data?.error === 'string' && /\b429\b/.test(data.error));
+            const rateLimited = path === '/functions/v1/market-data'
+                && (response.status === 429 || (typeof data?.error === 'string' && /\b429\b/.test(data.error)));
+            const invalidCredentials = operation === 'Supabase sign-in'
+                && (data?.error_code === 'invalid_credentials' || data?.code === 'invalid_credentials');
             const providerError = path === '/functions/v1/market-data' && typeof data?.error === 'string'
                 && /^(Yahoo Finance|Unable to retrieve valid data from Yahoo Finance)/.test(data.error)
-                ? data.error : `Supabase request failed (HTTP ${response.status}).`;
+                ? data.error : invalidCredentials
+                    ? `Supabase sign-in failed: invalid email or password (HTTP ${response.status}).`
+                    : `${operation} failed (HTTP ${response.status}).`;
             const error = new Error(rateLimited ? 'Market data provider rate limited the refresh.' : providerError);
             error.rateLimited = rateLimited;
             throw error;
@@ -48,6 +58,14 @@ async function refreshPortfolio(config, {
     });
     if (typeof auth?.access_token !== 'string' || !auth.access_token) throw new Error('Supabase sign-in returned no access token.');
     const headers = { apikey: anonKey, Authorization: `Bearer ${auth.access_token}` };
+
+    const isMember = await request('/rest/v1/rpc/is_shared_meal_plan_member', {
+        method: 'POST',
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body: '{}'
+    });
+    if (typeof isMember !== 'boolean') throw new Error('Supabase household membership check returned an invalid response.');
+    if (!isMember) throw new Error('Refresh account is not a Meal Plan household member.');
 
     async function readRows(table, columns) {
         const rows = [];
