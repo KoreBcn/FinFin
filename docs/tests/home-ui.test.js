@@ -35,7 +35,11 @@ function setup() {
         querySelectorAll: selector => selector === '.tab-btn' ? [element('navHome'), element('navInvestments')] : [],
         querySelector: selector => selector.includes("'home'") ? element('navHome') : element('navInvestments'),
         addEventListener() {},
-        documentElement: { setAttribute() {} },
+        documentElement: {
+            attributes: {},
+            setAttribute(name, value) { this.attributes[name] = value; },
+            getAttribute(name) { return this.attributes[name] || null; }
+        },
         body: element('body')
     };
     const context = vm.createContext({ document, investmentSubtab: 'portfolio' });
@@ -155,6 +159,84 @@ test('Monthly view limits rows to the current calendar year and selected scope',
         ),
         1
     );
+});
+
+test('category and subcategory heatmap selections update annual KPIs and open a trend popup', () => {
+    const { context, elements } = setup();
+    vm.runInContext(`
+        renderPieChart = () => {};
+        renderMonthlyChart = () => {};
+        renderExpensesTrendChart = () => { expenseTrendRenders++; };
+        let expenseTrendRenders = 0;
+        globalFilters.years = [2026];
+        filteredData = [
+            {Year: 2026, Month: 1, Amount: -1200, Type: 'Food', Expense: 'Groceries', kind: 'expense', PlannedReal: 'Real'},
+            {Year: 2026, Month: 2, Amount: -600, Type: 'Food', Expense: 'Dining', kind: 'expense', PlannedReal: 'Real'},
+            {Year: 2026, Month: 1, Amount: -240, Type: 'Home', Expense: 'Internet', kind: 'expense', PlannedReal: 'Real'}
+        ];
+        _monthlyCategories = ['Food'];
+        monthlyHeatmapKind = 'expense';
+        drillMonthlyHeatmap(0);
+    `, context);
+
+    assert.equal(elements.get('kpiExpTotal').textContent, vm.runInContext('formatMoney(1800)', context));
+    assert.equal(elements.get('kpiExpMonthly').textContent, vm.runInContext('formatMoney(150)', context));
+    assert.equal(elements.get('trendModal').classList.contains('open'), true);
+    assert.equal(elements.get('trendModalTitle').textContent, '📈 Monthly Expenses Trend — Food');
+    assert.equal(elements.get('transactionDrawer').classList.contains('open'), false);
+    assert.equal(vm.runInContext('expenseTrendRenders', context), 1);
+
+    vm.runInContext(`
+        _monthlyCategories = ['Dining'];
+        openMonthlyRowDrawer(0);
+    `, context);
+
+    assert.equal(elements.get('kpiExpTotal').textContent, vm.runInContext('formatMoney(600)', context));
+    assert.equal(elements.get('kpiExpMonthly').textContent, vm.runInContext('formatMoney(50)', context));
+    assert.equal(elements.get('trendModalTitle').textContent, '📈 Monthly Expenses Trend — Dining');
+    assert.equal(elements.get('transactionDrawer').classList.contains('open'), false);
+    assert.equal(vm.runInContext('chartFilters.typeLevel', context), 'Expense');
+});
+
+test('monthly heatmap uses one colour scale for detail and total cells', () => {
+    const { context, elements } = setup();
+    vm.runInContext(`
+        filteredData = [
+            {Year: 2026, Month: 1, Amount: -10, Type: 'Food', Expense: 'Groceries', kind: 'expense'},
+            {Year: 2026, Month: 1, Amount: -20, Type: 'Home', Expense: 'Rent', kind: 'expense'}
+        ];
+        monthlyHeatmapKind = 'expense';
+        renderMonthlyChart();
+    `, context);
+
+    const html = elements.get('monthlyHeatmapContainer').innerHTML;
+    assert.match(html, /heatmap-totals-cell" style="background:rgba\(239,68,68,1\.00\)/);
+    assert.match(html, /background:rgba\(239,68,68,0\.18\)/);
+});
+
+test('subcategory selection keeps all rows in the drilled category heatmap', () => {
+    const { context, elements } = setup();
+    vm.runInContext(`
+        filteredData = [
+            {Year: 2026, Month: 1, Amount: -20, Type: 'Food', Expense: 'Groceries', kind: 'expense'},
+            {Year: 2026, Month: 2, Amount: -10, Type: 'Food', Expense: 'Dining', kind: 'expense'},
+            {Year: 2026, Month: 1, Amount: -30, Type: 'Home', Expense: 'Rent', kind: 'expense'}
+        ];
+        monthlyHeatmapKind = 'expense';
+        monthlyDrillType = 'Food';
+        chartFilters = {
+            monthKey: null,
+            typeKey: 'Dining',
+            typeLevel: 'Expense',
+            kind: 'expense'
+        };
+        renderMonthlyChart();
+    `, context);
+
+    const html = elements.get('monthlyHeatmapContainer').innerHTML;
+    assert.match(html, /Groceries/);
+    assert.match(html, /Dining/);
+    assert.doesNotMatch(html, /Rent/);
 });
 
 test('Monthly review KPI excludes analytics-disabled rows while the full table keeps them', () => {

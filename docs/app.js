@@ -627,8 +627,18 @@ function updateStats() {
         .reduce((s, d) => s + d.Amount, 0);
     const totalSav = totalInc - totalExp;
 
-    const expMonths = new Set(data.filter(d => d.kind === 'expense').map(d => `${d.Year}-${d.Month}`)).size || 1;
-    const incMonths = new Set(data.filter(d => d.kind === 'saving').map(d => `${d.Year}-${d.Month}`)).size || 1;
+    const selectionYears = globalFilters.years.length
+        ? new Set(globalFilters.years)
+        : new Set(filteredData.map(d => d.Year));
+    const selectedCalendarMonths = chartFilters.monthKey
+        ? 1
+        : (selectionYears.size || 1) * 12;
+    const expMonths = chartFilters.typeKey
+        ? selectedCalendarMonths
+        : new Set(data.filter(d => d.kind === 'expense').map(d => `${d.Year}-${d.Month}`)).size || 1;
+    const incMonths = chartFilters.typeKey
+        ? selectedCalendarMonths
+        : new Set(data.filter(d => d.kind === 'saving').map(d => `${d.Year}-${d.Month}`)).size || 1;
     const allMonths = new Set(data.map(d => `${d.Year}-${d.Month}`)).size || 1;
 
     document.getElementById('kpiExpTotal').textContent   = formatMoney(toDisplay(totalExp));
@@ -647,7 +657,13 @@ function sumRows(data, kind, pr, useAbs) {
 // =====================================================
 //  EXPENSES TREND MODAL
 // =====================================================
+function currentChartSelectionLabel() {
+    return chartFilters.typeKey ? ` — ${chartFilters.typeKey}` : '';
+}
+
 function openExpensesTrendModal() {
+    document.getElementById('trendModalTitle').textContent =
+        `📈 Monthly Expenses Trend${currentChartSelectionLabel()}`;
     document.getElementById('trendModal').classList.add('open');
     renderExpensesTrendChart();
 }
@@ -667,9 +683,12 @@ function renderExpensesTrendChart() {
     if (!base.length) { if (charts.expTrend) { charts.expTrend.destroy(); charts.expTrend = null; } return; }
 
     const MNAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-
-    // Build a continuous sorted list of year-month keys that have data
-    const ymKeys = [...new Set(base.map(d => `${d.Year}-${String(d.Month).padStart(2,'0')}`))].sort();
+    const years = globalFilters.years.length
+        ? [...globalFilters.years].sort((a, b) => a - b)
+        : [...new Set(base.map(d => d.Year))].sort((a, b) => a - b);
+    const ymKeys = years.flatMap(year =>
+        Array.from({ length: 12 }, (_, index) => `${year}-${String(index + 1).padStart(2, '0')}`)
+    );
     const labels = ymKeys.map(ym => {
         const [y, m] = ym.split('-');
         return `${MNAMES[parseInt(m) - 1]} '${y.slice(2)}`;
@@ -686,7 +705,7 @@ function renderExpensesTrendChart() {
         data: {
             labels,
             datasets: [{
-                label: 'Expenses',
+                label: chartFilters.typeKey || 'Expenses',
                 data: values,
                 borderColor: '#ef4444',
                 backgroundColor: 'rgba(239,68,68,0.1)',
@@ -720,6 +739,8 @@ function renderExpensesTrendChart() {
 //  INCOME TREND MODAL
 // =====================================================
 function openIncomeTrendModal() {
+    document.getElementById('incTrendModalTitle').textContent =
+        `📊 Monthly Income Trend${currentChartSelectionLabel()}`;
     document.getElementById('incTrendModal').classList.add('open');
     renderIncomeTrendChart();
 }
@@ -756,8 +777,12 @@ function renderIncomeTrendChart() {
     if (!base.length) { if (charts.incTrend) { charts.incTrend.destroy(); charts.incTrend = null; } return; }
 
     const MNAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-
-    const ymKeys = [...new Set(base.map(d => `${d.Year}-${String(d.Month).padStart(2,'0')}`))].sort();
+    const years = globalFilters.years.length
+        ? [...globalFilters.years].sort((a, b) => a - b)
+        : [...new Set(base.map(d => d.Year))].sort((a, b) => a - b);
+    const ymKeys = years.flatMap(year =>
+        Array.from({ length: 12 }, (_, index) => `${year}-${String(index + 1).padStart(2, '0')}`)
+    );
     const labels = ymKeys.map(ym => {
         const [y, m] = ym.split('-');
         return `${MNAMES[parseInt(m) - 1]} '${y.slice(2)}`;
@@ -774,7 +799,7 @@ function renderIncomeTrendChart() {
         data: {
             labels,
             datasets: [{
-                label: 'Income',
+                label: chartFilters.typeKey || 'Income',
                 data: values,
                 borderColor: '#10b981',
                 backgroundColor: 'rgba(16,185,129,0.1)',
@@ -1058,11 +1083,13 @@ function resetDrillDown(which) {
 function drillMonthlyHeatmap(catIdx) {
     const cat = _monthlyCategories[catIdx];
     monthlyDrillType       = cat;
-    // Update chart type filter so KPIs reflect this category selection
     chartFilters.typeKey   = cat;
     chartFilters.kind      = monthlyHeatmapKind;
     chartFilters.typeLevel = 'Type';
+    closeDrawer();
     renderDashboard();
+    if (monthlyHeatmapKind === 'expense') openExpensesTrendModal();
+    else openIncomeTrendModal();
 }
 
 function resetMonthlyDrill() {
@@ -1075,7 +1102,7 @@ function resetMonthlyDrill() {
 
 function renderMonthlyChart() {
     const container = document.getElementById('monthlyHeatmapContainer');
-    const base = getChartData(true, false).filter(d => d.kind === monthlyHeatmapKind);
+    const base = getChartData(true, true).filter(d => d.kind === monthlyHeatmapKind);
 
     // Update breadcrumb visibility
     const bc = document.getElementById('monthlyHeatmapBreadcrumb');
@@ -1129,13 +1156,30 @@ function renderMonthlyChart() {
             ${months.map(m => `<th>${MNAMES[m-1]}</th>`).join('')}
         </tr></thead><tbody>`;
 
-    // Global min/max across all rows so colour scale is consistent
-    const allNonZero = catSet.flatMap(c => months.map(m => map[c][m] || 0)).filter(v => v > 0);
-    const globalMax  = Math.max(...allNonZero, 1);
-    const globalMin  = allNonZero.length ? Math.min(...allNonZero) : 0;
+    const monthTotals = months.map(m =>
+        catSet.reduce((s, c) => s + (map[c][m] || 0), 0)
+    );
+    // Use one colour domain for every numeric cell, including the totals row.
+    const allNonZero = [
+        ...catSet.flatMap(c => months.map(m => map[c][m] || 0)),
+        ...monthTotals
+    ].filter(v => v > 0);
+    const globalMax = Math.max(...allNonZero, 1);
+    const globalMin = allNonZero.length ? Math.min(...allNonZero) : 0;
+
+    function heatmapCellStyle(value) {
+        const t   = (value - globalMin) / (globalMax - globalMin || 1);
+        const a   = 0.18 + t * 0.82;
+        const bg  = isExp
+            ? `rgba(239,68,68,${a.toFixed(2)})`
+            : `rgba(16,185,129,${a.toFixed(2)})`;
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        const fg  = isDark || t > 0.55 ? '#ffffff' : '#1e293b';
+        return `background:${bg};color:${fg}`;
+    }
 
     catSet.forEach((cat, catIdx) => {
-        // Row label: top-level → click to drill; drilled → click opens drawer
+        // Row labels select a category; their cells still open transaction details.
         const rowClick = monthlyDrillType
             ? `openMonthlyRowDrawer(${catIdx})`
             : `drillMonthlyHeatmap(${catIdx})`;
@@ -1149,16 +1193,9 @@ function renderMonthlyChart() {
             if (!val) {
                 html += `<td class="empty-cell">—</td>`;
             } else {
-                const t   = (val - globalMin) / (globalMax - globalMin || 1);
-                const a   = 0.18 + t * 0.82;
-                const bg  = isExp
-                    ? `rgba(239,68,68,${a.toFixed(2)})`
-                    : `rgba(16,185,129,${a.toFixed(2)})`;
-                const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-                const fg  = isDark || t > 0.55 ? '#ffffff' : '#1e293b';
                 const disp = iFormatShort(val, globalFilters.currency);
                 const tip  = `${cat} — ${MNAMES[m-1]}: ${formatMoney(toDisplay(val))}`;
-                html += `<td style="background:${bg};color:${fg};cursor:pointer" title="${tip}"
+                html += `<td style="${heatmapCellStyle(val)};cursor:pointer" title="${tip}"
                     onclick="openDrawerFromMonthlyHeatmap(${catIdx},${m})">${disp}</td>`;
             }
         });
@@ -1166,14 +1203,11 @@ function renderMonthlyChart() {
     });
 
     // Totals row
-    const monthTotals = months.map(m =>
-        catSet.reduce((s, c) => s + (map[c][m] || 0), 0)
-    );
     html += `<tr class="heatmap-totals-row"><td class="row-label row-totals-label">Total</td>`;
     months.forEach((m, mi) => {
         const val = monthTotals[mi];
         html += val
-            ? `<td class="heatmap-totals-cell">${iFormatShort(val, globalFilters.currency)}</td>`
+            ? `<td class="heatmap-totals-cell" style="${heatmapCellStyle(val)}">${iFormatShort(val, globalFilters.currency)}</td>`
             : `<td class="heatmap-totals-cell">—</td>`;
     });
     html += `</tr>`;
@@ -1195,13 +1229,13 @@ function openDrawerFromMonthlyHeatmap(catIdx, month) {
 
 function openMonthlyRowDrawer(catIdx) {
     const category = _monthlyCategories[catIdx];
-    const field    = monthlyDrillType ? 'Expense' : 'Type';
-    const base     = getChartData(true, false).filter(d =>
-        d.kind === monthlyHeatmapKind && d[field] === category
-        && (!monthlyDrillType || d.Type === monthlyDrillType)
-    );
-    const icon = monthlyHeatmapKind === 'expense' ? '💸' : '💰';
-    openDrawerWith(base, `${icon} ${category}`, `${base.length} transactions`);
+    chartFilters.typeKey   = category;
+    chartFilters.kind      = monthlyHeatmapKind;
+    chartFilters.typeLevel = monthlyDrillType ? 'Expense' : 'Type';
+    closeDrawer();
+    renderDashboard();
+    if (monthlyHeatmapKind === 'expense') openExpensesTrendModal();
+    else openIncomeTrendModal();
 }
 
 
