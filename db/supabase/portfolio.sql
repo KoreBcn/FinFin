@@ -63,7 +63,11 @@ ALTER TABLE public.portfolio_items
     ADD COLUMN IF NOT EXISTS valuation_version bigint NOT NULL DEFAULT 0,
     ADD COLUMN IF NOT EXISTS market_price numeric,
     ADD COLUMN IF NOT EXISTS market_currency text,
-    ADD COLUMN IF NOT EXISTS market_price_at timestamptz;
+    ADD COLUMN IF NOT EXISTS market_price_at timestamptz,
+    ADD COLUMN IF NOT EXISTS market_change_today numeric,
+    ADD COLUMN IF NOT EXISTS market_change_7d numeric,
+    ADD COLUMN IF NOT EXISTS market_change_30d numeric,
+    ADD COLUMN IF NOT EXISTS market_change_90d numeric;
 ALTER TABLE public.portfolio_transactions
     ADD COLUMN IF NOT EXISTS revision bigint NOT NULL DEFAULT 0;
 

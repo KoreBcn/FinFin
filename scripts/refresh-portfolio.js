@@ -1,6 +1,6 @@
 'use strict';
 
-const { fromStored } = require('../docs/investment-math.js');
+const { fromStored, changeSince } = require('../docs/investment-math.js');
 
 const itemColumns = 'id,ticker,platform,name,type,is_closed,is_in_scope,current_value_dkk,valuation_version,market_price,market_currency,market_price_at';
 const transactionColumns = 'id,portfolio_item_id,action,quantity,fees,total_cost';
@@ -101,14 +101,14 @@ async function refreshPortfolio(config, {
     let refreshed = 0;
     const failures = [];
 
-    async function market(path, symbol) {
+    async function market(path, symbol, extra = {}) {
         const delay = Math.max(0, nextRequestAt - now());
         if (delay) await sleep(delay);
         nextRequestAt = now() + 8000;
         const data = await request('/functions/v1/market-data', {
             method: 'POST',
             headers: { ...headers, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ path, params: { symbol } })
+            body: JSON.stringify({ path, params: { symbol, ...extra } })
         });
         if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('Invalid market data response.');
         return data;
@@ -127,9 +127,21 @@ async function refreshPortfolio(config, {
                     throw new Error('Quote has an invalid timestamp.');
                 }
                 quote = { price, currency: data.currency, at: data.last_quote_at == null ? null : new Date(data.last_quote_at * 1000).toISOString() };
+                const today = data.percent_change == null ? null : Number(data.percent_change);
+                quote.fields = { market_change_today: Number.isFinite(today) ? today : null };
+                try {
+                    const history = await market('time_series', position.ticker, { interval: '1day', outputsize: '140' });
+                    if (!Array.isArray(history.values)) throw new Error('Historical prices are unavailable.');
+                    for (const days of [7, 30, 90]) {
+                        quote.fields[`market_change_${days}d`] = changeSince(history.values, price, days);
+                    }
+                } catch (error) {
+                    error.message = `History: ${error.message}`;
+                    quote.historyError = error;
+                }
                 quotes.set(position.ticker, quote);
             }
-            const fields = { market_price: quote.price, market_currency: quote.currency, market_price_at: quote.at };
+            const fields = { market_price: quote.price, market_currency: quote.currency, market_price_at: quote.at, ...quote.fields };
             let conversionError;
             if (!position.quantityUnknown) {
                 let rate = 1;
@@ -173,6 +185,7 @@ async function refreshPortfolio(config, {
             }
             refreshed++;
             if (conversionError) throw conversionError;
+            if (quote.historyError) throw quote.historyError;
         } catch (error) {
             failures.push({ id: position.id, message: error.message });
             if (error.rateLimited) break;

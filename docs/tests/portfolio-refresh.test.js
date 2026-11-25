@@ -43,7 +43,14 @@ function fixture(items, transactions) {
             if (state.failFx) return Response.json({ error: 'Unavailable' }, { status: 502 });
             return Response.json({ rate: 7 });
         }
-        return Response.json({ close: 10, currency: request.params.symbol === 'DANISH' ? 'DKK' : 'USD', last_quote_at: 1700000000 });
+        if (request.path === 'time_series') {
+            if (state.failHistory) return Response.json({ error: 'No history' }, { status: 502 });
+            const values = Array.from({ length: 140 }, (_, index) => ({
+                datetime: new Date(Date.now() - index * 86400000).toISOString().slice(0, 10), close: '8'
+            }));
+            return Response.json({ values });
+        }
+        return Response.json({ close: 10, currency: request.params.symbol === 'DANISH' ? 'DKK' : 'USD', last_quote_at: 1700000000, percent_change: '1.5' });
     };
     const options = { fetcher, now: () => time, sleep: async delay => { delays.push(delay); time += delay; } };
     return { state, calls, saves, delays, options };
@@ -55,19 +62,33 @@ test('refreshes eligible positions with shared math, cached quotes and FX, and p
     const db = fixture(items, [transaction('one', '2,5'), transaction('two', '3'), transaction('three', '1')]);
     const result = await refreshPortfolio(config, db.options);
     assert.deepEqual(result, { refreshed: 3, eligible: 3, failures: [] });
-    assert.deepEqual(db.delays, [8000, 8000]);
+    assert.deepEqual(db.delays, [8000, 8000, 8000, 8000]);
     assert.deepEqual(db.saves.map(save => [save.id, save.fields.current_value_dkk]), [
         ['one', 25], ['two', 210], ['three', 70]
     ]);
+    assert.equal(db.saves[0].fields.market_change_today, 1.5);
+    for (const days of [7, 30, 90]) assert.equal(db.saves[0].fields[`market_change_${days}d`], 25);
     assert.equal(db.saves[0].fields.market_price_at, '2023-11-14T22:13:20.000Z');
     assert.equal(db.saves[0].params.get('valuation_version'), 'eq.0');
     assert.equal(db.saves[0].params.get('is_closed'), 'eq.false');
     assert.deepEqual(db.calls.filter(call => call.url.pathname === '/functions/v1/market-data')
         .map(call => JSON.parse(call.options.body)), [
         { path: 'quote', params: { symbol: 'DANISH' } },
+        { path: 'time_series', params: { symbol: 'DANISH', interval: '1day', outputsize: '140' } },
         { path: 'quote', params: { symbol: 'US' } },
+        { path: 'time_series', params: { symbol: 'US', interval: '1day', outputsize: '140' } },
         { path: 'exchange_rate', params: { symbol: 'USD/DKK' } }
     ]);
+});
+
+test('saves the price and today change but keeps stored longer changes when history fails', async () => {
+    const db = fixture([item('one', 'DANISH')], [transaction('one')]);
+    db.state.failHistory = true;
+    const result = await refreshPortfolio(config, db.options);
+    assert.equal(result.refreshed, 1);
+    assert.match(result.failures[0].message, /^History: /);
+    assert.equal(db.saves[0].fields.market_change_today, 1.5);
+    assert.equal('market_change_7d' in db.saves[0].fields, false);
 });
 
 test('saves only the quote when quantity is unknown or conversion fails', async () => {
@@ -103,7 +124,7 @@ test('does not save a stale valuation and stops when the provider rate limits', 
     assert.match(stoppedFx.failures[0].message, /rate limited/);
     assert.equal(limitedFx.saves.length, 1);
     assert.equal('current_value_dkk' in limitedFx.saves[0].fields, false);
-    assert.equal(limitedFx.calls.filter(call => call.url.pathname === '/functions/v1/market-data').length, 2);
+    assert.equal(limitedFx.calls.filter(call => call.url.pathname === '/functions/v1/market-data').length, 3);
 });
 
 test('retries when transactions may have changed during the initial read', async () => {

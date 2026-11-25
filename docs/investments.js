@@ -759,7 +759,7 @@ async function openInvestments() {
                 if (data.length < pageSize) return rows;
             }
         }
-        const itemColumns = 'id, ticker, platform, name, type, is_closed, is_in_scope, current_value_dkk, valuation_version, market_price, market_currency, market_price_at';
+        const itemColumns = 'id, ticker, platform, name, type, is_closed, is_in_scope, current_value_dkk, valuation_version, market_price, market_currency, market_price_at, market_change_today, market_change_7d, market_change_30d, market_change_90d';
         const transactionColumns = 'id, revision, portfolio_item_id, transaction_date, action, platform, type, ticker, name, quantity, price_per_unit, exchange_rate, commission, fees, currency, total_cost, local_value, local_currency';
         let items, transactions;
         for (let attempt = 0; attempt < 3; attempt++) {
@@ -782,6 +782,11 @@ async function openInvestments() {
                 investmentQuotes.set(key, {
                     price: Number(item.market_price), currency: item.market_currency,
                     datetime: item.market_price_at ? formatLocalDateTime(new Date(item.market_price_at), true) : '',
+                    today: item.market_change_today == null ? null : Number(item.market_change_today),
+                    changes: Object.fromEntries([7, 30, 90].map(days => {
+                        const stored = item[`market_change_${days}d`];
+                        return [days, stored == null ? null : Number(stored)];
+                    })),
                     rate: null
                 });
             }
@@ -813,7 +818,10 @@ async function saveInvestmentValue(position, value, generation, quote = null) {
     const item = investmentItems.find(entry => entry.id === position.id);
     const fields = {};
     if (value !== undefined) fields.current_value_dkk = value;
-    if (quote) Object.assign(fields, { market_price: quote.price, market_currency: quote.currency, market_price_at: quote.at });
+    if (quote) Object.assign(fields, {
+        market_price: quote.price, market_currency: quote.currency, market_price_at: quote.at,
+        market_change_today: quote.today ?? null
+    });
     let update = supabaseClient.from('portfolio_items').update(fields).eq('id', position.id);
     if (position.type.toLowerCase() !== 'crowdlending') update = update.eq('valuation_version', item.valuation_version);
     const { error } = await update.select('id').single();
@@ -893,14 +901,17 @@ document.getElementById('investmentForm').addEventListener('submit', async event
         if (existing) {
             const update = { ...item, valuation_version: existing.valuation_version + 1 };
             if (typeChanged || (tickerChanged && item.type.toLowerCase() !== 'crowdlending')) update.current_value_dkk = null;
-            if (typeChanged || tickerChanged) Object.assign(update, { market_price: null, market_currency: null, market_price_at: null });
+            if (typeChanged || tickerChanged) Object.assign(update, {
+                market_price: null, market_currency: null, market_price_at: null,
+                market_change_today: null, market_change_7d: null, market_change_30d: null, market_change_90d: null
+            });
             query = supabaseClient.from('portfolio_items').update(update).eq('id', existing.id)
                 .eq('valuation_version', existing.valuation_version);
         } else {
             query = supabaseClient.from('portfolio_items').insert(item);
         }
         requestSent = true;
-        const { data, error } = await query.select('id, ticker, platform, name, type, is_closed, is_in_scope, current_value_dkk, valuation_version, market_price, market_currency, market_price_at').single();
+        const { data, error } = await query.select('id, ticker, platform, name, type, is_closed, is_in_scope, current_value_dkk, valuation_version, market_price, market_currency, market_price_at, market_change_today, market_change_7d, market_change_30d, market_change_90d').single();
         if (error) throw new Error(error.message);
         if (generation !== investmentGeneration) return;
         if (existing) {
@@ -1027,6 +1038,10 @@ async function refreshInvestment(p) {
             const history = await request('time_series', { ...params, interval: '1day', outputsize: '140' });
             if (!Array.isArray(history.values)) throw new Error('Historical prices are unavailable.');
             quote.changes = Object.fromEntries([7, 30, 90].map(days => [days, InvestmentMath.changeSince(history.values, price, days)]));
+            const stored = { market_change_7d: quote.changes[7], market_change_30d: quote.changes[30], market_change_90d: quote.changes[90] };
+            const { error } = await supabaseClient.from('portfolio_items').update(stored).eq('id', p.id);
+            if (error) throw new Error(error.message);
+            if (generation === investmentGeneration) Object.assign(investmentItems.find(entry => entry.id === p.id) || {}, stored);
         } catch (error) {
             if (generation !== investmentGeneration) return;
             quote.error = `History: ${error.message}`;
