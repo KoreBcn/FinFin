@@ -76,20 +76,24 @@ const InvestmentMath = (() => {
         return prior ? (latest / Number(prior.close) - 1) * 100 : null;
     }
 
-    function pnlSeries(snapshots, includedIds) {
+    function pnlSeries(snapshots, typeById) {
         const latest = new Map();
         const byDate = new Map();
-        snapshots.filter(row => includedIds.has(row.portfolio_item_id) && Number.isFinite(Number(row.pnl_dkk)))
+        snapshots.filter(row => typeById.has(row.portfolio_item_id) && Number.isFinite(Number(row.pnl_dkk)))
             .forEach(row => {
                 if (!byDate.has(row.snapshot_date)) byDate.set(row.snapshot_date, []);
                 byDate.get(row.snapshot_date).push(row);
             });
-        return [...byDate.keys()].sort().map(date => {
+        const dates = [...byDate.keys()].sort();
+        const types = [...new Set(typeById.values())].sort();
+        const values = new Map(types.map(type => [type, []]));
+        dates.forEach(date => {
             byDate.get(date).forEach(row => latest.set(row.portfolio_item_id, Number(row.pnl_dkk)));
-            let total = 0;
-            latest.forEach(value => { total += value; });
-            return { date, pnl: total };
+            const totals = new Map(types.map(type => [type, 0]));
+            latest.forEach((pnl, id) => totals.set(typeById.get(id), totals.get(typeById.get(id)) + pnl));
+            types.forEach(type => values.get(type).push(totals.get(type)));
         });
+        return { dates, series: types.map(type => ({ type, values: values.get(type) })) };
     }
 
     return { fromStored, number, changeSince, pnlSeries };

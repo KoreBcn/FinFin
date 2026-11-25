@@ -635,8 +635,15 @@
                 <button id="analyticsRetry" class="btn-secondary" type="button" hidden>Retry portfolio load</button>
                 <p id="analyticsCoverage" class="investment-note" role="status"></p>
                 <div id="analyticsTrendBox" class="chart-container" hidden>
+                    <div class="portfolio-view-buttons analytics-range" role="group" aria-label="P/L trend period">
+                        <button id="analyticsRange7" class="btn-secondary" type="button" aria-pressed="false">7d</button>
+                        <button id="analyticsRange30" class="btn-secondary" type="button" aria-pressed="false">30d</button>
+                        <button id="analyticsRange90" class="btn-secondary" type="button" aria-pressed="true">90d</button>
+                        <button id="analyticsRange365" class="btn-secondary" type="button" aria-pressed="false">1y</button>
+                        <button id="analyticsRangeall" class="btn-secondary" type="button" aria-pressed="false">All</button>
+                    </div>
                     <div style="position:relative;height:340px"><canvas id="investmentPnlChart"></canvas></div>
-                    <p class="investment-note">Total net P/L over time for items counted in total P/L. Open positions are snapshotted by each price refresh; closed positions are dated at their last transaction.</p>
+                    <p class="investment-note">Net P/L over time by type, stacked, for items counted in total P/L. Click a legend entry to show or hide a type. Open positions are snapshotted by each price refresh; closed positions are dated at their last transaction.</p>
                 </div>
                 <table id="analyticsTable" class="analytics-table">
                     <thead><tr><th id="analyticsNameHeading" scope="col">Platform</th><th scope="col">Value DKK</th><th scope="col">Portfolio %</th><th scope="col">Net P/L DKK</th></tr></thead>

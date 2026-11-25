@@ -360,23 +360,44 @@ test('plots total P/L history for items counted in total P/L on the trend view',
     const { context, elements, database } = setupPortfolio();
     database.items.push({ id: 'out', ticker: 'OUT', platform: 'Broker', name: 'Out', type: 'Shares',
         is_closed: true, is_in_scope: false, current_value_dkk: 0 });
+    database.items.push({ id: 'fund', ticker: 'FUND', platform: 'Broker', name: 'Fund', type: 'etf',
+        is_closed: true, is_in_scope: true, current_value_dkk: 0 });
     database.history = [
+        { id: 4, portfolio_item_id: 'fund', snapshot_date: '2024-01-15', pnl_dkk: 5 },
         { id: 1, portfolio_item_id: 'out', snapshot_date: '2024-01-01', pnl_dkk: 500 },
         { id: 2, portfolio_item_id: 'item-1', snapshot_date: '2024-02-01', pnl_dkk: 10 },
         { id: 3, portfolio_item_id: 'item-1', snapshot_date: '2024-03-01', pnl_dkk: 30 }
     ];
-    vm.runInContext('globalThis.charts = []; Chart = class { constructor(canvas, config) { this.config = config; charts.push(this); } destroy() { this.destroyed = true; } }', context);
+    vm.runInContext('globalThis.charts = []; Chart = class { constructor(canvas, config) { this.config = config; this.data = config.data; this.hidden = new Set(); charts.push(this); } isDatasetVisible(i) { return !this.hidden.has(i); } setDatasetVisibility(i, visible) { if (visible) this.hidden.delete(i); else this.hidden.add(i); } update() {} destroy() { this.destroyed = true; } }', context);
     await vm.runInContext('openInvestments()', context);
     elements.get('analyticsTrendButton').listeners.click();
+    assert.equal(elements.get('analyticsRange90').attributes['aria-pressed'], 'true');
+    assert.match(elements.get('analyticsCoverage').textContent, /No P\/L snapshots in this period/);
+    elements.get('analyticsRangeall').listeners.click();
     assert.equal(elements.get('analyticsTable').hidden, true);
     assert.equal(elements.get('analyticsTrendBox').hidden, false);
     assert.equal(elements.get('analyticsTrendButton').attributes['aria-pressed'], 'true');
     assert.equal(elements.get('analyticsPlatformButton').attributes['aria-pressed'], 'false');
     const charts = vm.runInContext('charts', context);
-    assert.deepEqual(Array.from(charts[0].config.data.datasets[0].data, point => point.y), [10, 30]);
+    const datasets = charts[0].config.data.datasets;
+    assert.deepEqual(Array.from(datasets, set => set.label), ['ETF', 'Shares']);
+    assert.deepEqual(Array.from(datasets[0].data, point => point.y), [5, 5, 5]);
+    assert.deepEqual(Array.from(datasets[1].data, point => point.y), [5, 15, 35]);
+    assert.equal(datasets[0].fill, 'origin');
+    assert.equal(datasets[1].fill, 0);
+    charts[0].config.options.plugins.legend.onClick(null, { datasetIndex: 0 }, { chart: charts[0] });
+    assert.deepEqual(Array.from(datasets[1].data, point => point.y), [0, 10, 30]);
+    assert.equal(datasets[1].fill, 'origin');
     elements.get('analyticsPlatformButton').listeners.click();
     assert.equal(charts[0].destroyed, true);
     assert.equal(elements.get('analyticsTable').hidden, false);
+    elements.get('analyticsTrendButton').listeners.click();
+    elements.get('analyticsRange30').listeners.click();
+    assert.equal(elements.get('analyticsRange30').attributes['aria-pressed'], 'true');
+    assert.equal(elements.get('analyticsRangeall').attributes['aria-pressed'], 'false');
+    assert.match(elements.get('analyticsCoverage').textContent, /No P\/L snapshots in this period/);
+    elements.get('analyticsRangeall').listeners.click();
+    assert.equal(elements.get('analyticsCoverage').textContent, '');
 });
 
 test('explains an empty or unavailable P/L history on the trend view', async () => {

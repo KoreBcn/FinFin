@@ -479,6 +479,8 @@ main {
 .portfolio-view-buttons button { padding: 0.45rem 0.7rem; }
 .portfolio-view-buttons button[aria-pressed="true"] { background: var(--primary); border-color: var(--primary); color: white; }
 .portfolio-view-buttons[hidden] { display: none; }
+.analytics-range { justify-content: flex-end; margin-bottom: 0.5rem; }
+.analytics-range button { padding: 0.15rem 0.5rem; font-size: 0.75rem; }
 .analytics-table { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 0.85rem; }
 .analytics-table th, .analytics-table td { padding: 0.55rem 0.4rem; border-bottom: 1px solid var(--border); text-align: right; overflow-wrap: anywhere; }
 .analytics-table th:first-child, .analytics-table td:first-child { width: 40%; text-align: left; }

@@ -21,6 +21,7 @@ let investmentSort = { key: '', ascending: true };
 let investmentShowClosed = false;
 let analyticsView = 'platform';
 let analyticsRanking = 'top';
+let analyticsRange = '90';
 let portfolioTransactionsVisible = false;
 let portfolioTransactionPage = 1;
 let portfolioTransactionSaving = false;
@@ -75,6 +76,7 @@ function clearInvestments() {
     investmentShowClosed = false;
     analyticsView = 'platform';
     analyticsRanking = 'top';
+    analyticsRange = '90';
     portfolioTransactionsVisible = false;
     portfolioTransactionPage = 1;
     portfolioTransactionSaving = false;
@@ -155,30 +157,70 @@ function matchesPortfolioSearch(item, search) {
 
 function renderInvestmentPnlTrend(coverage) {
     if (investmentPnlChart) { investmentPnlChart.destroy(); investmentPnlChart = null; }
-    const included = new Set(investmentItems.filter(item => item.is_in_scope).map(item => item.id));
-    const series = InvestmentMath.pnlSeries(investmentPnlHistory, included);
+    const typeLabel = type => {
+        const text = type.trim().toLowerCase();
+        return text === 'etf' ? 'ETF' : text.charAt(0).toUpperCase() + text.slice(1);
+    };
+    const typeById = new Map(investmentItems.filter(item => item.is_in_scope).map(item => [item.id, typeLabel(item.type)]));
+    const full = InvestmentMath.pnlSeries(investmentPnlHistory, typeById);
+    // Carry-forward values are computed on the full history, then the period is applied.
+    let from = 0;
+    if (analyticsRange !== 'all') {
+        const now = new Date();
+        const cutoff = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - Number(analyticsRange))).toISOString().slice(0, 10);
+        from = full.dates.findIndex(date => date >= cutoff);
+        if (from < 0) from = full.dates.length;
+    }
+    const dates = full.dates.slice(from);
+    const series = full.series.map(entry => ({ type: entry.type, values: entry.values.slice(from) }));
     coverage.textContent = investmentPnlHistoryError
-        || (series.length ? '' : 'No P/L history yet; snapshots are saved by the price refresh workflow.');
-    if (!series.length || typeof Chart === 'undefined') return;
+        || (full.dates.length ? (dates.length ? '' : 'No P/L snapshots in this period.')
+            : 'No P/L history yet; snapshots are saved by the price refresh workflow.');
+    if (!dates.length || typeof Chart === 'undefined') return;
+    const palette = { Crypto: '#f59e0b', ETF: '#2563eb', Crowdlending: '#10b981', Shares: '#8b5cf6', Stock: '#ec4899', Index: '#06b6d4', Other: '#6b7280' };
+    const fallback = ['#ef4444', '#84cc16', '#14b8a6', '#a855f7', '#f97316'];
     const dateLabel = ms => new Date(ms).toISOString().slice(0, 10);
+    // Layers are stacked cumulatively (not per sign) so each area sits on the previous visible one.
+    const applyStack = chart => {
+        let total = dates.map(() => 0);
+        let below = 'origin';
+        chart.data.datasets.forEach((dataset, index) => {
+            if (!chart.isDatasetVisible(index)) return;
+            total = total.map((sum, position) => sum + dataset.raw[position]);
+            dataset.data = dates.map((date, position) => ({ x: Date.parse(date), y: total[position] }));
+            dataset.fill = below;
+            below = index;
+        });
+    };
     investmentPnlChart = new Chart(document.getElementById('investmentPnlChart'), {
         type: 'line',
         data: {
-            datasets: [{
-                label: 'Net P/L DKK',
-                data: series.map(point => ({ x: Date.parse(point.date), y: point.pnl })),
-                borderColor: '#2563eb', backgroundColor: 'rgba(37,99,235,0.1)',
-                pointRadius: series.length > 60 ? 0 : 3, borderWidth: 2, tension: 0.2, fill: true
-            }]
+            datasets: series.map((entry, index) => {
+                const color = palette[entry.type] || fallback[index % fallback.length];
+                return {
+                    label: entry.type, raw: entry.values, data: [],
+                    borderColor: color, backgroundColor: `${color}99`,
+                    pointRadius: dates.length > 60 ? 0 : 3, borderWidth: 1.5, tension: 0.2, fill: 'origin'
+                };
+            })
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
             plugins: {
-                legend: { display: false },
+                legend: {
+                    display: true,
+                    onClick: (_event, legendItem, legend) => {
+                        const chart = legend.chart;
+                        chart.setDatasetVisibility(legendItem.datasetIndex, !chart.isDatasetVisible(legendItem.datasetIndex));
+                        applyStack(chart);
+                        chart.update();
+                    }
+                },
                 tooltip: { callbacks: {
                     title: items => dateLabel(items[0].parsed.x),
-                    label: item => ` Net P/L: ${investmentFormat(item.parsed.y)} DKK`
+                    label: item => ` ${item.dataset.label}: ${investmentFormat(item.dataset.raw[item.dataIndex])} DKK`
                 } }
             },
             scales: {
@@ -187,6 +229,8 @@ function renderInvestmentPnlTrend(coverage) {
             }
         }
     });
+    applyStack(investmentPnlChart);
+    investmentPnlChart.update();
 }
 
 function renderInvestmentAnalytics() {
@@ -200,6 +244,8 @@ function renderInvestmentAnalytics() {
     document.getElementById('analyticsRankingControls').hidden = !performers;
     document.getElementById('analyticsTable').hidden = trend;
     document.getElementById('analyticsTrendBox').hidden = !trend;
+    ['7', '30', '90', '365', 'all'].forEach(range => document.getElementById(`analyticsRange${range}`)
+        .setAttribute('aria-pressed', String(analyticsRange === range)));
     document.getElementById('analyticsTitle').textContent = trend ? 'Net P/L trend' : performers
         ? `${analyticsRanking === 'top' ? 'Top' : 'Worst'} performers` : 'Performance by platform';
     document.getElementById('analyticsNameHeading').textContent = performers ? 'Position' : 'Platform';
@@ -280,6 +326,12 @@ function renderInvestmentAnalytics() {
 for (const [id, view] of [['analyticsTrendButton', 'trend'], ['analyticsPlatformButton', 'platform'], ['analyticsPerformersButton', 'performers']]) {
     document.getElementById(id).addEventListener('click', () => {
         analyticsView = view;
+        renderInvestmentAnalytics();
+    });
+}
+for (const range of ['7', '30', '90', '365', 'all']) {
+    document.getElementById(`analyticsRange${range}`).addEventListener('click', () => {
+        analyticsRange = range;
         renderInvestmentAnalytics();
     });
 }
