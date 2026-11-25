@@ -2,6 +2,12 @@
 Dates are displayed and entered as `YYYY-MM-DD` throughout the app. Enter
 dates as text in this format; timestamps use the browser's local time.
 
+## Sharing the Meal Plan Supabase project
+
+See [db/supabase/README.md](db/supabase/README.md#moving-homefin-into-the-meal-plan-project)
+for the migration, household access and cutover steps. Changing GitHub secrets
+alone does not migrate data or change the browser's Supabase configuration.
+
 ## Install as a mobile app
 
 The app is a PWA. Open the HTTPS (GitHub Pages) URL on your phone, then use

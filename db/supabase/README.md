@@ -5,6 +5,121 @@ omitted because they are derived from `transaction_date`. `Planned/Rea` is
 retained as `transaction_status`: it currently contains only `REA`, but it
 represents whether a transaction is planned or actual and is not derivable.
 
+## Moving HomeFin into the Meal Plan project
+
+Changing GitHub secrets alone does not move the database. The browser reads
+`docs\supabase-config.js` directly, while the bank import and scheduled price
+refresh use separate GitHub Actions settings. The two apps will also share
+Supabase Auth and project resources.
+
+The shared-project access model is **all Meal Plan household members can access
+all HomeFin data**. Other authenticated users must not have access. Removing a
+user from `public.household_members` removes their HomeFin access too. The
+service-role key bypasses RLS and must remain private. The `market-data` Edge
+Function requires a signed-in user but is not restricted to household members;
+it does not read HomeFin data.
+
+Do not point the frontend or either workflow at the target until the following
+steps have succeeded. These steps require administrative access to both
+projects; no database or Auth users are migrated by a code deployment.
+
+1. Back up both projects privately and test the backups. Pause both HomeFin
+   scheduled workflows, close the app for all users, and prevent other HomeFin
+   writes until cutover and validation are complete. Keep the old project
+   intact for rollback.
+2. Inspect the live target database for name conflicts, including HomeFin
+   tables, functions, indexes and triggers. **Stop if any exist** until their
+   owners and compatibility are understood. The checked-in Meal Plan schema
+   uses different table names, but it may not reflect the live database. Never
+   run Meal Plan's destructive `supabase-import.sql` as part of this migration.
+   Compare the live HomeFin schema with the local scripts before applying
+   them; do not assume an old generated CSV seed represents current data.
+3. Ensure Meal Plan's `public.is_shared_meal_plan_member()` function and
+   `public.household_members` table exist. Add the intended HomeFin users to the
+   Meal Plan household using the existing Meal Plan administration process.
+   Users sign in with their **Meal Plan project's** credentials; HomeFin Auth
+   accounts and passwords are not automatically copied. The scheduled refresh
+   account must also be a household member, which grants it Meal Plan access.
+4. On the target, install the matching HomeFin schema and functions: the base
+   `schema.sql` and `category_rules.sql`, followed by `transaction_import.sql`,
+   `house_installments.sql`, and this repository's `portfolio.sql`. The first
+   two files are ignored local files, so verify they match the live source;
+   they are not available in a fresh checkout. Do not load CSV seed data.
+   Run `shared_project_access.sql` before importing any HomeFin data: it adds
+   restrictive RLS policies to all six user-facing tables. The current
+   `portfolio.sql` also checks membership inside its security-definer write
+   functions, which bypass RLS, and protects its two tables itself.
+   Do not replace these functions with older versions. Review other existing
+   grants and security-definer functions in the live projects before import:
+   permissive or privileged access outside these scripts can bypass RLS.
+5. Copy current data from the **live HomeFin database**, preserving every
+   column and ID, not from the old CSVs. Include `transactions`,
+   `category_rules`, `house_config`, `house_installments`, `portfolio_items`,
+   `portfolio_transactions`, and `transaction_import_state`. In particular,
+   preserve transaction source references and the import watermark to avoid
+   duplicate imports or missed history. Do not copy in-flight
+   `transaction_import_stage` rows. The setup scripts may have inserted
+   initial category rules and an import watermark; on a verified fresh target,
+   remove only those initialization rows before restoring the source rows.
+   Preserve portfolio item values and valuation versions: inserting portfolio
+   transactions normally fires an invalidation trigger. If using a database
+   owner to restore a dump, disable only user triggers on
+   `public.portfolio_transactions` for the restore and re-enable them in the
+   **same transaction**; leave foreign-key triggers enabled. Roll back the
+   transaction on any failure. Confirm trigger state and compare row counts,
+   IDs, balances, saved valuations and the watermark with the source.
+6. Deploy `market-data` to the Meal Plan project using the CLI instructions
+   below, explicitly linking the **target** project. Check first that the
+   target does not already have an unrelated function with that name.
+7. Test access before cutover: a household member can read and modify each
+   intended HomeFin area, including portfolio transaction RPCs; a signed-in
+   non-member cannot read or write the tables or call those RPCs. Also test
+   anonymous access and confirm Meal Plan still works. Test with actual
+   non-member credentials, not the service-role key.
+8. For cutover, replace the URL and **public** publishable/anon key in
+   `docs\supabase-config.js` with the Meal Plan project's values and deploy
+   Pages. In HomeFin's GitHub Actions settings, update the `SUPABASE_URL` and
+   `SUPABASE_ANON_KEY` variables, the `SUPABASE_SERVICE_ROLE_KEY` secret, and
+   the refresh email/password secrets to the target project's values. Update
+   the ignored local `api\supabase-config.json` as well if using the local
+   importer; environment variables take precedence. Do not change the Enable
+   Banking credentials unless they themselves need updating.
+9. Sign in again, test reads and a reversible write in each app, run each
+   HomeFin workflow manually and inspect the results, then re-enable schedules.
+   Verify all clients use the target before retiring the old project. If
+   rolling back after writes have reached the target, first reconcile those
+   writes back to the old project; simply reverting configuration loses them.
+
+For example, with PostgreSQL client tools compatible with both servers, set up
+private libpq connection services named `homefin-source` and `mealplan-target`
+and a private password file. Set `HOMEFIN_EXPORT` to a private SQL file path,
+then, after stopping writes and verifying the target schema:
+
+```powershell
+pg_dump --dbname="service=homefin-source" --data-only --column-inserts `
+  --table=public.transactions --table=public.category_rules `
+  --table=public.house_config --table=public.house_installments `
+  --table=public.portfolio_items --table=public.portfolio_transactions `
+  --table=public.transaction_import_state --file="$env:HOMEFIN_EXPORT"
+```
+
+After confirming the target tables are fresh and removing only the initialization
+rows mentioned above, restore with a database owner. `--single-transaction`
+and `ON_ERROR_STOP` roll back the trigger change and imported rows together if
+the restore fails:
+
+```powershell
+psql --dbname="service=mealplan-target" --single-transaction --set=ON_ERROR_STOP=1 `
+  --command="ALTER TABLE public.portfolio_transactions DISABLE TRIGGER USER" `
+  --file="$env:HOMEFIN_EXPORT" `
+  --command="ALTER TABLE public.portfolio_transactions ENABLE TRIGGER USER"
+```
+
+Do not put connection passwords on the command line, upload the export as a
+GitHub artifact, or restore a full database dump into Meal Plan. Securely
+remove the private export when it is no longer needed. Both apps share the
+target's free-tier quotas.
+
 ## Generate and load the local CSV
 
 From the repository root, run:
@@ -22,10 +137,10 @@ no source rows are discarded. The script supports the date formats currently
 present in the CSV and strips thousands separators from amounts. Empty comments
 are inserted as `NULL`.
 
-Row Level Security is enabled. The schema grants authenticated Supabase users
-read/write access to the shared transactions table; anonymous users have no
-access. If you need per-user transaction isolation, add an owner column and
-replace this shared-access policy with user-scoped policies.
+Row Level Security is enabled. The base schema grants authenticated Supabase
+users read/write access to the shared transactions table; anonymous users have
+no access. For the Meal Plan shared project, run `shared_project_access.sql`
+before loading data to further restrict access to household members.
 
 ## Configure the frontend
 
@@ -58,8 +173,9 @@ ON CONFLICT (id) DO UPDATE SET
     interest_concept = EXCLUDED.interest_concept;
 ```
 
-The references are shared with all authenticated Supabase users, as are the
-House installments; anonymous users cannot read them. Authenticated users can
+The base policies share the references and House installments with authenticated
+Supabase users; `shared_project_access.sql` restricts them to Meal Plan household
+members. Anonymous users cannot read them. Authorized users can
 only read the configuration, not modify it through the app. Payment descriptions
 match exactly and interest descriptions match by substring; the interest
 reference must not be contained in the payment reference.
@@ -91,12 +207,13 @@ mortgage entry is required before House totals can be calculated.
 
 ## Portfolio
 
-Run `portfolio.sql` in the Supabase SQL Editor. It creates shared
+Run `portfolio.sql` in the Supabase SQL Editor after setting up Meal Plan
+household membership. It creates shared
 `portfolio_items` and `portfolio_transactions` tables. The migration adds
 nullable saved market price, currency and quote-time columns to existing items;
-previously fetched quotes must be refreshed once to populate them. Authenticated users
+previously fetched quotes must be refreshed once to populate them. Household members
 can read both tables, create and update items, and are not isolated from each
-other. Anonymous access is revoked. Run the updated `portfolio.sql` again when
+other. Other users cannot access the portfolio. Run the updated `portfolio.sql` again when
 upgrading an existing installation. The app adds, edits, duplicates and deletes
 transactions through authenticated database functions; direct transaction
 writes remain unavailable to authenticated users.

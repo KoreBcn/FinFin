@@ -1,5 +1,12 @@
 BEGIN;
 
+DO $$
+BEGIN
+    IF to_regprocedure('public.is_shared_meal_plan_member()') IS NULL THEN
+        RAISE EXCEPTION 'Set up Meal Plan household membership before installing HomeFin portfolio';
+    END IF;
+END $$;
+
 CREATE TABLE IF NOT EXISTS public.portfolio_items (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     ticker text NOT NULL CHECK (length(trim(ticker)) > 0),
@@ -75,6 +82,16 @@ CREATE POLICY portfolio_items_authenticated_access ON public.portfolio_items
 DROP POLICY IF EXISTS portfolio_transactions_authenticated_read ON public.portfolio_transactions;
 CREATE POLICY portfolio_transactions_authenticated_read ON public.portfolio_transactions
     FOR SELECT TO authenticated USING (true);
+DROP POLICY IF EXISTS homefin_household_restriction ON public.portfolio_items;
+CREATE POLICY homefin_household_restriction ON public.portfolio_items
+    AS RESTRICTIVE FOR ALL TO PUBLIC
+    USING (coalesce(public.is_shared_meal_plan_member(), false))
+    WITH CHECK (coalesce(public.is_shared_meal_plan_member(), false));
+DROP POLICY IF EXISTS homefin_household_restriction ON public.portfolio_transactions;
+CREATE POLICY homefin_household_restriction ON public.portfolio_transactions
+    AS RESTRICTIVE FOR ALL TO PUBLIC
+    USING (coalesce(public.is_shared_meal_plan_member(), false))
+    WITH CHECK (coalesce(public.is_shared_meal_plan_member(), false));
 
 CREATE OR REPLACE FUNCTION public.invalidate_portfolio_valuation()
 RETURNS trigger
@@ -148,8 +165,8 @@ DECLARE
     field_value text;
     normalized text;
 BEGIN
-    IF auth.uid() IS NULL THEN
-        RAISE EXCEPTION 'Authentication required';
+    IF NOT coalesce(public.is_shared_meal_plan_member(), false) THEN
+        RAISE EXCEPTION 'HomeFin household membership required';
     END IF;
     IF action_value IS NULL OR action_value = '' OR p_transaction->>'transaction_date' IS NULL THEN
         RAISE EXCEPTION 'Date and action are required';
@@ -239,7 +256,9 @@ DECLARE
     source public.portfolio_transactions%ROWTYPE;
     saved public.portfolio_transactions%ROWTYPE;
 BEGIN
-    IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Authentication required'; END IF;
+    IF NOT coalesce(public.is_shared_meal_plan_member(), false) THEN
+        RAISE EXCEPTION 'HomeFin household membership required';
+    END IF;
     SELECT * INTO source FROM public.portfolio_transactions WHERE id = p_id FOR UPDATE;
     IF NOT FOUND OR p_expected_revision IS NULL OR source.revision <> p_expected_revision THEN
         RAISE EXCEPTION 'Transaction changed or was deleted; reload the portfolio';
@@ -265,7 +284,9 @@ RETURNS void
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
 AS $$
 BEGIN
-    IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Authentication required'; END IF;
+    IF NOT coalesce(public.is_shared_meal_plan_member(), false) THEN
+        RAISE EXCEPTION 'HomeFin household membership required';
+    END IF;
     DELETE FROM public.portfolio_transactions WHERE id = p_id AND revision = p_expected_revision;
     IF NOT FOUND THEN RAISE EXCEPTION 'Transaction changed or was deleted; reload the portfolio'; END IF;
 END;
