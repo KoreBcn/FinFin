@@ -499,17 +499,20 @@ main {
     color: var(--text-light); pointer-events: none; transform: translateY(-50%);
 }
 .portfolio-transaction-form select { display: block; width: 100%; margin-top: 0.3rem; }
-.tx-table-wrap.portfolio-transaction-table-wrap { overflow: visible; max-height: none; }
-#portfolioTransactions .tx-table-wrap table.portfolio-transaction-table { min-width: 0; table-layout: fixed; }
+.tx-table-wrap.portfolio-transaction-table-wrap { overflow-x: auto; max-height: none; }
+#portfolioTransactions .tx-table-wrap table.portfolio-transaction-table { min-width: 1150px; table-layout: fixed; }
 table.tx-table.portfolio-transaction-table thead th { padding: 0.45rem 0.3rem; white-space: normal; overflow-wrap: anywhere; }
 table.tx-table.portfolio-transaction-table tbody td { padding: 0.45rem 0.3rem; overflow-wrap: anywhere; }
-table.portfolio-transaction-table th:nth-child(1) { width: 6.25rem; }
-table.portfolio-transaction-table th:nth-child(2) { width: 6rem; }
-table.portfolio-transaction-table th:nth-child(3) { width: 5.5rem; }
-table.portfolio-transaction-table th:nth-child(4) { width: 7.5rem; }
-table.portfolio-transaction-table td:nth-child(2) { white-space: nowrap; }
+table.portfolio-transaction-table th:nth-child(1) { width: 6rem; }
+table.portfolio-transaction-table th:nth-child(2) { width: 5.5rem; }
+table.portfolio-transaction-table th:nth-child(3) { width: 7.5rem; }
+table.portfolio-transaction-table th:last-child { width: 6.25rem; }
+table.portfolio-transaction-table td:first-child { white-space: nowrap; }
 .portfolio-transaction-ticker { position: relative; }
-.portfolio-transaction-ticker .investment-info-popup { white-space: normal; overflow-wrap: anywhere; }
+.portfolio-transaction-ticker .investment-info[open] { min-width: 0; flex: 1 1 auto; }
+.portfolio-transaction-ticker .investment-info-popup {
+    position: relative; white-space: normal; overflow-wrap: anywhere;
+}
 .investment-note { color: var(--text-light); font-size: 0.82rem; margin: 0.55rem 0; }
 .investment-table input { background: var(--input-bg); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.2rem 0.35rem; }
 .investment-status { margin: 0.8rem 0; font-size: 0.85rem; }
@@ -609,19 +612,6 @@ table.tx-table.investment-table tbody td.investment-portfolio-heat {
 [data-theme="dark"] table.portfolio-transaction-table td.investment-positive { color: #34d399; }
 [data-theme="dark"] table.portfolio-transaction-table td.investment-negative { color: #f87171; }
 .portfolio-transaction-table .tx-action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-@media (max-width: 1050px) {
-    .portfolio-transaction-table thead { display: none; }
-    #portfolioTransactions .tx-table-wrap table.portfolio-transaction-table,
-    .portfolio-transaction-table tbody { display: block; }
-    table.portfolio-transaction-table tbody tr { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 0.45rem; }
-    table.portfolio-transaction-table tbody td { min-width: 0; display: block; }
-    table.portfolio-transaction-table tbody td::before {
-        content: attr(data-label); display: block; color: var(--text-light); font-size: 0.7rem;
-    }
-    table.portfolio-transaction-table tbody td:first-child,
-    table.portfolio-transaction-table tbody td.portfolio-transaction-ticker { grid-column: 1 / -1; }
-}
 
 @media (max-width: 768px) {
     .home-subtab-bar { display: contents; }
@@ -1801,23 +1791,13 @@ body.is-authenticated .auth-gate { display: none; }
     #tabCategories .rules-info-btn + .transaction-add-btn { grid-column: 3; }
     .tx-table-wrap,
     .drawer-table-wrapper,
-    .monthly-view-table,
-    .portfolio-transaction-table-wrap {
+    .monthly-view-table {
         overflow-x: auto;
     }
     #tabTransactions .tx-table { min-width: 820px; }
     #tabCategories .tx-table { min-width: 1000px; }
     .monthly-view-table table,
     .drawer-table-wrapper table { min-width: 760px; }
-    #portfolioTransactions .tx-table-wrap table.portfolio-transaction-table {
-        display: table;
-        min-width: 1280px;
-    }
-    .portfolio-transaction-table thead { display: table-header-group; }
-    .portfolio-transaction-table tbody { display: table-row-group; }
-    table.portfolio-transaction-table tbody tr { display: table-row; padding: 0; }
-    table.portfolio-transaction-table tbody td { display: table-cell; }
-    table.portfolio-transaction-table tbody td::before { content: none; }
     .tx-table-wrap,
     .drawer-table-wrapper,
     .monthly-view-table {

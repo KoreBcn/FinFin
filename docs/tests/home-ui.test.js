@@ -32,8 +32,9 @@ function setup() {
     }
     const document = {
         getElementById: element,
-        querySelectorAll: selector => selector === '.tab-btn' ? [element('navHome'), element('navInvestments')] : [],
-        querySelector: selector => selector.includes("'home'") ? element('navHome') : element('navInvestments'),
+        querySelectorAll: selector => selector === '.tab-btn' ? [element('navHome'), element('navInvestments'), element('navMortgage')] : [],
+        querySelector: selector => selector.includes("'home'") ? element('navHome')
+            : selector.includes("'mortgage'") ? element('navMortgage') : element('navInvestments'),
         addEventListener() {},
         documentElement: {
             attributes: {},
@@ -75,7 +76,7 @@ test('switches Home subtabs and preserves the selected subtab after visiting Inv
     assert.equal(vm.runInContext('highlightsRendered', context), 1);
 });
 
-test('opens Monthly view when the selected account has a visible pending review', () => {
+test('opens Monthly view for Anna first and preserves Home selection across main tabs', () => {
     const { context, elements } = setup();
     vm.runInContext(`
         populateYearFilter = () => {};
@@ -83,24 +84,26 @@ test('opens Monthly view when the selected account has a visible pending review'
         applyGlobalFilters = () => {};
         renderDrawerTable = () => {};
         const now = new Date();
-        const previousMonth = new Date(now.getFullYear(), now.getMonth() - 2, 1);
-        rawData = [{ Year: previousMonth.getFullYear(), Month: previousMonth.getMonth() + 1,
+        rawData = [{ Year: now.getFullYear(), Month: 1,
             Account: 'anna', Expense: 'Groceries', Type: '⚠️ Review' }];
-        bootstrapApp();
+        rawData.push({ Year: now.getFullYear(), Account: 'joint', Expense: 'Review' });
+        bootstrapApp('ANNA.K.MIKKELSEN@gmail.com');
     `, context);
     assert.equal(elements.get('tabMonthly').style.display, 'flex');
     assert.equal(elements.get('homeMonthlyTab').attributes['aria-selected'], 'true');
     assert.equal(elements.get('monthlyReviewCount').textContent, '1');
+    assert.equal(elements.get('monthlyScopeAnna').attributes['aria-pressed'], 'true');
     vm.runInContext("switchHomeSubtab('dashboard'); switchTab('investments'); switchTab('home')", context);
     assert.equal(elements.get('tabDashboard').style.display, 'flex');
 });
 
-test('opens Dashboard when reviews are outside the selected account or current year, or excluded', () => {
+test('chooses Joint then Carlos when eligible and otherwise opens Dashboard', () => {
     const { context, elements } = setup();
     vm.runInContext(`
         populateYearFilter = () => {};
         populateCategoryFilter = () => {};
         applyGlobalFilters = () => {};
+        renderDrawerTable = () => {};
         const now = new Date();
         rawData = [
             { Year: now.getFullYear(), Month: now.getMonth() + 1, Account: 'carlos', Expense: 'Review' },
@@ -108,17 +111,82 @@ test('opens Dashboard when reviews are outside the selected account or current y
             { Year: now.getFullYear() + 1, Month: now.getMonth() + 1, Account: 'anna', Expense: 'Review' },
             { Year: now.getFullYear(), Month: now.getMonth() + 1, Account: 'anna', Type: 'Review', excluded: true }
         ];
-        bootstrapApp();
+        bootstrapApp('anna.k.mikkelsen@gmail.com');
+    `, context);
+    assert.equal(elements.get('tabMonthly').style.display, 'flex');
+    assert.equal(elements.get('monthlyScopeCarlos').attributes['aria-pressed'], 'true');
+    assert.equal(elements.get('monthlyReviewCount').textContent, '1');
+    vm.runInContext(`
+        rawData.push({ Year: now.getFullYear(), Account: 'joint', Type: 'Review' });
+        rawData.push({ Year: now.getFullYear(), Account: 'anna', Type: 'Review' });
+        bootstrapApp('person@example.com');
+    `, context);
+    assert.equal(elements.get('tabMonthly').style.display, 'flex');
+    assert.equal(elements.get('monthlyScopeJoint').attributes['aria-pressed'], 'true');
+    assert.equal(elements.get('monthlyReviewCount').textContent, '1');
+    vm.runInContext(`
+        rawData = rawData.filter(row => row.Account !== 'anna');
+        bootstrapApp('anna.k.mikkelsen@gmail.com');
+    `, context);
+    assert.equal(elements.get('monthlyScopeJoint').attributes['aria-pressed'], 'true');
+    vm.runInContext(`
+        rawData = rawData.filter(row => row.Account !== 'joint');
+        bootstrapApp('person@example.com');
+    `, context);
+    assert.equal(elements.get('monthlyScopeCarlos').attributes['aria-pressed'], 'true');
+    vm.runInContext(`
+        rawData = [{Year: now.getFullYear(), Account: 'anna', Type: 'Review'}];
+        bootstrapApp('person@example.com');
     `, context);
     assert.equal(elements.get('tabDashboard').style.display, 'flex');
     assert.equal(elements.get('homeDashboardTab').attributes['aria-selected'], 'true');
     vm.runInContext(`
-        renderDrawerTable = () => {};
-        monthlyViewScope = 'carlos';
-        bootstrapApp();
+        rawData = rawData.filter(row => row.Year !== now.getFullYear() || row.excluded);
+        bootstrapApp('anna.k.mikkelsen@gmail.com');
     `, context);
-    assert.equal(elements.get('tabMonthly').style.display, 'flex');
-    assert.equal(elements.get('monthlyReviewCount').textContent, '1');
+    assert.equal(elements.get('tabDashboard').style.display, 'flex');
+});
+
+test('ignores a transaction load from a previous sign-in, even for the same user', async () => {
+    const { context } = setup();
+    let resolve;
+    context.client = {
+        from() {
+            return {
+                select() { return this; },
+                order() { return this; },
+                range() { return new Promise(done => { resolve = done; }); }
+            };
+        }
+    };
+    vm.runInContext(`
+        supabaseClient = client;
+        activeAuthUserId = 'user';
+        authGeneration = 1;
+        bootstrapApp = () => { throw new Error('stale load must not bootstrap'); };
+    `, context);
+    const pending = vm.runInContext("loadData('user', 'person@example.com', 1)", context);
+    vm.runInContext("activeAuthUserId = null; authGeneration++; activeAuthUserId = 'user'; authGeneration++", context);
+    resolve({ data: [], error: null });
+    await pending;
+    assert.equal(vm.runInContext('rawData.length', context), 0);
+});
+
+test('opens Mortgage as a main tab and preserves Investment and Home selections', () => {
+    const { context, elements } = setup();
+    vm.runInContext(`
+        let houseOpens = 0;
+        openHouse = () => { houseOpens++; };
+        switchHomeSubtab('transactions');
+        switchTab('mortgage');
+    `, context);
+    assert.equal(elements.get('investmentHouse').style.display, 'grid');
+    assert.equal(elements.get('tabHome').style.display, 'none');
+    assert.equal(elements.get('tabInvestments').style.display, 'none');
+    assert.equal(vm.runInContext('houseOpens', context), 1);
+    vm.runInContext("switchTab('investments'); switchTab('home')", context);
+    assert.equal(elements.get('investmentHouse').style.display, 'none');
+    assert.equal(elements.get('tabTransactions').style.display, 'flex');
 });
 
 test('Monthly view limits rows to the current calendar year and selected scope', () => {

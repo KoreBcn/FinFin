@@ -41,10 +41,11 @@ includes manual entries and is not the time of the last Enable Banking run; a
 run that adds no transactions does not change it.
 The value is read on sign-in and after transaction changes.
 
-On sign-in, Home opens Review if the selected account has transactions to
-review in the current or previous two calendar months; otherwise it opens
-Dashboard. Transactions excluded from analytics do not count as pending reviews,
-matching the Review tab's count. The initial account is Anna.
+On sign-in, Home opens Review for the first account with pending items in the
+current calendar year. Anna's account is checked first for Anna's sign-in,
+then Joint and Carlos; other sign-ins check Joint and Carlos. If none have
+pending items, Home opens Dashboard. Transactions excluded from analytics do
+not count, matching the Review tab's count.
 
 ## Investments
 
@@ -138,9 +139,9 @@ value, so check that they are actually closed. Portfolio percentages use
 known open values. Unknown valuations are excluded from rankings and marked
 as partial in platform totals.
 
-### House
+### Mortgage
 
-The House subtab uses the already-loaded Supabase transactions and reads its
+The Mortgage main tab uses the already-loaded Supabase transactions and reads its
 transaction references from Supabase after sign-in. Configure them as described
 in [db/supabase/README.md](db/supabase/README.md); do not publish account
 identifiers in the static site. Payment descriptions are matched exactly, while
@@ -148,7 +149,7 @@ interest descriptions can contain the configured text; matching ignores case
 and surrounding whitespace. Actual matching bank outflows count as payments,
 with inflows as refunds. Interest transactions retain their signed amounts as
 adjustments. Planned transactions are excluded, regardless of the dashboard
-filters. The House view works on GitHub Pages and the local app.
+filters. The Mortgage view works on GitHub Pages and the local app.
 
 The house value starts at 6,100,000 DKK and can be changed in whole kroner. Run
 `db\supabase\house_installments.sql` in the Supabase SQL Editor before using

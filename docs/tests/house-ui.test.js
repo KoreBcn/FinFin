@@ -145,7 +145,6 @@ test('switches to analytics and loads portfolio data without opening House', () 
     vm.runInContext("let portfolioOpens = 0; openInvestments = () => { portfolioOpens++; }; switchInvestmentSubtab('analytics')", context);
     assert.equal(elements.get('investmentAnalytics').hidden, false);
     assert.equal(elements.get('investmentPortfolio').hidden, true);
-    assert.equal(elements.get('investmentHouse').hidden, true);
     assert.equal(elements.get('investmentAnalyticsTab')['aria-selected'], 'true');
     assert.equal(vm.runInContext('portfolioOpens', context), 1);
 });

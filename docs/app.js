@@ -57,6 +57,7 @@ let activeTab = 'dashboard';
 let homeSubtab = 'dashboard';
 let supabaseClient = null;
 let activeAuthUserId = null;
+let authGeneration = 0;
 let transactionInsertRequest = 0;
 
 // Highlights tab currency
@@ -129,12 +130,16 @@ function switchTab(tab) {
     document.querySelector(`.tab-btn[onclick="switchTab('${tab}')"]`).classList.add('active');
     document.getElementById('tabHome').style.display = tab === 'home' ? 'flex' : 'none';
     document.getElementById('tabInvestments').style.display = tab === 'investments' ? 'flex' : 'none';
+    document.getElementById('investmentHouse').style.display = tab === 'mortgage' ? 'grid' : 'none';
     if (tab === 'home') switchHomeSubtab(homeSubtab);
     if (tab === 'investments') {
         activeTab = tab;
         renderInvestments();
-        if (investmentSubtab === 'house') openHouse();
-        else openInvestments();
+        openInvestments();
+    }
+    if (tab === 'mortgage') {
+        activeTab = tab;
+        openHouse();
     }
 }
 
@@ -230,7 +235,7 @@ function supabaseDataToRow(d) {
     };
 }
 
-async function loadData() {
+async function loadData(userId, email, generation) {
     try {
         const data = [];
         const pageSize = 1000;
@@ -244,11 +249,12 @@ async function loadData() {
             data.push(...page);
             if (page.length < pageSize) break;
         }
+        if (activeAuthUserId !== userId || authGeneration !== generation) return;
         rawData = data.filter(d => Number(d.amount) !== 0).map(supabaseDataToRow);
-        bootstrapApp();
+        bootstrapApp(email);
         showToast(`✅ Loaded ${rawData.length} transactions`, 'success');
     } catch (e) {
-        showToast('❌ Failed to load data from Supabase: ' + e.message, 'error');
+        if (activeAuthUserId === userId && authGeneration === generation) showToast('❌ Failed to load data from Supabase: ' + e.message, 'error');
     }
 }
 
@@ -305,6 +311,7 @@ async function applyAuthSession(session) {
     if (userId === activeAuthUserId) return;
 
     activeAuthUserId = userId;
+    const generation = ++authGeneration;
     transactionInsertRequest++;
     document.getElementById('transactionInsertDate').textContent = 'Last updated: —';
     clearInvestments();
@@ -321,8 +328,8 @@ async function applyAuthSession(session) {
     document.getElementById('signedInEmail').title = user.email || '';
     document.body.classList.add('is-authenticated');
     void refreshTransactionInsertDate();
-    await loadData();
-    if (activeAuthUserId === userId) await openInvestments();
+    await loadData(userId, user.email, generation);
+    if (activeAuthUserId === userId && authGeneration === generation) await openInvestments();
 }
 
 async function initializeSupabaseAuth() {
@@ -473,7 +480,7 @@ async function submitTxForm(e) {
 // =====================================================
 //  BOOTSTRAP
 // =====================================================
-function bootstrapApp() {
+function bootstrapApp(email) {
     const currentYear = new Date().getFullYear();
     const availableYears = [...new Set(rawData.map(row => Number(row.Year)))];
     globalFilters.years = availableYears.includes(currentYear) ? [currentYear] : [];
@@ -481,7 +488,12 @@ function bootstrapApp() {
     populateYearFilter();
     populateCategoryFilter();
     document.getElementById('emptyState').style.display      = 'none';
-    homeSubtab = getMonthlyViewScopeRows().some(isMonthlyReviewRow) ? 'monthly' : 'dashboard';
+    const scopes = String(email || '').trim().toLowerCase() === 'anna.k.mikkelsen@gmail.com'
+        ? ['anna', 'joint', 'carlos'] : ['joint', 'carlos'];
+    const reviewScope = scopes.find(scope => getMonthlyViewScopeRows(new Date(), scope).some(isMonthlyReviewRow));
+    monthlyViewReviewOnly = false;
+    setMonthlyScope(reviewScope || scopes[0], false);
+    homeSubtab = reviewScope ? 'monthly' : 'dashboard';
     switchTab('home');
     document.getElementById('tabSwitcher').style.display     = 'flex';
     applyGlobalFilters();
@@ -1659,9 +1671,9 @@ function sortDrawer(key, view = 'drawer') {
 // =====================================================
 //  MONTHLY VIEW
 // =====================================================
-function monthlyViewScopeMatches(row) {
+function monthlyViewScopeMatches(row, scope = monthlyViewScope) {
     const account = String(row.Account || '').trim().toLowerCase();
-    return account === monthlyViewScope;
+    return account === scope;
 }
 
 function getMonthIndex(year, month) {
@@ -1676,11 +1688,11 @@ function getMonthIndex(year, month) {
     return numericYear * 12 + numericMonth - 1;
 }
 
-function getMonthlyViewScopeRows(referenceDate = new Date()) {
+function getMonthlyViewScopeRows(referenceDate = new Date(), scope = monthlyViewScope) {
     const currentYear = referenceDate.getFullYear();
 
     return rawData.filter(row =>
-        monthlyViewScopeMatches(row) && Number(row.Year) === currentYear
+        monthlyViewScopeMatches(row, scope) && Number(row.Year) === currentYear
     );
 }
 
@@ -1724,7 +1736,7 @@ function renderMonthlyView(referenceDate = new Date()) {
     renderDrawerTable('monthly');
 }
 
-function setMonthlyScope(scope) {
+function setMonthlyScope(scope, render = true) {
     if (!['anna', 'carlos', 'joint'].includes(scope)) return;
     monthlyViewScope = scope;
     monthlyViewPage = 1;
@@ -1736,7 +1748,7 @@ function setMonthlyScope(scope) {
         button.classList.toggle('active', active);
         button.setAttribute('aria-pressed', String(active));
     });
-    renderMonthlyView();
+    if (render) renderMonthlyView();
 }
 
 function toggleMonthlyReviewFilter() {

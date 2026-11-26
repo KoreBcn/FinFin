@@ -12,7 +12,7 @@
     <link rel="alternate icon" href="icons/icon-192.png" type="image/png">
     <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
     <title>MollerupFin</title>
-    <link rel="stylesheet" href="styles.css?v=70">
+    <link rel="stylesheet" href="styles.css?v=72">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 </head>
@@ -51,6 +51,9 @@
                 </button>
                 <button class="tab-btn" onclick="switchTab('investments')">
                     📈 Investments
+                </button>
+                <button class="tab-btn" onclick="switchTab('mortgage')">
+                    🏠 Mortgage
                 </button>
             </div>
         </nav>
@@ -485,8 +488,8 @@
     <div id="tabInvestments" class="tab-panel" style="display:none">
         <div class="investment-subtabs" role="tablist" aria-label="Investments sections">
             <button type="button" id="investmentPortfolioTab" class="investment-subtab active" role="tab" aria-selected="true" aria-controls="investmentPortfolio" onclick="switchInvestmentSubtab('portfolio')">Portfolio</button>
-                        <button type="button" id="investmentTransactionsTab" class="investment-subtab" role="tab" aria-selected="false" aria-controls="investmentPortfolio" onclick="switchInvestmentSubtab('transactions')">Transactions</button>            <button type="button" id="investmentAnalyticsTab" class="investment-subtab" role="tab" aria-selected="false" aria-controls="investmentAnalytics" onclick="switchInvestmentSubtab('analytics')">Analytics</button>
-            <button type="button" id="investmentHouseTab" class="investment-subtab" role="tab" aria-selected="false" aria-controls="investmentHouse" onclick="switchInvestmentSubtab('house')">House</button>
+            <button type="button" id="investmentTransactionsTab" class="investment-subtab" role="tab" aria-selected="false" aria-controls="investmentPortfolio" onclick="switchInvestmentSubtab('transactions')">Transactions</button>
+            <button type="button" id="investmentAnalyticsTab" class="investment-subtab" role="tab" aria-selected="false" aria-controls="investmentAnalytics" onclick="switchInvestmentSubtab('analytics')">Analytics</button>
         </div>
         <div id="investmentPortfolio" class="tab-panel" role="tabpanel" aria-labelledby="investmentPortfolioTab">
         <section class="filters-bar portfolio-filters" aria-label="Portfolio filters">
@@ -564,7 +567,7 @@
                 <p id="portfolioTransactionStatus" class="investment-note" role="status" aria-live="polite"></p>
                 <div class="tx-table-wrap portfolio-transaction-table-wrap">
                     <table class="tx-table portfolio-transaction-table">
-                        <thead><tr><th>Actions</th><th>Date</th><th>Action</th><th>Ticker</th><th>Quantity</th><th>Price / unit</th><th>Exchange rate</th><th>Commission</th><th>Fees DKK</th><th>Total cost DKK</th><th>Local value</th></tr></thead>
+                        <thead><tr><th>Date</th><th>Action</th><th>Ticker</th><th>Quantity</th><th>Price / unit</th><th>Exchange rate</th><th>Commission</th><th>Fees DKK</th><th>Total cost DKK</th><th>Local value</th><th>Actions</th></tr></thead>
                         <tbody id="portfolioTransactionBody"></tbody>
                     </table>
                 </div>
@@ -652,7 +655,8 @@
                 <p class="investment-note">Includes all platforms. Closed positions are treated as having zero current value; check that they are actually closed. Portfolio percentages use known open-position values. Net P/L includes cash flows, fees and dividends. * indicates a partial platform total.</p>
             </section>
         </div>
-        <section id="investmentHouse" class="house-layout" role="tabpanel" aria-labelledby="investmentHouseTab" hidden>
+    </div>
+        <section id="investmentHouse" class="house-layout" style="display:none" aria-label="Mortgage">
             <div class="house-panel house-installments-panel">
                 <div class="house-panel-heading">
                     <h2>Installments</h2>
@@ -740,8 +744,6 @@
                 <p class="house-note">Equity includes principal payments, manual adjustments and the change in house value. Bank interest transactions are excluded. Debt is the house value minus equity; this is an estimate, not the actual mortgage balance.</p>
             </div>
         </section>
-    </div>
-
 </main>
 
 <datalist id="expenseOptions"></datalist>
@@ -755,9 +757,9 @@
 <script src="supabase-config.js"></script>
 <script src="date-utils.js?v=1"></script>
 <script src="investment-math.js?v=1"></script>
-<script src="investments.js?v=35"></script>
-<script src="house.js?v=17"></script>
-<script src="app.js?v=33"></script>
+<script src="investments.js?v=36"></script>
+<script src="house.js?v=18"></script>
+<script src="app.js?v=34"></script>
     <script>
         if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
     </script>

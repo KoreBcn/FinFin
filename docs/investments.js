@@ -666,7 +666,6 @@ function renderPortfolioTransactions() {
             button.addEventListener('click', handler);
             actions.append(button);
         }
-        tr.append(actions);
         fields.forEach(([field, label]) => {
             const td = document.createElement('td');
             td.dataset.label = label;
@@ -714,6 +713,7 @@ function renderPortfolioTransactions() {
             }
             tr.append(td);
         });
+        tr.append(actions);
         body.append(tr);
     });
 }

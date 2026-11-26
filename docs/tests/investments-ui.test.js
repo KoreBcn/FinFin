@@ -1041,6 +1041,9 @@ test('shows ticker details with overview badges and colors actions and signed am
     const rows = elements.get('portfolioTransactionBody').children;
     const overviewBadge = find(elements.get('investmentTableBody').children[0], e => e.className === 'investment-type');
     const cell = (row, label) => find(row, e => e.dataset.label === label);
+    assert.equal(rows[0].children[0].dataset.label, 'Date');
+    assert.equal(rows[0].children.at(-1).dataset.label, 'Actions');
+    assert.equal(rows[0].children.at(-1).children.length, 3);
     const ticker = cell(rows[0], 'Ticker');
     const popup = find(ticker, e => e.className === 'investment-popup investment-info-popup');
     assert.match(popup.textContent, /Name: ExamplePlatform: BrokerType: SharesCurrency: USDLocal currency: DKK/);
