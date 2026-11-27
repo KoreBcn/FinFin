@@ -15,6 +15,7 @@ function fixture(items, transactions) {
     let time = 0;
     const calls = [];
     const saves = [];
+    const metadataSaves = [];
     const delays = [];
     const historyPosts = [];
     const state = { failFx: false, limited: false, limitedFx: false, stale: false, changedReads: 0, closedHistory: [] };
@@ -30,6 +31,11 @@ function fixture(items, transactions) {
                 return Response.json(rows.map((_, index) => ({ id: index })));
             }
             return Response.json(state.closedHistory.map((id, index) => ({ id: index, portfolio_item_id: id })));
+        }
+        if (url.pathname === '/rest/v1/portfolio_refresh_metadata') {
+            const row = JSON.parse(options.body);
+            metadataSaves.push(row);
+            return Response.json([{ id: row.id }]);
         }
         if (url.pathname === '/rest/v1/portfolio_items' && options.method === 'PATCH') {
             const id = url.searchParams.get('id').slice(3);
@@ -62,7 +68,7 @@ function fixture(items, transactions) {
         return Response.json({ close: 10, currency: request.params.symbol === 'DANISH' ? 'DKK' : 'USD', last_quote_at: 1700000000, percent_change: '1.5' });
     };
     const options = { fetcher, today: () => '2026-11-25', now: () => time, sleep: async delay => { delays.push(delay); time += delay; } };
-    return { state, calls, saves, delays, historyPosts, options };
+    return { state, calls, saves, metadataSaves, delays, historyPosts, options };
 }
 
 test('refreshes eligible positions with shared math, cached quotes and FX, and paced requests', async () => {
@@ -76,6 +82,7 @@ test('refreshes eligible positions with shared math, cached quotes and FX, and p
         ['one', 25], ['two', 210], ['three', 70]
     ]);
     assert.equal(db.saves[0].fields.market_change_today, 1.5);
+    assert.deepEqual(db.metadataSaves, [{ id: 1, refreshed_at: new Date(32000).toISOString() }]);
     for (const days of [7, 30, 90]) assert.equal(db.saves[0].fields[`market_change_${days}d`], 25);
     assert.equal(db.saves[0].fields.market_price_at, '2023-11-14T22:13:20.000Z');
     assert.equal(db.saves[0].params.get('valuation_version'), 'eq.0');

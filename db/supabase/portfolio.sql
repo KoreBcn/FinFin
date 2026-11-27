@@ -127,6 +127,22 @@ CREATE POLICY homefin_household_restriction ON public.portfolio_pnl_history
     USING (coalesce(public.is_shared_meal_plan_member(), false))
     WITH CHECK (coalesce(public.is_shared_meal_plan_member(), false));
 
+CREATE TABLE IF NOT EXISTS public.portfolio_refresh_metadata (
+    id smallint PRIMARY KEY CHECK (id = 1),
+    refreshed_at timestamptz NOT NULL
+);
+ALTER TABLE public.portfolio_refresh_metadata ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.portfolio_refresh_metadata FROM PUBLIC, anon, authenticated;
+GRANT SELECT, INSERT, UPDATE ON public.portfolio_refresh_metadata TO authenticated;
+DROP POLICY IF EXISTS portfolio_refresh_metadata_authenticated_access ON public.portfolio_refresh_metadata;
+CREATE POLICY portfolio_refresh_metadata_authenticated_access ON public.portfolio_refresh_metadata
+    FOR ALL TO authenticated USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS homefin_household_restriction ON public.portfolio_refresh_metadata;
+CREATE POLICY homefin_household_restriction ON public.portfolio_refresh_metadata
+    AS RESTRICTIVE FOR ALL TO PUBLIC
+    USING (coalesce(public.is_shared_meal_plan_member(), false))
+    WITH CHECK (coalesce(public.is_shared_meal_plan_member(), false));
+
 CREATE OR REPLACE FUNCTION public.invalidate_portfolio_valuation()
 RETURNS trigger
 LANGUAGE plpgsql

@@ -208,8 +208,8 @@ mortgage entry is required before House totals can be calculated.
 ## Portfolio
 
 Run `portfolio.sql` in the Supabase SQL Editor after setting up Meal Plan
-household membership. It creates shared
-`portfolio_items` and `portfolio_transactions` tables. The migration adds
+household membership. It creates shared portfolio item, transaction, P/L
+history, and refresh-metadata tables. The migration adds
 nullable saved market price, currency and quote-time columns to existing items;
 previously fetched quotes must be refreshed once to populate them. Household members
 can read both tables, create and update items, and are not isolated from each
@@ -354,7 +354,10 @@ quantity, price, DKK value and net P/L). Items whose value could not be refreshe
 are skipped; crowdlending items use their manual value. The first run (and any
 later run, once an item is closed) also inserts a single realized P/L row for each
 closed item that has none, dated at its last transaction. Investments → Analytics →
-**P/L trend** plots the running total for items counted in total P/L.
+**P/L trend** plots the running total for items counted in total P/L. The workflow
+also records its completion time in `portfolio_refresh_metadata`; Investments
+shows that time using the same display format as Home. Manual price refreshes do
+not change this workflow timestamp.
 
 ## Import new Enable Banking transactions
 
@@ -415,9 +418,11 @@ The Anna profile is enabled only when at least one of its non-base-URL
 credentials is present. If enabled, its app ID, certificate, and account UID
 secret are all required. Its transactions use the primary categorization rules,
 are assigned to account `anna`, and use category `👩 Anna` except for recognized
-income, which retains `💰 Income`. Unmatched transactions use subcategory
-`⚠️ Review`. This applies to newly imported transactions; previously imported
-transactions are not recategorized.
+income, which retains `💰 Income`. Unmatched Anna and Carlos transactions use
+their personal category (`👩 Anna` or `👨 Carlos`) with subcategory `⚠️ Review`;
+unmatched joint-account transactions use `⚠️ Review` for both fields. This
+applies to newly imported transactions; previously imported transactions are
+not recategorized.
 
 Each workflow failure reports the profile and account index without exposing
 account UIDs or API response bodies. An `HTTP 404` on a transaction fetch

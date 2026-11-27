@@ -408,7 +408,7 @@ main {
     border-color: #f59e0b;
     box-shadow: 0 0 0 2px rgba(245,158,11,0.25), var(--shadow-lg);
 }
-#investmentPortfolio[hidden], #investmentAnalytics[hidden], #investmentHouse[hidden] { display: none; }
+#investmentPortfolio[hidden], #investmentHouse[hidden] { display: none; }
 .house-layout { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(300px, 0.8fr); gap: 0.75rem; }
 .house-panel { min-width: 0; padding: 1.25rem; background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); }
 .house-panel h2 { font-size: 1.2rem; }
@@ -481,7 +481,17 @@ main {
 .portfolio-view-buttons[hidden] { display: none; }
 .analytics-range { justify-content: flex-end; margin-bottom: 0.5rem; }
 .analytics-range button { padding: 0.15rem 0.5rem; font-size: 0.75rem; }
+.investment-pnl-trigger { border: 0; padding: 0; color: inherit; background: transparent; line-height: 1; cursor: pointer; }
+.investment-pnl-trigger:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; border-radius: 2px; }
+.investment-pnl-dialog { width: min(52rem, calc(100vw - 2rem)); }
+.investment-pnl-chart { position: relative; height: min(50vh, 420px); min-height: 260px; }
+#investmentPnlTrendBox[hidden], #investmentPnlDialogTable[hidden] { display: none !important; }
+.investment-pnl-dialog .investment-analytics-views > button[aria-pressed="true"],
+.investment-pnl-dialog #investmentPnlRankingControls > button[aria-pressed="true"] {
+    background: var(--primary); border-color: var(--primary); color: white;
+}
 .analytics-table { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 0.85rem; }
+.investment-pnl-table-wrap { max-width: 100%; overflow-x: auto; }
 .analytics-table th, .analytics-table td { padding: 0.55rem 0.4rem; border-bottom: 1px solid var(--border); text-align: right; overflow-wrap: anywhere; }
 .analytics-table th:first-child, .analytics-table td:first-child { width: 40%; text-align: left; }
 .analytics-table .investment-positive { color: #047857; }
@@ -642,28 +652,14 @@ table.tx-table.investment-table tbody td.investment-portfolio-heat {
         padding-inline: 0.45rem;
     }
     .investments-card { padding: 0.85rem; }
-    .analytics-table thead { display: none; }
-    .analytics-table, .analytics-table tbody { display: block; }
-    .analytics-table tbody tr { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 0.45rem 0; border-bottom: 1px solid var(--border); }
-    .analytics-table tbody td { display: block; min-width: 0; border: 0; text-align: left; }
-    .analytics-table tbody td:first-child { width: auto; grid-column: 1 / -1; font-weight: 600; }
-    .analytics-table tbody td:not(:first-child)::before { content: attr(data-label); display: block; color: var(--text-light); font-size: 0.7rem; }
+    .investment-pnl-table-wrap .analytics-table { min-width: 460px; }
     .investment-sort-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; margin: 0.6rem 0; font-size: 0.8rem; }
     .investment-sort-controls select, .investment-sort-controls button {
         background: var(--input-bg); color: var(--text); border: 1px solid var(--border);
         border-radius: var(--radius-sm); padding: 0.35rem; font: inherit;
     }
-    .investment-table colgroup, .investment-table thead { display: none; }
-    .investment-table, .investment-table tbody, .investment-table tr { display: block; }
-    table.investment-table tbody tr { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 0.45rem 0; }
-    table.investment-table tbody td { min-width: 0; display: block; }
-    table.investment-table tbody td:first-child { grid-column: 1 / -1; }
-    table.investment-table tbody td:not(:first-child)::before {
-        content: attr(data-label); display: block; color: var(--text-light); font-size: 0.7rem;
-    }
-    table.investment-table tbody td.investment-return { grid-column: 2; grid-row: 5; padding-right: 3.5rem; }
-    table.investment-table tbody td.investment-actions { grid-column: 2; grid-row: 5; justify-self: end; align-self: end; }
-    table.investment-table tbody td.investment-actions::before { content: none; }
+    .tx-table-wrap.investment-table-wrap { overflow-x: auto; }
+    .tx-table-wrap.investment-table-wrap table.investment-table { min-width: 1040px; }
     .investment-performance-popup { left: 0; right: auto; }
 }
 

@@ -31,9 +31,10 @@ To import an additional Enable Banking profile whose transactions all belong to
 Anna, configure `ENABLEBANKING_ANNA_APP_ID` as a variable and
 `ENABLEBANKING_ANNA_CERTIFICATE_PEM` plus
 `ENABLEBANKING_ANNA_ACCOUNT_UIDS` as secrets. Both profiles use
-`ENABLEBANKING_BASE_URL`, the same categorization rules, and store unknown merchants as
-subcategory `⚠️ Review`. Anna's non-income transactions use category `👩 Anna`,
-including unmatched transactions. Existing imports are not recategorized.
+`ENABLEBANKING_BASE_URL` and the same categorization rules. Unmatched Anna and Carlos
+transactions use subcategory `⚠️ Review` with their personal categories (`👩 Anna` or
+`👨 Carlos`); unmatched joint transactions use `⚠️ Review` for both fields. Existing
+imports are not recategorized.
 
 The Home subtab bar shows the latest `inserted_at` in the transactions table, in the
 browser's local time; on mobile it appears below the active Home content. It

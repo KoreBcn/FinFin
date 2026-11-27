@@ -62,7 +62,12 @@ def categorize_transaction(debtor_name: str, creditor_name: str,
                 bool(rule.get("is_excluded")),
             )
 
-    # Default if no keyword matched — flag for manual review
+    # Keep unmatched personal-account transactions grouped under their owner.
+    if account == "anna":
+        return "⚠️ Review", "👩 Anna", False
+    if account == "carlos":
+        return "⚠️ Review", "👨 Carlos", False
+
     return "⚠️ Review", "⚠️ Review", False
 
 

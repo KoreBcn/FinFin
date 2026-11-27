@@ -30,6 +30,7 @@ async function refreshPortfolio(config, {
             : path.startsWith('/rest/v1/portfolio_items?') ? 'Supabase portfolio items request'
                 : path.startsWith('/rest/v1/portfolio_transactions?') ? 'Supabase portfolio transactions request'
                     : path.startsWith('/rest/v1/portfolio_pnl_history') ? 'Supabase P/L history request'
+                    : path.startsWith('/rest/v1/portfolio_refresh_metadata') ? 'Supabase portfolio refresh time request'
                     : path === '/rest/v1/rpc/is_shared_meal_plan_member' ? 'Supabase household membership check'
                         : 'Supabase request';
         let response;
@@ -206,6 +207,18 @@ async function refreshPortfolio(config, {
         await saveHistory();
     } catch (error) {
         failures.push({ id: 'pnl-history', message: error.message });
+    }
+    try {
+        const metadata = await request('/rest/v1/portfolio_refresh_metadata?on_conflict=id&select=id', {
+            method: 'POST',
+            headers: { ...headers, 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates,return=representation' },
+            body: JSON.stringify({ id: 1, refreshed_at: new Date(now()).toISOString() })
+        });
+        if (!Array.isArray(metadata) || metadata.length !== 1 || metadata[0].id !== 1) {
+            throw new Error('Portfolio refresh time was not saved.');
+        }
+    } catch (error) {
+        failures.push({ id: 'portfolio-refresh-time', message: error.message });
     }
     return { refreshed, eligible: positions.length, failures };
 

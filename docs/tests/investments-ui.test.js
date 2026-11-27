@@ -24,7 +24,7 @@ class Element {
     removeAttribute(name) { delete this.attributes[name]; }
     addEventListener(name, callback) { this.listeners[name] = callback; }
     showModal() { this.open = true; }
-    close() { this.open = false; }
+    close() { this.open = false; if (this.listeners.close) this.listeners.close(); }
     reset() {}
     checkValidity() { return true; }
 }
@@ -110,7 +110,8 @@ function setupPortfolio(clock = null) {
             type: 'Shares', market_symbol: null, is_closed: false, is_in_scope: true, current_value_dkk: 180, valuation_version: 0 }],
         transactions: [{ id: 'tx-1', portfolio_item_id: 'item-1', action: 'Buy',
             quantity: '2', fees: '', total_cost: '-100' }],
-        failLoad: false, failSave: false, marketError: null, historyError: null, marketRequests: []
+        failLoad: false, failSave: false, marketError: null, historyError: null, marketRequests: [],
+        portfolioRefreshMetadata: []
     };
     ['investmentTicker', 'investmentName', 'investmentType', 'investmentPlatform', 'investmentInScope']
         .forEach(id => document.getElementById(id));
@@ -194,6 +195,9 @@ function setupPortfolio(clock = null) {
                     if (table === 'portfolio_pnl_history') {
                         if (database.historyLoadError) return Promise.resolve({ error: { message: 'history failed' } });
                         return Promise.resolve({ data: database.history || [], error: null });
+                    }
+                    if (table === 'portfolio_refresh_metadata') {
+                        return Promise.resolve({ data: database.portfolioRefreshMetadata, error: null });
                     }
                     return Promise.resolve({ data: (table === 'portfolio_items' ? database.items : database.transactions).map(row =>
                         table === 'portfolio_items' ? { valuation_version: 0, ...row } : { revision: 0, ...row }), error: null });
@@ -314,15 +318,16 @@ test('aggregates open and closed positions by platform including excluded KPI pl
         { id: 'coin-buy', portfolio_item_id: 'kucoin', action: 'Buy', quantity: '1', fees: '', total_cost: '-50' }
     );
     await vm.runInContext('openInvestments()', context);
-    const rows = elements.get('analyticsTableBody').children;
+    elements.get('investmentPnlOpen').listeners.click();
+    elements.get('investmentPnlPlatformButton').listeners.click();
+    const rows = elements.get('investmentPnlDialogTableBody').children;
     assert.equal(rows.length, 2);
     assert.deepEqual(rows[0].children.map(cell => cell.textContent), ['Broker', '180.00 *', '69.23% *', '180.00 *']);
     assert.deepEqual(rows[1].children.map(cell => cell.textContent), ['KuCoin', '80.00', '30.77%', '30.00']);
-    assert.match(elements.get('analyticsCoverage').textContent, /1 position has an unavailable value or P\/L/);
+    assert.match(elements.get('investmentPnlDialogCoverage').textContent, /1 position has an unavailable value or P\/L/);
     assert.equal(elements.get('investmentPortfolioPnl').textContent, '180 DKK');
-    assert.equal(elements.get('analyticsRankingControls').hidden, true);
     elements.get('investmentClosedToggle').listeners.click();
-    assert.deepEqual(elements.get('analyticsTableBody').children[0].children.map(cell => cell.textContent),
+    assert.deepEqual(elements.get('investmentPnlDialogTableBody').children[0].children.map(cell => cell.textContent),
         ['Broker', '180.00 *', '69.23% *', '180.00 *']);
 });
 
@@ -337,26 +342,33 @@ test('ranks the top and worst ten known positions and excludes unvalued position
     database.items.push({ id: 'unknown', ticker: 'UNKNOWN', platform: 'Broker', name: 'Unknown',
         type: 'Shares', is_closed: false, is_in_scope: true, current_value_dkk: null });
     await vm.runInContext('openInvestments()', context);
-    elements.get('analyticsPerformersButton').listeners.click();
-    assert.equal(elements.get('analyticsRankingControls').hidden, false);
-    assert.equal(elements.get('analyticsPerformersButton').attributes['aria-pressed'], 'true');
-    let rows = elements.get('analyticsTableBody').children;
+    elements.get('investmentPnlOpen').listeners.click();
+    elements.get('investmentPnlPerformersButton').listeners.click();
+    assert.equal(elements.get('investmentPnlRankingControls').hidden, false);
+    assert.equal(elements.get('investmentPnlPerformersButton').attributes['aria-pressed'], 'true');
+    assert.equal(elements.get('investmentPnlTopButton').attributes['aria-pressed'], 'true');
+    assert.equal(elements.get('investmentPnlWorstButton').attributes['aria-pressed'], 'false');
+    let rows = elements.get('investmentPnlDialogTableBody').children;
     assert.equal(rows.length, 10);
     assert.match(rows[0].textContent, /Example/);
-    assert.doesNotMatch(elements.get('analyticsTableBody').textContent, /Unknown/);
-    assert.match(elements.get('analyticsCoverage').textContent, /excluded from performer rankings/);
-    elements.get('analyticsWorstButton').listeners.click();
-    rows = elements.get('analyticsTableBody').children;
+    assert.doesNotMatch(elements.get('investmentPnlDialogTableBody').textContent, /Unknown/);
+    assert.match(elements.get('investmentPnlDialogCoverage').textContent, /excluded from performer rankings/);
+    elements.get('investmentPnlWorstButton').listeners.click();
+    rows = elements.get('investmentPnlDialogTableBody').children;
     assert.equal(rows.length, 10);
     assert.match(rows[0].textContent, /Rank 11/);
     assert.equal(rows[0].children[3].textContent, '-11.00');
     assert.equal(rows[0].children[3].classes.has('investment-negative'), true);
-    assert.equal(elements.get('analyticsWorstButton').attributes['aria-pressed'], 'true');
-    elements.get('analyticsPlatformButton').listeners.click();
-    assert.equal(elements.get('analyticsRankingControls').hidden, true);
+    assert.equal(elements.get('investmentPnlWorstButton').attributes['aria-pressed'], 'true');
+    assert.equal(elements.get('investmentPnlTopButton').attributes['aria-pressed'], 'false');
+    elements.get('investmentPnlPlatformButton').listeners.click();
+    assert.equal(elements.get('investmentPnlRankingControls').hidden, true);
+    assert.equal(elements.get('investmentPnlDialogTable').hidden, false);
+    assert.equal(elements.get('investmentPnlTrendBox').hidden, true);
+    assert.match(elements.get('investmentPnlDialogTableBody').textContent, /Broker/);
 });
 
-test('plots total P/L history for items counted in total P/L on the trend view', async () => {
+test('opens total P/L history in a popup with filtering for items counted in total P/L', async () => {
     const { context, elements, database } = setupPortfolio();
     database.items.push({ id: 'out', ticker: 'OUT', platform: 'Broker', name: 'Out', type: 'Shares',
         is_closed: true, is_in_scope: false, current_value_dkk: 0 });
@@ -370,14 +382,15 @@ test('plots total P/L history for items counted in total P/L on the trend view',
     ];
     vm.runInContext('globalThis.charts = []; Chart = class { constructor(canvas, config) { this.config = config; this.data = config.data; this.hidden = new Set(); charts.push(this); } isDatasetVisible(i) { return !this.hidden.has(i); } setDatasetVisibility(i, visible) { if (visible) this.hidden.delete(i); else this.hidden.add(i); } update() {} destroy() { this.destroyed = true; } }', context);
     await vm.runInContext('openInvestments()', context);
-    elements.get('analyticsTrendButton').listeners.click();
-    assert.equal(elements.get('analyticsRange90').attributes['aria-pressed'], 'true');
-    assert.match(elements.get('analyticsCoverage').textContent, /No P\/L snapshots in this period/);
-    elements.get('analyticsRangeall').listeners.click();
-    assert.equal(elements.get('analyticsTable').hidden, true);
-    assert.equal(elements.get('analyticsTrendBox').hidden, false);
-    assert.equal(elements.get('analyticsTrendButton').attributes['aria-pressed'], 'true');
-    assert.equal(elements.get('analyticsPlatformButton').attributes['aria-pressed'], 'false');
+    elements.get('investmentPnlOpen').listeners.click();
+    assert.equal(elements.get('investmentPnlDialog').open, true);
+    assert.equal(elements.get('investmentPnlTrendButton').attributes['aria-pressed'], 'true');
+    assert.equal(elements.get('investmentPnlRange90').attributes['aria-pressed'], 'true');
+    assert.match(elements.get('investmentPnlDialogCoverage').textContent, /No P\/L snapshots in this period/);
+    elements.get('investmentPnlRangeall').listeners.click();
+    assert.equal(elements.get('investmentPnlDialogTable').hidden, true);
+    assert.equal(elements.get('investmentPnlTrendButton').attributes['aria-pressed'], 'true');
+    assert.equal(elements.get('investmentPnlPlatformButton').attributes['aria-pressed'], 'false');
     const charts = vm.runInContext('charts', context);
     const datasets = charts[0].config.data.datasets;
     assert.deepEqual(Array.from(datasets, set => set.label), ['ETF', 'Shares']);
@@ -388,42 +401,46 @@ test('plots total P/L history for items counted in total P/L on the trend view',
     charts[0].config.options.plugins.legend.onClick(null, { datasetIndex: 0 }, { chart: charts[0] });
     assert.deepEqual(Array.from(datasets[1].data, point => point.y), [0, 10, 30]);
     assert.equal(datasets[1].fill, 'origin');
-    elements.get('analyticsPlatformButton').listeners.click();
-    assert.equal(charts[0].destroyed, true);
-    assert.equal(elements.get('analyticsTable').hidden, false);
-    elements.get('analyticsTrendButton').listeners.click();
-    elements.get('analyticsRange30').listeners.click();
-    assert.equal(elements.get('analyticsRange30').attributes['aria-pressed'], 'true');
-    assert.equal(elements.get('analyticsRangeall').attributes['aria-pressed'], 'false');
-    assert.match(elements.get('analyticsCoverage').textContent, /No P\/L snapshots in this period/);
-    elements.get('analyticsRangeall').listeners.click();
-    assert.equal(elements.get('analyticsCoverage').textContent, '');
+    elements.get('investmentPnlPlatformButton').listeners.click();
+    assert.equal(elements.get('investmentPnlDialog').open, true);
+    assert.equal(elements.get('investmentPnlDialogTable').hidden, false);
+    assert.equal(elements.get('investmentPnlTrendBox').hidden, true);
+    assert.match(elements.get('investmentPnlDialogTableBody').textContent, /Broker/);
+    elements.get('investmentPnlTrendButton').listeners.click();
+    elements.get('investmentPnlRange30').listeners.click();
+    assert.equal(elements.get('investmentPnlRange30').attributes['aria-pressed'], 'true');
+    assert.equal(elements.get('investmentPnlRangeall').attributes['aria-pressed'], 'false');
+    assert.match(elements.get('investmentPnlDialogCoverage').textContent, /No P\/L snapshots in this period/);
+    elements.get('investmentPnlRangeall').listeners.click();
+    assert.equal(elements.get('investmentPnlDialogCoverage').textContent, '');
+    elements.get('investmentPnlClose').listeners.click();
+    assert.equal(charts.at(-1).destroyed, true);
 });
 
-test('explains an empty or unavailable P/L history on the trend view', async () => {
+test('explains an empty or unavailable P/L history in the popup', async () => {
     const { context, elements, database } = setupPortfolio();
     await vm.runInContext('openInvestments()', context);
-    elements.get('analyticsTrendButton').listeners.click();
-    assert.match(elements.get('analyticsCoverage').textContent, /No P\/L history yet/);
+    elements.get('investmentPnlOpen').listeners.click();
+    assert.match(elements.get('investmentPnlDialogCoverage').textContent, /No P\/L history yet/);
     database.historyLoadError = true;
     vm.runInContext('clearInvestments()', context);
     await vm.runInContext('openInvestments()', context);
-    elements.get('analyticsTrendButton').listeners.click();
+    elements.get('investmentPnlOpen').listeners.click();
     assert.equal(elements.get('investmentTableBody').children.length, 1);
-    assert.match(elements.get('analyticsCoverage').textContent, /Unable to load P\/L history/);
+    assert.match(elements.get('investmentPnlDialogCoverage').textContent, /Unable to load P\/L history/);
 });
 
-test('shows portfolio load failures and allows retry from analytics', async () => {
+test('shows portfolio load failures and allows retry from the P/L popup', async () => {
     const { context, elements, database } = setupPortfolio();
     database.failLoad = true;
-    await vm.runInContext('openInvestments()', context);
-    assert.match(elements.get('analyticsStatus').textContent, /Unable to load portfolio/);
-    assert.equal(elements.get('analyticsRetry').hidden, false);
+    await vm.runInContext('openInvestmentPnlHistory()', context);
+    assert.match(elements.get('investmentPnlDialogStatus').textContent, /Unable to load portfolio/);
+    assert.equal(elements.get('investmentPnlRetry').hidden, false);
     database.failLoad = false;
-    await elements.get('analyticsRetry').listeners.click();
-    assert.equal(elements.get('analyticsStatus').textContent, '');
-    assert.equal(elements.get('analyticsRetry').hidden, true);
-    assert.equal(elements.get('analyticsTableBody').children.length, 1);
+    await elements.get('investmentPnlRetry').listeners.click();
+    assert.equal(elements.get('investmentPnlDialogStatus').textContent, '');
+    assert.equal(elements.get('investmentPnlRetry').hidden, true);
+    assert.equal(elements.get('investmentTableBody').children.length, 1);
 });
 
 test('includes hidden positions in total P/L at zero current value without showing them', async () => {
@@ -774,19 +791,26 @@ test('requests the stored ticker unchanged, ignoring any saved market symbol', a
 test('persists and restores a refreshed price, currency and quote time', async () => {
     const { context, elements, database } = setupPortfolio();
     database.quoteCurrency = 'USD';
+    database.portfolioRefreshMetadata = [{ refreshed_at: '2026-01-02T03:04:05.000Z' }];
     await vm.runInContext('openInvestments()', context);
+    const expectedRefreshTime = vm.runInContext(
+        'formatLocalDateTime(new Date("2026-01-02T03:04:05.000Z"))', context
+    );
+    assert.equal(elements.get('investmentRefreshDate').textContent, `Last updated: ${expectedRefreshTime}`);
     await refreshButton(elements.get('investmentTableBody').children[0]).listeners.click();
+    assert.equal(elements.get('investmentRefreshDate').textContent, `Last updated: ${expectedRefreshTime}`);
     assert.equal(database.items[0].market_price, 100);
     assert.equal(database.items[0].market_currency, 'USD');
     assert.equal(database.items[0].market_price_at, '2026-01-01T12:00:00.000Z');
     assert.equal(database.items[0].current_value_dkk, 1500);
     const refreshedPrice = find(elements.get('investmentTableBody').children[0], e => e.dataset.label === 'Price');
-    assert.match(refreshedPrice.textContent, /\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/);
+    assert.doesNotMatch(refreshedPrice.textContent, /\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/);
     vm.runInContext('clearInvestments()', context);
     await vm.runInContext('openInvestments()', context);
+    assert.equal(elements.get('investmentRefreshDate').textContent, `Last updated: ${expectedRefreshTime}`);
     const price = find(elements.get('investmentTableBody').children[0], e => e.dataset.label === 'Price');
     assert.match(price.textContent, /100\.00 USD/);
-    assert.match(price.textContent, /\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/);
+    assert.doesNotMatch(price.textContent, /\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/);
     assert.equal(elements.get('investmentPortfolioSize').textContent, '1,500 DKK');
 });
 

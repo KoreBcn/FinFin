@@ -103,7 +103,7 @@ class BankAccountConfigurationTests(unittest.TestCase):
         self.assertEqual(known[1]["Expense"], "Food")
         self.assertEqual(unknown[1]["Account"], "anna")
         self.assertEqual(unknown[1]["Expense"], "⚠️ Review")
-        self.assertEqual(unknown[1]["Type"], "⚠️ Review")
+        self.assertEqual(unknown[1]["Type"], "👩 Anna")
 
     def test_all_accounts_rule_keeps_its_category(self):
         rule = {
@@ -131,10 +131,10 @@ class BankAccountConfigurationTests(unittest.TestCase):
         self.assertEqual(income["Expense"], "Anna Salary")
 
         row["remittance_information"] = "Unknown Merchant"
-        for account in ("carlos", "joint"):
+        for account, expected_type in (("carlos", "👨 Carlos"), ("joint", "⚠️ Review")):
             with self.subTest(account=account):
                 _, unknown = categorize_raw_transaction(row, account)
-                self.assertEqual(unknown["Type"], "⚠️ Review")
+                self.assertEqual(unknown["Type"], expected_type)
                 self.assertEqual(unknown["Expense"], "⚠️ Review")
 
     def test_rule_with_is_excluded_marks_transaction_excluded(self):
@@ -165,7 +165,9 @@ class BankAccountConfigurationTests(unittest.TestCase):
         )
 
         self.assertEqual(other_account["Expense"], "⚠️ Review")
+        self.assertEqual(other_account["Type"], "👨 Carlos")
         self.assertEqual(empty_account_rule["Expense"], "⚠️ Review")
+        self.assertEqual(empty_account_rule["Type"], "⚠️ Review")
 
     def test_parses_valid_adhoc_start_date(self):
         parsed = parse_date_override("2026-05-22")

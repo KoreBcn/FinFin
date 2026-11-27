@@ -124,15 +124,13 @@ let houseHistoryDatasetVisibility = [true, true, false];
 
 function switchInvestmentSubtab(tab) {
     investmentSubtab = tab;
-    // Portfolio and Transactions share one panel and differ only in the portfolio view shown.
-    const panelSuffix = tab === 'transactions' ? 'Portfolio' : tab[0].toUpperCase() + tab.slice(1);
-    for (const [name, suffix] of [['portfolio', 'Portfolio'], ['transactions', 'Transactions'], ['analytics', 'Analytics']]) {
+    for (const [name, suffix] of [['portfolio', 'Portfolio'], ['transactions', 'Transactions']]) {
         const selected = name === tab;
         const button = document.getElementById(`investment${suffix}Tab`);
         button.classList.toggle('active', selected);
         button.setAttribute('aria-selected', String(selected));
-        if (name !== 'transactions') document.getElementById(`investment${suffix}`).hidden = suffix !== panelSuffix;
     }
+    document.getElementById('investmentPortfolio').hidden = false;
     portfolioTransactionsVisible = tab === 'transactions';
     if (tab === 'portfolio' || tab === 'transactions') renderPortfolioTransactions();
     openInvestments();

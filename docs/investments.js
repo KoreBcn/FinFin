@@ -83,6 +83,8 @@ function clearInvestments() {
     portfolioTransactionEditing = null;
     const dialog = document.getElementById('investmentDialog');
     if (dialog.open) dialog.close();
+    const pnlDialog = document.getElementById('investmentPnlDialog');
+    if (pnlDialog.open) pnlDialog.close();
     document.getElementById('investmentForm').reset();
     document.getElementById('investmentSubmit').disabled = false;
     document.getElementById('investmentCancel').disabled = false;
@@ -93,6 +95,7 @@ function clearInvestments() {
     document.getElementById('portfolioTransactionFormStatus').textContent = '';
     document.getElementById('investmentRetry').hidden = true;
     document.getElementById('investmentStatus').textContent = '';
+    document.getElementById('investmentRefreshDate').textContent = 'Last updated: —';
     renderInvestments();
 }
 
@@ -157,6 +160,8 @@ function matchesPortfolioSearch(item, search) {
 
 function renderInvestmentPnlTrend(coverage) {
     if (investmentPnlChart) { investmentPnlChart.destroy(); investmentPnlChart = null; }
+    ['7', '30', '90', '365', 'all'].forEach(range => document.getElementById(`investmentPnlRange${range}`)
+        .setAttribute('aria-pressed', String(analyticsRange === range)));
     const typeLabel = type => {
         const text = type.trim().toLowerCase();
         return text === 'etf' ? 'ETF' : text.charAt(0).toUpperCase() + text.slice(1);
@@ -192,7 +197,7 @@ function renderInvestmentPnlTrend(coverage) {
             below = index;
         });
     };
-    investmentPnlChart = new Chart(document.getElementById('investmentPnlChart'), {
+    investmentPnlChart = new Chart(document.getElementById('investmentPnlDialogChart'), {
         type: 'line',
         data: {
             datasets: series.map((entry, index) => {
@@ -233,34 +238,10 @@ function renderInvestmentPnlTrend(coverage) {
     investmentPnlChart.update();
 }
 
-function renderInvestmentAnalytics() {
-    const trend = analyticsView === 'trend';
-    const performers = analyticsView === 'performers';
-    document.getElementById('analyticsTrendButton').setAttribute('aria-pressed', String(trend));
-    document.getElementById('analyticsPlatformButton').setAttribute('aria-pressed', String(!performers && !trend));
-    document.getElementById('analyticsPerformersButton').setAttribute('aria-pressed', String(performers));
-    document.getElementById('analyticsTopButton').setAttribute('aria-pressed', String(analyticsRanking === 'top'));
-    document.getElementById('analyticsWorstButton').setAttribute('aria-pressed', String(analyticsRanking === 'worst'));
-    document.getElementById('analyticsRankingControls').hidden = !performers;
-    document.getElementById('analyticsTable').hidden = trend;
-    document.getElementById('analyticsTrendBox').hidden = !trend;
-    ['7', '30', '90', '365', 'all'].forEach(range => document.getElementById(`analyticsRange${range}`)
-        .setAttribute('aria-pressed', String(analyticsRange === range)));
-    document.getElementById('analyticsTitle').textContent = trend ? 'Net P/L trend' : performers
-        ? `${analyticsRanking === 'top' ? 'Top' : 'Worst'} performers` : 'Performance by platform';
-    document.getElementById('analyticsNameHeading').textContent = performers ? 'Position' : 'Platform';
-    document.getElementById('analyticsStatus').textContent = document.getElementById('investmentStatus').textContent;
-    document.getElementById('analyticsRetry').hidden = document.getElementById('investmentRetry').hidden !== false;
-    const body = document.getElementById('analyticsTableBody');
-    const coverage = document.getElementById('analyticsCoverage');
+function renderInvestmentAnalyticsTable(body, coverage, performers) {
     body.replaceChildren();
     coverage.textContent = '';
-    if (!trend && investmentPnlChart) { investmentPnlChart.destroy(); investmentPnlChart = null; }
     if (!investmentLoaded) return;
-    if (trend) {
-        renderInvestmentPnlTrend(coverage);
-        return;
-    }
 
     const positions = investmentPositions.map(position => {
         const value = position.isClosed ? 0 : investmentValue(position);
@@ -323,29 +304,65 @@ function renderInvestmentAnalytics() {
     });
 }
 
-for (const [id, view] of [['analyticsTrendButton', 'trend'], ['analyticsPlatformButton', 'platform'], ['analyticsPerformersButton', 'performers']]) {
+function renderInvestmentPnlDialog() {
+    const trend = analyticsView === 'trend';
+    const performers = analyticsView === 'performers';
+    document.getElementById('investmentPnlTrendButton').setAttribute('aria-pressed', String(trend));
+    document.getElementById('investmentPnlPlatformButton').setAttribute('aria-pressed', String(!trend && !performers));
+    document.getElementById('investmentPnlPerformersButton').setAttribute('aria-pressed', String(performers));
+    document.getElementById('investmentPnlTopButton').setAttribute('aria-pressed', String(analyticsRanking === 'top'));
+    document.getElementById('investmentPnlWorstButton').setAttribute('aria-pressed', String(analyticsRanking === 'worst'));
+    document.getElementById('investmentPnlRankingControls').hidden = !performers;
+    document.getElementById('investmentPnlDialogTable').hidden = trend;
+    document.getElementById('investmentPnlTrendBox').hidden = !trend;
+    document.getElementById('investmentPnlDialogTitle').textContent = trend ? 'Net P/L history'
+        : performers ? 'Performance by performers' : 'Performance by platform';
+    document.getElementById('investmentPnlDialogNameHeading').textContent = performers ? 'Position' : 'Platform';
+    if (trend) {
+        renderInvestmentPnlTrend(document.getElementById('investmentPnlDialogCoverage'));
+        return;
+    }
+    if (investmentPnlChart) { investmentPnlChart.destroy(); investmentPnlChart = null; }
+    renderInvestmentAnalyticsTable(
+        document.getElementById('investmentPnlDialogTableBody'),
+        document.getElementById('investmentPnlDialogCoverage'),
+        performers
+    );
+}
+
+function renderInvestmentPnlDialogIfNeeded() {
+    if (document.getElementById('investmentPnlDialog').open && analyticsView !== 'trend') {
+        renderInvestmentPnlDialog();
+    }
+}
+
+for (const [id, view] of [
+    ['investmentPnlTrendButton', 'trend'],
+    ['investmentPnlPlatformButton', 'platform'],
+    ['investmentPnlPerformersButton', 'performers']
+]) {
     document.getElementById(id).addEventListener('click', () => {
         analyticsView = view;
-        renderInvestmentAnalytics();
+        renderInvestmentPnlDialog();
     });
 }
 for (const range of ['7', '30', '90', '365', 'all']) {
-    document.getElementById(`analyticsRange${range}`).addEventListener('click', () => {
+    document.getElementById(`investmentPnlRange${range}`).addEventListener('click', () => {
         analyticsRange = range;
-        renderInvestmentAnalytics();
+        if (document.getElementById('investmentPnlDialog').open && analyticsView === 'trend') {
+            renderInvestmentPnlTrend(document.getElementById('investmentPnlDialogCoverage'));
+        }
     });
 }
-for (const [id, ranking] of [['analyticsTopButton', 'top'], ['analyticsWorstButton', 'worst']]) {
+for (const [id, ranking] of [['investmentPnlTopButton', 'top'], ['investmentPnlWorstButton', 'worst']]) {
     document.getElementById(id).addEventListener('click', () => {
         analyticsRanking = ranking;
-        renderInvestmentAnalytics();
+        renderInvestmentPnlDialog();
     });
 }
-document.getElementById('analyticsRetry').addEventListener('click', openInvestments);
-
 function renderInvestments() {
     if (activeAuthUserId) loadInvestmentSettings();
-    renderInvestmentAnalytics();
+    renderInvestmentPnlDialogIfNeeded();
     renderPortfolioTransactions();
     const body = document.getElementById('investmentTableBody');
     body.replaceChildren();
@@ -529,9 +546,9 @@ function renderInvestments() {
             }
             if (cell.key === 'price' && quote) {
                 const details = document.createElement('small');
-                details.textContent = [quote.datetime, quote.error].filter(Boolean).join(' · ');
+                details.textContent = quote.error || '';
                 if (quote.error) details.setAttribute('role', 'status');
-                td.append(details);
+                if (details.textContent) td.append(details);
             }
             if (cell.key === 'value' && crowdlending && !p.isClosed) {
                 td.textContent = '';
@@ -849,7 +866,8 @@ async function openInvestments() {
     investmentLoading = true;
     document.getElementById('investmentRetry').hidden = true;
     document.getElementById('investmentStatus').textContent = 'Loading portfolio from Supabase…';
-    renderInvestmentAnalytics();
+    document.getElementById('investmentRefreshDate').textContent = 'Last updated: loading…';
+    renderInvestmentPnlDialogIfNeeded();
     try {
         async function readRows(table, columns) {
             const rows = [];
@@ -879,6 +897,21 @@ async function openInvestments() {
         investmentItems = items;
         investmentTransactions = transactions;
         try {
+            const refreshRows = await readRows('portfolio_refresh_metadata', 'refreshed_at');
+            if (generation !== investmentGeneration || !activeAuthUserId) return;
+            const value = refreshRows[0]?.refreshed_at;
+            const date = typeof value === 'string' ? new Date(value) : null;
+            if (value != null && (!date || !Number.isFinite(date.getTime()))) {
+                throw new Error('Invalid portfolio refresh date.');
+            }
+            document.getElementById('investmentRefreshDate').textContent =
+                `Last updated: ${date ? formatLocalDateTime(date) : '—'}`;
+        } catch (error) {
+            if (generation !== investmentGeneration || !activeAuthUserId) return;
+            document.getElementById('investmentRefreshDate').textContent =
+                `Last updated unavailable: ${error.message}`;
+        }
+        try {
             const history = await readRows('portfolio_pnl_history', 'id, portfolio_item_id, snapshot_date, is_closed, pnl_dkk');
             if (generation !== investmentGeneration || !activeAuthUserId) return;
             investmentPnlHistory = history;
@@ -894,7 +927,6 @@ async function openInvestments() {
                 const key = JSON.stringify([item.platform, item.ticker]);
                 investmentQuotes.set(key, {
                     price: Number(item.market_price), currency: item.market_currency,
-                    datetime: item.market_price_at ? formatLocalDateTime(new Date(item.market_price_at), true) : '',
                     today: item.market_change_today == null ? null : Number(item.market_change_today),
                     changes: Object.fromEntries([7, 30, 90].map(days => {
                         const stored = item[`market_change_${days}d`];
@@ -907,18 +939,53 @@ async function openInvestments() {
         investmentLoaded = true;
         document.getElementById('investmentStatus').textContent = '';
         renderInvestments();
+        if (document.getElementById('investmentPnlDialog').open) {
+            document.getElementById('investmentPnlDialogStatus').textContent = '';
+            document.getElementById('investmentPnlRetry').hidden = true;
+            renderInvestmentPnlDialog();
+        }
     } catch (error) {
         if (generation === investmentGeneration) {
             document.getElementById('investmentStatus').textContent = `Unable to load portfolio: ${error.message}`;
             document.getElementById('investmentRetry').hidden = false;
-            renderInvestmentAnalytics();
+            renderInvestmentPnlDialogIfNeeded();
+            if (document.getElementById('investmentPnlDialog').open) {
+                document.getElementById('investmentPnlDialogStatus').textContent =
+                    document.getElementById('investmentStatus').textContent;
+                document.getElementById('investmentPnlRetry').hidden = false;
+                renderInvestmentPnlDialog();
+            }
         }
     } finally {
         if (generation === investmentGeneration) investmentLoading = false;
     }
 }
 
+async function openInvestmentPnlHistory() {
+    if (!investmentLoaded) await openInvestments();
+    const dialog = document.getElementById('investmentPnlDialog');
+    analyticsView = 'trend';
+    document.getElementById('investmentPnlDialogStatus').textContent =
+        document.getElementById('investmentStatus').textContent;
+    document.getElementById('investmentPnlRetry').hidden = document.getElementById('investmentRetry').hidden !== false;
+    if (!dialog.open) dialog.showModal();
+    renderInvestmentPnlDialog();
+}
+
 document.getElementById('investmentRetry').addEventListener('click', openInvestments);
+document.getElementById('investmentPnlOpen').addEventListener('click', openInvestmentPnlHistory);
+document.getElementById('investmentPnlClose').addEventListener('click', () => {
+    document.getElementById('investmentPnlDialog').close();
+});
+document.getElementById('investmentPnlDialog').addEventListener('close', () => {
+    if (investmentPnlChart) { investmentPnlChart.destroy(); investmentPnlChart = null; }
+    analyticsView = 'platform';
+});
+document.getElementById('investmentPnlRetry').addEventListener('click', async () => {
+    investmentLoaded = false;
+    await openInvestments();
+    if (investmentLoaded) renderInvestmentPnlDialog();
+});
 document.getElementById('investmentSortField').addEventListener('change', event => {
     investmentSort = { key: event.currentTarget.value, ascending: true };
     renderInvestments();
@@ -1123,7 +1190,7 @@ async function refreshInvestment(p) {
         if (!Number.isFinite(price) || price <= 0 || typeof currency !== 'string' || !/^[A-Z]{3}$/.test(currency)) throw new Error('Quote is missing a valid price or currency.');
         if (data.last_quote_at != null && (!Number.isFinite(data.last_quote_at) || data.last_quote_at <= 0)) throw new Error('Quote has an invalid timestamp.');
         const at = data.last_quote_at == null ? null : new Date(data.last_quote_at * 1000).toISOString();
-        const quote = { price, currency, at, datetime: at ? formatLocalDateTime(new Date(at), true) : '', today: data.percent_change == null ? null : Number(data.percent_change), rate: null };
+        const quote = { price, currency, at, today: data.percent_change == null ? null : Number(data.percent_change), rate: null };
         let rate = 1;
         let conversionError = null;
         if (!p.quantityUnknown && currency !== 'DKK') {

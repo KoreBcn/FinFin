@@ -162,7 +162,7 @@
             <li><strong>Analytics</strong>: when Off, matching transactions are excluded from analytics.</li>
             <li><strong>Actions</strong>: 💾 saves the row, 📋 duplicates it just below, 🗑 deletes it. Edits are only stored after pressing 💾.</li>
             <li>The <strong>+</strong> button adds a new rule at the top. Rules apply to future imports; existing transactions are not changed.</li>
-            <li>Transactions that match no rule are marked ⚠️ Review.</li>
+            <li>Transactions that match no rule are marked ⚠️ Review; Anna and Carlos transactions keep their personal category, while joint-account transactions use ⚠️ Review for both fields.</li>
         </ul>
     </div>
 </div>
@@ -486,10 +486,12 @@
     </div>
 
     <div id="tabInvestments" class="tab-panel" style="display:none">
-        <div class="investment-subtabs" role="tablist" aria-label="Investments sections">
-            <button type="button" id="investmentPortfolioTab" class="investment-subtab active" role="tab" aria-selected="true" aria-controls="investmentPortfolio" onclick="switchInvestmentSubtab('portfolio')">Portfolio</button>
-            <button type="button" id="investmentTransactionsTab" class="investment-subtab" role="tab" aria-selected="false" aria-controls="investmentPortfolio" onclick="switchInvestmentSubtab('transactions')">Transactions</button>
-            <button type="button" id="investmentAnalyticsTab" class="investment-subtab" role="tab" aria-selected="false" aria-controls="investmentAnalytics" onclick="switchInvestmentSubtab('analytics')">Analytics</button>
+        <div class="home-subtab-bar">
+            <div class="investment-subtabs" role="tablist" aria-label="Investments sections">
+                <button type="button" id="investmentPortfolioTab" class="investment-subtab active" role="tab" aria-selected="true" aria-controls="investmentPortfolio" onclick="switchInvestmentSubtab('portfolio')">Portfolio</button>
+                <button type="button" id="investmentTransactionsTab" class="investment-subtab" role="tab" aria-selected="false" aria-controls="investmentPortfolio" onclick="switchInvestmentSubtab('transactions')">Transactions</button>
+            </div>
+            <span id="investmentRefreshDate" class="transaction-insert-date" role="status" aria-live="polite">Last updated: &mdash;</span>
         </div>
         <div id="investmentPortfolio" class="tab-panel" role="tabpanel" aria-labelledby="investmentPortfolioTab">
         <section class="filters-bar portfolio-filters" aria-label="Portfolio filters">
@@ -518,7 +520,7 @@
                 <div id="investmentPortfolioSize" class="kpi-real">—</div>
             </div>
             <div class="kpi-card">
-                <div class="kpi-top"><span class="kpi-icon" aria-hidden="true">📈</span><span class="kpi-label">Total PnL</span></div>
+                <div class="kpi-top"><button id="investmentPnlOpen" class="kpi-icon investment-pnl-trigger" type="button" aria-label="Open Total PnL history" title="Open Total PnL history">📈</button><span class="kpi-label">Total PnL</span></div>
                 <div id="investmentPortfolioPnl" class="kpi-real">—</div>
             </div>
         </section>
@@ -561,7 +563,6 @@
                     <tbody id="investmentTableBody"></tbody>
                 </table>
             </div>
-            <p class="investment-note">Net P/L = current value + buy and sell cash flows + fees + dividends. Total P/L excludes positions whose "In scope" setting is off (editable per item) and includes other closed positions with zero current value, whether shown or hidden. This is not a tax-lot calculation. Portfolio percentages use only open positions with known values; text colors range from green for the smallest allocation to red for the largest. Other transaction actions do not change quantity or cash flows; their fees still count.</p>
             </div>
             <div id="portfolioTransactions" hidden>
                 <p id="portfolioTransactionStatus" class="investment-note" role="status" aria-live="polite"></p>
@@ -620,41 +621,38 @@
             </dialog>
         </section>
         </div>
-        <div id="investmentAnalytics" class="tab-panel" role="tabpanel" aria-labelledby="investmentAnalyticsTab" hidden>
-            <section class="filters-bar analytics-filters" aria-label="Analytics filters">
-                <div class="portfolio-view-buttons" role="group" aria-label="Analytics aggregation">
-                    <button id="analyticsTrendButton" class="btn-secondary" type="button" aria-pressed="false">P/L trend</button>
-                    <button id="analyticsPlatformButton" class="btn-secondary" type="button" aria-pressed="true">Platform</button>
-                    <button id="analyticsPerformersButton" class="btn-secondary" type="button" aria-pressed="false">Performers</button>
-                </div>
-                <div id="analyticsRankingControls" class="portfolio-view-buttons" role="group" aria-label="Performer ranking" hidden>
-                    <button id="analyticsTopButton" class="btn-secondary" type="button" aria-pressed="true">Top 10</button>
-                    <button id="analyticsWorstButton" class="btn-secondary" type="button" aria-pressed="false">Worst 10</button>
-                </div>
-            </section>
-            <section class="investments-card" aria-labelledby="analyticsTitle">
-                <h2 id="analyticsTitle">Performance by platform</h2>
-                <p id="analyticsStatus" class="investment-note" role="status" aria-live="polite"></p>
-                <button id="analyticsRetry" class="btn-secondary" type="button" hidden>Retry portfolio load</button>
-                <p id="analyticsCoverage" class="investment-note" role="status"></p>
-                <div id="analyticsTrendBox" class="chart-container" hidden>
-                    <div class="portfolio-view-buttons analytics-range" role="group" aria-label="P/L trend period">
-                        <button id="analyticsRange7" class="btn-secondary" type="button" aria-pressed="false">7d</button>
-                        <button id="analyticsRange30" class="btn-secondary" type="button" aria-pressed="false">30d</button>
-                        <button id="analyticsRange90" class="btn-secondary" type="button" aria-pressed="true">90d</button>
-                        <button id="analyticsRange365" class="btn-secondary" type="button" aria-pressed="false">1y</button>
-                        <button id="analyticsRangeall" class="btn-secondary" type="button" aria-pressed="false">All</button>
-                    </div>
-                    <div style="position:relative;height:340px"><canvas id="investmentPnlChart"></canvas></div>
-                    <p class="investment-note">Net P/L over time by type, stacked, for items counted in total P/L. Click a legend entry to show or hide a type. Open positions are snapshotted by each price refresh; closed positions are dated at their last transaction.</p>
-                </div>
-                <table id="analyticsTable" class="analytics-table">
-                    <thead><tr><th id="analyticsNameHeading" scope="col">Platform</th><th scope="col">Value DKK</th><th scope="col">Portfolio %</th><th scope="col">Net P/L DKK</th></tr></thead>
-                    <tbody id="analyticsTableBody"></tbody>
+        <dialog id="investmentPnlDialog" class="modal house-dialog investment-pnl-dialog" aria-labelledby="investmentPnlDialogTitle">
+            <div class="modal-header"><h2 id="investmentPnlDialogTitle">Net P/L history</h2><button id="investmentPnlClose" class="modal-close" type="button" aria-label="Close P/L history">✕</button></div>
+            <div class="portfolio-view-buttons investment-analytics-views" role="group" aria-label="Analytics view">
+                <button id="investmentPnlTrendButton" class="btn-secondary" type="button" aria-pressed="true">P/L trend</button>
+                <button id="investmentPnlPlatformButton" class="btn-secondary" type="button" aria-pressed="false">Platform</button>
+                <button id="investmentPnlPerformersButton" class="btn-secondary" type="button" aria-pressed="false">Performers</button>
+            </div>
+            <p id="investmentPnlDialogStatus" class="investment-note" role="status" aria-live="polite"></p>
+            <button id="investmentPnlRetry" class="btn-secondary" type="button" hidden>Retry portfolio load</button>
+            <p id="investmentPnlDialogCoverage" class="investment-note" role="status"></p>
+            <div id="investmentPnlRankingControls" class="portfolio-view-buttons" role="group" aria-label="Performer ranking" hidden>
+                <button id="investmentPnlTopButton" class="btn-secondary" type="button" aria-pressed="true">Top 10</button>
+                <button id="investmentPnlWorstButton" class="btn-secondary" type="button" aria-pressed="false">Worst 10</button>
+            </div>
+            <div class="investment-pnl-table-wrap">
+                <table id="investmentPnlDialogTable" class="analytics-table" hidden>
+                    <thead><tr><th id="investmentPnlDialogNameHeading" scope="col">Platform</th><th scope="col">Value DKK</th><th scope="col">Portfolio %</th><th scope="col">Net P/L DKK</th></tr></thead>
+                    <tbody id="investmentPnlDialogTableBody"></tbody>
                 </table>
-                <p class="investment-note">Includes all platforms. Closed positions are treated as having zero current value; check that they are actually closed. Portfolio percentages use known open-position values. Net P/L includes cash flows, fees and dividends. * indicates a partial platform total.</p>
-            </section>
-        </div>
+            </div>
+            <div id="investmentPnlTrendBox">
+                <div class="portfolio-view-buttons analytics-range" role="group" aria-label="P/L history period">
+                    <button id="investmentPnlRange7" class="btn-secondary" type="button" aria-pressed="false">7d</button>
+                    <button id="investmentPnlRange30" class="btn-secondary" type="button" aria-pressed="false">30d</button>
+                    <button id="investmentPnlRange90" class="btn-secondary" type="button" aria-pressed="true">90d</button>
+                    <button id="investmentPnlRange365" class="btn-secondary" type="button" aria-pressed="false">1y</button>
+                    <button id="investmentPnlRangeall" class="btn-secondary" type="button" aria-pressed="false">All</button>
+                </div>
+                <div class="investment-pnl-chart"><canvas id="investmentPnlDialogChart"></canvas></div>
+                <p class="investment-note">Net P/L over time by type, stacked, for items counted in total P/L. Click a legend entry to show or hide a type. Open positions are snapshotted by scheduled price refreshes; closed positions are dated at their last transaction.</p>
+            </div>
+        </dialog>
     </div>
         <section id="investmentHouse" class="house-layout" style="display:none" aria-label="Mortgage">
             <div class="house-panel house-installments-panel">

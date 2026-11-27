@@ -140,12 +140,11 @@ test('tracks the house illustration width for the compact chart layout', () => {
     assert.equal(elements.get('houseHistoryChartWrap').style['--house-diagram-width'], '258px');
 });
 
-test('switches to analytics and loads portfolio data without opening House', () => {
+test('switches to Portfolio and loads portfolio data without opening House', () => {
     const { context, elements } = setup();
-    vm.runInContext("let portfolioOpens = 0; openInvestments = () => { portfolioOpens++; }; switchInvestmentSubtab('analytics')", context);
-    assert.equal(elements.get('investmentAnalytics').hidden, false);
-    assert.equal(elements.get('investmentPortfolio').hidden, true);
-    assert.equal(elements.get('investmentAnalyticsTab')['aria-selected'], 'true');
+    vm.runInContext("let portfolioOpens = 0; openInvestments = () => { portfolioOpens++; }; switchInvestmentSubtab('portfolio')", context);
+    assert.equal(elements.get('investmentPortfolio').hidden, false);
+    assert.equal(elements.get('investmentPortfolioTab')['aria-selected'], 'true');
     assert.equal(vm.runInContext('portfolioOpens', context), 1);
 });
 
@@ -153,7 +152,6 @@ test('shows the shared portfolio panel for the Transactions subtab', () => {
     const { context, elements } = setup();
     vm.runInContext("let renders = 0; renderPortfolioTransactions = () => { renders++; }; switchInvestmentSubtab('transactions')", context);
     assert.equal(elements.get('investmentPortfolio').hidden, false);
-    assert.equal(elements.get('investmentAnalytics').hidden, true);
     assert.equal(elements.get('investmentTransactionsTab')['aria-selected'], 'true');
     assert.equal(vm.runInContext('portfolioTransactionsVisible && renders', context), 1);
 });
